@@ -1,0 +1,398 @@
+{
+  // Active pane styling and effects
+  "active_pane_modifiers": {
+    "magnification": 1.0, // Scale factor for active pane (float)
+    "border_size": 0.0, // Border thickness in pixels (non-negative float)
+    "inactive_opacity": 1.0 // Opacity of inactive panes (0.0-1.0)
+  },
+
+  // AI agent configuration
+  "agent": {
+    "button": true, // Show/hide agent button
+    "default_height": 320, // Initial height in pixels
+    "default_model": {
+      "model": "claude-3-7-sonnet-latest",
+      "provider": "zed.dev"
+    },
+    "default_width": 640, // Initial width in pixels
+    "dock": "right", // Dock position: "left" | "right"
+    "editor_model": {
+      "model": "claude-3-7-sonnet-latest", 
+      "provider": "zed.dev"
+    },
+    "enabled": true, // Enable/disable agent
+    "single_file_review": true, // Single file review mode
+    "version": "2" // Agent version
+  },
+
+  // Auto-install extension settings
+  "auto_install_extensions": {
+    "html": true // Example: control per-extension installation
+  },
+
+  // Autosave behavior
+  "autosave": "off", // Options: "off" | "on_focus_change" | "on_window_change" | {"after_delay": {"milliseconds": 1000}}
+
+  // Auto-scroll when clicking near text area edges
+  "autoscroll_on_clicks": false,
+
+  // Automatic update checking
+  "auto_update": true,
+
+  // Base keymap scheme
+  "base_keymap": "VSCode", // Options: "VSCode" | "Atom" | "JetBrains" | "None" | "SublimeText" | "TextMate"
+
+  // Bottom dock layout configuration
+  "bottom_dock_layout": "contained", // Options: "contained" | "full" | "left_aligned" | "right_aligned"
+
+  // Editor buffer font settings
+  "buffer_font_family": "Zed Plex Mono",
+  "buffer_font_features": null, // OpenType font features (macOS/Windows)
+  "buffer_font_size": 15, // Size in pixels (6-100)
+  "buffer_font_weight": 400, // Weight (100-900)
+  "buffer_line_height": "comfortable", // Options: "standard" | "comfortable" | {"custom": float}
+
+  // Call settings
+  "calls": {
+    "mute_on_join": false, // Mute microphone when joining
+    "share_on_join": false // Auto-share project on join
+  },
+
+  // Centered layout configuration
+  "centered_layout": {
+    "left_padding": 0.2, // (0.0-0.4)
+    "right_padding": 0.2 // (0.0-0.4)
+  },
+
+  // Quit confirmation dialog
+  "confirm_quit": false,
+
+  // Current line highlighting
+  "current_line_highlight": "all", // Options: "none" | "gutter" | "line" | "all"
+
+  // Cursor settings
+  "cursor_blink": true,
+  "cursor_shape": "bar", // Options: "bar" | "block" | "underline" | "hollow"
+
+  // Diagnostic settings
+  "diagnostics": {
+    "include_warnings": true,
+    "inline": {
+      "enabled": false,
+      "max_severity": null,
+      "min_column": 0,
+      "padding": 4,
+      "update_debounce_ms": 150
+    },
+    "primary_only": false,
+    "update_with_cursor": false,
+    "use_rendered": false
+  },
+
+  // Edit prediction settings
+  "edit_predictions": {
+    "disabled_globs": [
+      "**/.env*",
+      "**/*.pem",
+      "**/*.key",
+      "**/*.cert",
+      "**/*.crt",
+      "**/.dev.vars",
+      "**/secrets.yml"
+    ]
+  },
+  "edit_predictions_disabled_in": [], // Language scopes to disable predictions
+
+  // Language server enablement
+  "enable_language_server": true,
+
+  // Ensure final newline on save
+  "ensure_final_newline_on_save": true,
+
+  // File scan settings
+  "file_scan_exclusions": [
+    "**/.git",
+    "**/.svn",
+    "**/.hg",
+    "**/.jj",
+    "**/CVS",
+    "**/.DS_Store",
+    "**/.classpath",
+    "**/.settings",
+    "**/Thumbs.db"
+  ],
+  "file_scan_inclusions": [".env*"],
+
+  // File type associations
+  "file_types": {
+    "JSONC": ["**/.zed/**/*.json", "**/zed/**/*.json", "**/Zed/**/*.json", "**/.vscode/**/*.json"],
+    "Shell Script": [".env.*"]
+  },
+
+  // Format on save behavior
+  "format_on_save": "on", // Options: "on" | "off"
+
+  // Formatter configuration
+  "formatter": "auto", // Options: "language_server" | {"external": {"command": string, "arguments": [string]}} | "code_actions"
+
+  // Git settings
+  "git": {
+    "git_gutter": "tracked_files", // Options: "tracked_files" | "hide"
+    "gutter_debounce": null,
+    "hunk_style": "staged_hollow", // Options: "staged_hollow" | "unstaged_hollow"
+    "inline_blame": {
+      "enabled": true,
+      "delay_ms": null,
+      "show_commit_summary": false,
+      "min_column": null
+    }
+  },
+
+  // Hard tabs vs spaces
+  "hard_tabs": false,
+
+  // Mouse cursor hiding
+  "hide_mouse": "on_typing_and_movement", // Options: "never" | "on_typing" | "on_typing_and_movement"
+
+  // Hover popover enablement
+  "hover_popover_enabled": true,
+
+  // Indent guide settings
+  "indent_guides": {
+    "active_line_width": 1,
+    "background_coloring": "disabled",
+    "coloring": "fixed",
+    "enabled": true,
+    "line_width": 1
+  },
+
+  // Inlay hint settings
+  "inlay_hints": {
+    "edit_debounce_ms": 700,
+    "enabled": false,
+    "scroll_debounce_ms": 50,
+    "show_background": false,
+    "show_other_hints": true,
+    "show_parameter_hints": true,
+    "show_type_hints": true,
+    "toggle_on_modifiers_press": null
+  },
+
+  // Journal settings
+  "journal": {
+    "hour_format": "hour12", // Options: "hour12" | "hour24"
+    "path": "~"
+  },
+
+  // Language-specific settings
+  "languages": {}, // Override settings per language
+
+  // LSP settings
+  "lsp": null, // Language server configurations
+
+  // LSP highlight debounce
+  "lsp_highlight_debounce": 75,
+
+  // Outline panel settings
+  "outline_panel": {
+    "auto_fold_dirs": true,
+    "auto_reveal_entries": true,
+    "button": true,
+    "default_width": 300,
+    "dock": "left", // Options: "left" | "right"
+    "file_icons": true,
+    "folder_icons": true,
+    "git_status": true,
+    "indent_guides": {
+      "show": "always" // Options: "always" | "never"
+    },
+    "indent_size": 20,
+    "scrollbar": {
+      "show": null // Options: null | "auto" | "system" | "always" | "never"
+    }
+  },
+
+  // Preferred line length
+  "preferred_line_length": 80,
+
+  // Preview tab settings
+  "preview_tabs": {
+    "enabled": true,
+    "enable_preview_from_code_navigation": false,
+    "enable_preview_from_file_finder": false
+  },
+
+  // Project panel settings
+  "project_panel": {
+    "auto_fold_dirs": true,
+    "auto_reveal_entries": true,
+    "button": true,
+    "default_width": 240,
+    "dock": "left",
+    "entry_spacing": "comfortable", // Options: "comfortable" | "standard"
+    "file_icons": true,
+    "folder_icons": true,
+    "git_status": true,
+    "indent_guides": {
+      "show": "always"
+    },
+    "indent_size": 20,
+    "scrollbar": {
+      "show": null
+    },
+    "show_diagnostics": "all"
+  },
+
+  // Projects online default state
+  "projects_online_by_default": true,
+
+  // Network proxy settings
+  "proxy": null, // URI with scheme: http, https, socks4, socks4a, socks5, socks5h
+
+  // Remove trailing whitespace on save
+  "remove_trailing_whitespace_on_save": true,
+
+  // Restore state on startup
+  "restore_on_startup": "last_session", // Options: "last_session" | "last_workspace" | "none"
+
+  // Scrollbar settings
+  "scrollbar": {
+    "axes": {
+      "horizontal": true,
+      "vertical": true
+    },
+    "cursors": true,
+    "diagnostics": "all", // Options: "all" | "none" | "error" | "warning" | "information"
+    "git_diff": true,
+    "search_results": true,
+    "selected_symbol": true,
+    "selected_text": true,
+    "show": "auto" // Options: "auto" | "system" | "always" | "never"
+  },
+
+  // Search settings
+  "search": {
+    "case_sensitive": false,
+    "include_ignored": false,
+    "regex": false,
+    "whole_word": false
+  },
+
+  // Search query seeding from cursor
+  "seed_search_query_from_cursor": "always", // Options: "always" | "selection" | "never"
+
+  // Show call status icon
+  "show_call_status_icon": true,
+
+  // Completion settings
+  "show_completion_documentation": true,
+  "show_completions_on_input": true,
+
+  // Edit prediction display
+  "show_edit_predictions": true,
+
+  // Selection highlight
+  "selection_highlight": true,
+
+  // Show whitespace characters
+  "show_whitespaces": "selection", // Options: "all" | "selection" | "none" | "boundary"
+
+  // Smart case search
+  "use_smartcase_search": false,
+
+  // Snippet sort order
+  "snippet_sort_order": "inline", // Options: "top" | "inline" | "bottom"
+
+  // Soft wrap settings
+  "soft_wrap": "none", // Options: "none" | "editor_width" | "preferred_line_length" | "bounded"
+
+  // Tab size
+  "tab_size": 4,
+
+  // Tab bar settings
+  "tab_bar": {
+    "show": true,
+    "show_nav_history_buttons": true,
+    "show_tab_bar_buttons": true
+  },
+
+  // Tab settings
+  "tabs": {
+    "activate_on_close": "history", // Options: "history" | "neighbour" | "left_neighbour"
+    "close_position": "right", // Options: "right" | "left"
+    "file_icons": false,
+    "git_status": false,
+    "show_close_button": "hover", // Options: "hover" | "always" | "hidden"
+    "show_diagnostics": "off" // Options: "off" | "errors" | "all"
+  },
+
+  // Telemetry settings
+  "telemetry": {
+    "diagnostics": true,
+    "metrics": true
+  },
+
+  // Terminal settings
+  "terminal": {
+    "alternate_scroll": "off", // Options: "off" | "on"
+    "blinking": "terminal_controlled", // Options: "off" | "terminal_controlled" | "on"
+    "button": true,
+    "copy_on_select": false,
+    "default_height": 320,
+    "default_width": 640,
+    "detect_venv": {
+      "on": {
+        "activate_script": "default",
+        "directories": [".env", "env", ".venv", "venv"]
+      }
+    },
+    "dock": "bottom", // Options: "bottom" | "left" | "right"
+    "env": {},
+    "font_family": null,
+    "font_features": null,
+    "font_size": null,
+    "line_height": "comfortable", // Options: "comfortable" | "standard" | {"custom": float}
+    "option_as_meta": false,
+    "scrollbar": {
+      "show": null
+    },
+    "shell": "system",
+    "toolbar": {
+      "breadcrumbs": true
+    },
+    "working_directory": "current_project_directory" // Options: "current_project_directory" | "first_project_directory" | "always_home" | {"always": {"directory": string}}
+  },
+
+  // Theme settings
+  "theme": {
+    "dark": "One Dark",
+    "light": "One Light",
+    "mode": "system" // Options: "dark" | "light" | "system"
+  },
+
+  // Toolbar settings
+  "toolbar": {
+    "agent_review": true,
+    "breadcrumbs": true,
+    "quick_actions": true,
+    "selections_menu": true
+  },
+
+  // UI font settings
+  "ui_font_family": "Zed Plex Sans",
+  "ui_font_features": {
+    "calt": false
+  },
+  "ui_font_fallbacks": null,
+  "ui_font_size": 16, // Size in pixels (6-100)
+  "ui_font_weight": 400, // Weight (100-900)
+
+  // Unnecessary code fade amount
+  "unnecessary_code_fade": 0.3, // Float (0.0-0.9)
+
+  // Vim mode
+  "vim_mode": false,
+
+  // Wrap guides (vertical rulers)
+  "wrap_guides": [] // Array of column numbers
+}

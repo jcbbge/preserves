@@ -1,0 +1,84 @@
+# Current Session: [Date]
+
+## Session Context
+
+**Mode**: [Vision/Structure/Build]
+
+**Focus**: [Brief description of what we're working on]
+
+**Active Principles**: [List the specific principles most relevant to this work]
+
+## Progress
+
+### Completed
+- [Task/feature/component completed]
+- [Task/feature/component completed]
+
+### In Progress
+- [Current task/feature/component]
+  - [Specific aspect being worked on]
+  - [Current blockers if any]
+
+### Next Up
+- [Upcoming task/feature/component]
+- [Upcoming task/feature/component]
+
+## Key Decisions
+
+| Decision | Rationale | Principles Applied | Date |
+|----------|-----------|-------------------|------|
+| [Decision made] | [Why this decision was made] | [Which principles influenced this] | [Date] |
+| [Decision made] | [Why this decision was made] | [Which principles influenced this] | [Date] |
+
+## Principle Alignment Notes
+
+### Accessibility First
+- [How today's work upheld this principle]
+- [Any challenges encountered]
+- [Areas for improvement]
+
+### User-Centered Design
+- [How today's work upheld this principle]
+- [Any challenges encountered]
+- [Areas for improvement]
+
+### Sustainable Code
+- [How today's work upheld this principle]
+- [Any challenges encountered]
+- [Areas for improvement]
+
+## Technical Context
+
+**Key Files**:
+- `[path/to/file]`: [Current state/purpose]
+- `[path/to/file]`: [Current state/purpose]
+
+**Components in Focus**:
+- [Component]: [Current state/purpose]
+- [Component]: [Current state/purpose]
+
+## Next Session Preparation
+
+**Suggested Mode**: [Vision/Structure/Build]
+
+**Critical Context**:
+- [Important information to remember]
+- [Specific details that shouldn't be lost]
+
+**Reference Materials**:
+- [Links or paths to relevant documentation]
+- [Links or paths to relevant code samples]
+
+## Session Reflections
+
+**What Went Well**:
+- [Positive aspects of this session]
+- [Successful approaches]
+
+**What Could Improve**:
+- [Areas for improvement]
+- [Processes to refine]
+
+**Cultural Observations**:
+- [Notes on how well we aligned with our cultural values]
+- [Ideas for strengthening cultural expression in the code]

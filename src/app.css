@@ -1,0 +1,150 @@
+:root {
+  /* Peach-inspired color palette */
+  --peach-primary: #FF9A8B;     /* Main peach color */
+  --peach-secondary: #FF6B6B;   /* Deeper peach/coral */
+  --peach-accent: #FFCBC1;      /* Light peach */
+  --peach-background: #FFF4F2;  /* Very light peach background */
+  --peach-dark: #E86C5D;        /* Darker peach for hover states */
+  --text-dark: #4A3F3A;         /* Dark brown text */
+  --text-light: #FFFFFF;        /* White text */
+  --transition-duration: 300ms;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body, html {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+
+/* Global loading state */
+.loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--peach-background);
+  z-index: 1000;
+  gap: 1rem;
+}
+
+.loading::after {
+  content: '';
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--peach-accent);
+  border-top: 4px solid var(--peach-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.app {
+  background-color: var(--peach-background);
+  color: var(--text-dark);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  position: relative;
+}
+
+.card {
+  width: 100%;
+  max-width: 380px;
+  background-color: white;
+  border-radius: 24px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 12px 32px rgba(255, 154, 139, 0.15);
+  transition: transform var(--transition-duration);
+}
+
+.logo-container {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  position: relative;
+  background-color: white;
+  overflow: hidden;
+}
+
+.logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.form-content {
+  padding: 32px 24px;
+  background-color: white;
+}
+
+.input-field {
+  margin-bottom: 16px;
+}
+
+input {
+  width: 100%;
+  padding: 16px;
+  background-color: var(--peach-background);
+  color: var(--text-dark);
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 400;
+  transition: all 0.2s ease;
+}
+
+input::placeholder {
+  color: #B3A8A5;
+}
+
+input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--peach-primary);
+}
+
+.connect-button {
+  width: 100%;
+  padding: 16px;
+  background-color: var(--peach-primary);
+  color: var(--text-light);
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-duration);
+}
+
+.connect-button:hover {
+  background-color: var(--peach-dark);
+  transform: translateY(-1px);
+}
+
+.connect-button:active {
+  transform: translateY(0);
+}
+
+.error-message {
+  color: var(--peach-secondary);
+  font-size: 14px;
+  margin-top: 4px;
+  text-align: left;
+}
