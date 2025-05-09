@@ -42,17 +42,17 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
   const [corkboardRef, setCorkboardRef] = createSignal<HTMLDivElement>();
 
   // Basic interaction handlers
-  const handleFlip = (id: string, e: MouseEvent) => {
+  const handleFlip = (id: string, e: MouseEvent | TouchEvent) => {
     e.stopPropagation();
     props.onPhotoFlip(id);
   };
 
-  const handlePin = (id: string, e: MouseEvent) => {
+  const handlePin = (id: string, e: MouseEvent | TouchEvent) => {
     e.stopPropagation();
     props.onPhotoPin(id);
   };
 
-  const handleRotate = (id: string, e: MouseEvent) => {
+  const handleRotate = (id: string, e: MouseEvent | TouchEvent) => {
     e.stopPropagation();
     const photo = props.photos.find(p => p.id === id);
     if (photo) {
@@ -277,18 +277,89 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
     }
   };
 
-  // Set up event listeners
+  // Handle touch events similarly to mouse events
+  const handleTouchStart = (id: string, e: TouchEvent) => {
+    e.preventDefault(); // Prevent scrolling
+    
+    if (e.touches.length === 1) {
+      // Convert touch to equivalent mouse event
+      const touch = e.touches[0];
+      const mouseEvent = new MouseEvent('mousedown', {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        bubbles: true,
+        cancelable: true,
+        view: window
+      }) as any;
+      
+      // Pass to existing mouse handler
+      handleDragStart(id, mouseEvent);
+    }
+  };
+  
+  const handleTouchMove = (e: TouchEvent) => {
+    e.preventDefault(); // Prevent scrolling
+    
+    if (e.touches.length === 1 && draggedPhoto) {
+      // Convert touch to equivalent mouse event
+      const touch = e.touches[0];
+      const mouseEvent = new MouseEvent('mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        buttons: 1 // Simulate left button pressed
+      }) as any;
+      
+      // Pass to existing mouse handler
+      handleDragMove(mouseEvent);
+    }
+  };
+  
+  const handleTouchEnd = (e: TouchEvent) => {
+    e.preventDefault(); // Prevent scrolling behavior
+    
+    if (draggedPhoto) {
+      // Use the last touch position for the end event
+      const lastTouch = e.changedTouches[0];
+      const mouseEvent = new MouseEvent('mouseup', {
+        clientX: lastTouch.clientX,
+        clientY: lastTouch.clientY,
+        bubbles: true,
+        cancelable: true,
+        view: window
+      }) as any;
+      
+      // Pass to existing mouse handler
+      handleDragEnd(mouseEvent);
+    }
+  };
+
+  // Set up event listeners for both mouse and touch
   onMount(() => {
     const board = corkboardRef();
     if (board) {
+      // Mouse events
       board.addEventListener('mousemove', handleDragMove);
       board.addEventListener('mouseup', handleDragEnd);
       board.addEventListener('mouseleave', handleDragEnd);
+      
+      // Touch events
+      board.addEventListener('touchmove', handleTouchMove, { passive: false });
+      board.addEventListener('touchend', handleTouchEnd, { passive: false });
+      board.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 
       return () => {
+        // Remove mouse events
         board.removeEventListener('mousemove', handleDragMove);
         board.removeEventListener('mouseup', handleDragEnd);
         board.removeEventListener('mouseleave', handleDragEnd);
+        
+        // Remove touch events
+        board.removeEventListener('touchmove', handleTouchMove);
+        board.removeEventListener('touchend', handleTouchEnd);
+        board.removeEventListener('touchcancel', handleTouchEnd);
       };
     }
   });
@@ -376,6 +447,7 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
                 "background": polaroidBg
               }}
               onMouseDown={(e) => handleDragStart(photo.id, e)}
+              onTouchStart={(e) => handleTouchStart(photo.id, e)}
             >
               <div class="polaroid-image-area">
                 {photo.mediaUrl ? (

@@ -1,10 +1,12 @@
 :root {
-  /* Peach-inspired color palette */
-  --peach-primary: #FF9A8B;     /* Main peach color */
-  --peach-secondary: #FF6B6B;   /* Deeper peach/coral */
-  --peach-accent: #FFCBC1;      /* Light peach */
+  /* Peach-inspired color palette sampled from peachdotcool.png */
+  --peach-primary: #fee3e8;     /* Light pink background from logo */
+  --peach-secondary: #FF6B6B;   /* Coral/pink from peach center */
+  --peach-accent: #FF9A8B;      /* Light peach color */
   --peach-background: #FFF4F2;  /* Very light peach background */
-  --peach-dark: #E86C5D;        /* Darker peach for hover states */
+  --peach-dark: #5F38C0;        /* Dark purple from logo outline */
+  --canvas-background: #3A215C; /* Darker purple for canvas background */
+  --canvas-spots: #8F6BC8;      /* Light purple for canvas spots */
   --text-dark: #4A3F3A;         /* Dark brown text */
   --text-light: #FFFFFF;        /* White text */
   --transition-duration: 300ms;

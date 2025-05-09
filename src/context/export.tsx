@@ -45,6 +45,7 @@ export interface ExportOptions {
 
 interface ExportContextValue {
   exportData: Store<ExportData>;
+  setExportData: (value: ExportData | ((prev: ExportData) => ExportData) | Record<string, any>) => ExportData;
   startExport: (options?: ExportOptions) => Promise<void>;
   pauseExport: () => Promise<void>;
   resumeExport: () => Promise<void>;
@@ -96,32 +97,12 @@ export function ExportProvider(props: { children: JSX.Element }) {
       completedTime: null
     });
     
-    // Mock progress updates for demo purposes
+    // Initial setup for the export context
+    // The real values will be set by the download.ts process with the actual post count
     setTimeout(() => {
       setExportData('status', 'exporting');
-      const progressInterval = setInterval(() => {
-        setExportData('progress', (prev) => {
-          const newPercentage = Math.min(prev.percentage + 5, 100);
-          const isComplete = newPercentage >= 100;
-          
-          if (isComplete) {
-            clearInterval(progressInterval);
-            setExportData('status', 'complete');
-            setExportData('completedTime', new Date());
-            setExportData('downloadUrl', '/mock-download.zip');
-          }
-          
-          return {
-            ...prev,
-            percentage: newPercentage,
-            currentActivity: 'Processing posts from 2022...',
-            estimatedTimeRemaining: Math.max(0, 120 - (newPercentage * 1.2)),
-            completedItems: Math.floor(newPercentage * 2),
-            totalItems: 200
-          };
-        });
-      }, 1000);
-    }, 2000);
+      // We'll let the actual download process control the progress values
+    }, 500);
   };
 
   const pauseExport = async () => {
@@ -166,6 +147,7 @@ export function ExportProvider(props: { children: JSX.Element }) {
 
   const value: ExportContextValue = {
     exportData,
+    setExportData, // Expose the setExportData function to allow components to update the store
     startExport,
     pauseExport,
     resumeExport,

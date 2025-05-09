@@ -2,13 +2,16 @@ import { Show, createSignal, onMount, createEffect } from "solid-js";
 import { Title } from "@solidjs/meta";
 import { useNavigate } from "@solidjs/router";
 import { usePeach } from "~/context/peach";
+import { useExport } from "~/context/export";
 import { fetchStream } from "./api/stream";
 import { downloadPeachData as fetchPeachData } from "~/lib/api/download";
 import { SimplePhotoCanvas, PolaroidPhoto } from "~/components/SimplePhotoCanvas";
+import { analyzePostMedia } from "~/lib/api/debug-peach";
 import { createStore, produce } from "solid-js/store";
 
 export default function Dashboard() {
   const { isAuthenticated, user, token } = usePeach();
+  const exportContext = useExport();
   const navigate = useNavigate();
 
   // Get stored username from user context to use as key for user-specific storage
@@ -45,6 +48,7 @@ export default function Dashboard() {
   const [cursor, setCursor] = createSignal<string | null>(getStoredCursor());
   const [loadingMore, setLoadingMore] = createSignal(false);
   const [polaroidPhotos, setPolaroidPhotos] = createStore<PolaroidPhoto[]>([]);
+  const [showDebugModal, setShowDebugModal] = createSignal(false); // Control debug modal visibility
 
   // Redirect if not authenticated
   const redirectIfNotAuth = () => {
@@ -88,6 +92,13 @@ export default function Dashboard() {
       const username = user.data.username;
       const streamToken = user.data.streams[0].token;
 
+      // Debug log exactly what's in the user data
+      console.log('[DEBUG-AUTH] DASHBOARD LOAD - FULL USER DATA:', JSON.stringify(user.data, null, 2));
+      console.log('[DEBUG-AUTH] DASHBOARD LOAD - USERNAME:', username);
+      console.log('[DEBUG-AUTH] DASHBOARD LOAD - TOKEN:', streamToken);
+      console.log('[DEBUG-AUTH] DASHBOARD LOAD - EXACT TOKEN TYPE:', typeof streamToken);
+      console.log('[DEBUG-AUTH] DASHBOARD LOAD - STREAM DATA:', JSON.stringify(user.data.streams[0], null, 2));
+
       // Create form data for server action
       const formData = new FormData();
       formData.append('username', username);
@@ -103,7 +114,29 @@ export default function Dashboard() {
 
       // From example: var posts = stream.data.data.posts;
       if (data && data.data && data.data.posts) {
-        console.log('[DASHBOARD] Posts found:', data.data.posts.length);
+        console.log('[DASHBOARD] Posts metrics:', {
+          newPostsCount: data.data.posts.length,
+          existingPostsCount: posts().length,
+          totalAfterMerge: posts().length + data.data.posts.length,
+          cursor: data.data.cursor || 'none'
+        });
+
+        // Debug posts to find media structure
+        console.log('[DASHBOARD] Analyzing posts for media structure');
+        const postsWithMedia = data.data.posts.filter(p => p.media && p.media.length > 0);
+        console.log(`[DASHBOARD] Posts with media array: ${postsWithMedia.length} / ${data.data.posts.length}`);
+
+        // Analyze first 3 posts with media
+        for (let i = 0; i < Math.min(3, postsWithMedia.length); i++) {
+          analyzePostMedia(postsWithMedia[i], i);
+        }
+
+        // Analyze first 3 posts with no media to check message structure
+        const postsWithoutMedia = data.data.posts.filter(p => !p.media || p.media.length === 0);
+        console.log(`[DASHBOARD] Posts without media array: ${postsWithoutMedia.length} / ${data.data.posts.length}`);
+        for (let i = 0; i < Math.min(3, postsWithoutMedia.length); i++) {
+          analyzePostMedia(postsWithoutMedia[i], i);
+        }
 
         // Update state
         setPosts(data.data.posts);
@@ -162,7 +195,14 @@ export default function Dashboard() {
 
       // Same data structure as initial load
       if (data && data.data && data.data.posts) {
-        console.log('[DASHBOARD] Additional posts found:', data.data.posts.length);
+        console.log('[DASHBOARD] Additional posts metrics:', {
+          newPostsCount: data.data.posts.length,
+          existingPostsCount: posts().length,
+          totalAfterMerge: posts().length + data.data.posts.length,
+          oldestNewPost: data.data.posts.length ? new Date(data.data.posts[data.data.posts.length-1].createdTime).toISOString() : 'none',
+          newestNewPost: data.data.posts.length ? new Date(data.data.posts[0].createdTime).toISOString() : 'none',
+          cursor: data.data.cursor || 'none'
+        });
 
         // Update posts with new ones appended
         const updatedPosts = [...posts(), ...data.data.posts];
@@ -187,7 +227,7 @@ export default function Dashboard() {
     }
   };
 
-  // Handle preserve/download action
+  // Handle download action
   const downloadPeachData = async () => {
     setDownloading(true);
     setError(null);
@@ -196,27 +236,51 @@ export default function Dashboard() {
       // Pass current username to preserve function for better archive naming
       const username = user.data?.username || 'peach-user';
 
-      console.log('[DASHBOARD] Starting preservation process for user:', username);
+      // Debug - dump all user info to ensure token availability
+      console.log('[DEBUG-AUTH] DOWNLOAD CLICK - USER DATA:', JSON.stringify(user.data, null, 2));
+      console.log('[DEBUG-AUTH] DOWNLOAD CLICK - USER STREAMS:', JSON.stringify(user.data?.streams, null, 2));
+      console.log('[DEBUG-AUTH] DOWNLOAD CLICK - TOKEN:', token());
+      console.log('[DEBUG-AUTH] DOWNLOAD CLICK - TOKEN TYPE:', typeof token());
+      console.log('[DEBUG-AUTH] DOWNLOAD CLICK - AUTH STATUS:', isAuthenticated());
 
-      // Call the download API with full options
-      const archiveFilename = await fetchPeachData(token(), {
-        includeComments: true,
-        includeImages: true
-      });
+      console.log('[DASHBOARD] Starting download process for user:', username);
+
+      console.log('[DASHBOARD] Starting download process with user context data');
+
+      // Call the download API directly with user data from context
+      const archiveFilename = await fetchPeachData(
+        token(),
+        {
+          includeComments: true,
+          includeImages: true,
+          devMode: true // Set to true for testing, false for production
+        },
+        exportContext,
+        user.data // Pass the entire user data from context
+      );
 
       console.log('[DASHBOARD] Archive created:', archiveFilename);
       setDownloadComplete(true);
 
-      // In a real implementation, we would trigger the actual download here
-      // For now, we just update the UI to show completion
-
-      // After 3 seconds, hide the completion message
+      // After successful download, show completion message for 5 seconds
       setTimeout(() => {
         setDownloadComplete(false);
+        // Reset the export context to allow new downloads
+        console.log('[DASHBOARD] Resetting export context after completion');
+        exportContext.resetExport();
       }, 5000);
     } catch (err) {
-      console.error('[DASHBOARD] Preservation error:', err);
-      setError('Failed to preserve your Peach data. Please try again.');
+      console.error('[DASHBOARD] Download error:', err);
+
+      // Show more detailed error to help with debugging
+      const errorMessage = err instanceof Error
+        ? `Error: ${err.message}`
+        : 'Failed to download your Peach data. Please try again.';
+
+      setError(errorMessage);
+
+      // Reset the export context on error
+      exportContext.resetExport();
     } finally {
       setDownloading(false);
     }
@@ -423,8 +487,15 @@ export default function Dashboard() {
       // Small delay to ensure auth is fully processed
       setTimeout(() => loadPosts(), 100);
     } else {
-      console.log('[DASHBOARD] Using stored posts:', posts().length);
-      setPolaroidPhotos(mapPostsToPolaroids(posts()));
+      const storedPosts = posts();
+      console.log('[DASHBOARD] Using stored posts:', {
+        totalPosts: storedPosts.length,
+        uniquePosts: new Set(storedPosts.map(p => p.id)).size,
+        postsWithMedia: storedPosts.filter(p => p.media && p.media.length > 0).length,
+        oldestPost: storedPosts.length ? new Date(storedPosts[storedPosts.length-1].createdTime).toISOString() : 'none',
+        newestPost: storedPosts.length ? new Date(storedPosts[0].createdTime).toISOString() : 'none'
+      });
+      setPolaroidPhotos(mapPostsToPolaroids(storedPosts));
       setLoading(false);
     }
   });
@@ -445,9 +516,8 @@ export default function Dashboard() {
       <header class="header">
         <div class="logo">
           <img src="/peachdotcool.png" alt="Peach" class="logo-img" />
-          <span>Preserves</span>
+          <span>Peach Preserves</span>
         </div>
-        <a href="/logout" class="logout-link">Logout</a>
       </header>
 
       <main class="interactive-canvas">
@@ -462,7 +532,127 @@ export default function Dashboard() {
                     <div class="success-icon">✓</div>
                   </div>
                   <div class="polaroid-caption">
-                    Preserved! Your memories have been safely archived.
+                    Downloaded! Your memories have been safely archived.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Download progress modal */}
+            {(exportContext.exportData.status === 'exporting' || exportContext.exportData.status === 'preparing') && (
+              <div class="download-progress" role="region" aria-live="polite">
+                <div class="progress-container">
+                  <div class="progress-header">
+                    <h3>Downloading Your Peach Data</h3>
+                  </div>
+
+                  <div class="progress-details">
+                    <div class="progress-activity">
+                      {exportContext.exportData.progress.currentActivity}
+                    </div>
+
+                    <div class="progress-bar-wrapper">
+                      <div
+                        class="progress-bar"
+                        style={{width: `${exportContext.exportData.progress.percentage}%`}}
+                        role="progressbar"
+                        aria-valuenow={exportContext.exportData.progress.percentage}
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      ></div>
+                    </div>
+
+                    <div class="progress-stats">
+                      <span class="progress-percentage">
+                        {Math.round(exportContext.exportData.progress.percentage)}%
+                      </span>
+                      {exportContext.exportData.progress.completedItems > 0 && (
+                        <span class="progress-count">
+                          {exportContext.exportData.progress.completedItems} / {exportContext.exportData.progress.totalItems}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error modal - Shows when export status is error */}
+            {exportContext.exportData.status === 'error' && exportContext.exportData.error && (
+              <div class="error-modal">
+                <div class="error-container">
+                  <div class="error-header">
+                    <h3>Download Failed</h3>
+                  </div>
+                  <div class="error-message">
+                    {exportContext.exportData.error.message}
+                  </div>
+                  <div class="error-actions">
+                    <button
+                      onClick={() => exportContext.retryExport()}
+                      class="retry-button"
+                    >
+                      Try Again
+                    </button>
+                    <button
+                      onClick={() => exportContext.resetExport()}
+                      class="cancel-button"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Debug Modal - only visible in development mode */}
+            {showDebugModal() && import.meta.env.DEV && (
+              <div class="debug-modal">
+                <div class="debug-container">
+                  <div class="debug-header">
+                    <h3>📊 Export Debug Information</h3>
+                    <button onClick={() => setShowDebugModal(false)} class="close-button">×</button>
+                  </div>
+
+                  <div class="debug-content">
+                    <div class="debug-section">
+                      <h4>Export State</h4>
+                      <pre>{JSON.stringify({
+                        status: exportContext.exportData.status,
+                        jobId: exportContext.exportData.jobId,
+                        startTime: exportContext.exportData.startTime,
+                        completedTime: exportContext.exportData.completedTime,
+                        downloadUrl: exportContext.exportData.downloadUrl,
+                      }, null, 2)}</pre>
+                    </div>
+
+                    <div class="debug-section">
+                      <h4>Progress Data</h4>
+                      <pre>{JSON.stringify({
+                        percentage: exportContext.exportData.progress.percentage,
+                        phase: exportContext.exportData.progress.phase,
+                        currentActivity: exportContext.exportData.progress.currentActivity,
+                        completedItems: exportContext.exportData.progress.completedItems,
+                        totalItems: exportContext.exportData.progress.totalItems,
+                        estimatedTimeRemaining: exportContext.exportData.progress.estimatedTimeRemaining,
+                      }, null, 2)}</pre>
+                    </div>
+
+                    <div class="debug-section">
+                      <h4>Component State</h4>
+                      <pre>{JSON.stringify({
+                        downloading: downloading(),
+                        downloadComplete: downloadComplete(),
+                        postsCount: posts().length,
+                        error: error(),
+                      }, null, 2)}</pre>
+                    </div>
+
+                    <div class="debug-actions">
+                      <button onClick={() => exportContext.resetExport()}>Reset Export</button>
+                      <button onClick={() => setDownloadComplete(true)}>Show Complete Modal</button>
+                      <button onClick={() => console.log(exportContext)}>Log Context to Console</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -502,10 +692,28 @@ export default function Dashboard() {
                       <button
                         onClick={downloadPeachData}
                         class="preserve-button"
-                        disabled={downloading()}
+                        disabled={
+                          // Only disable during active processes
+                          exportContext.exportData.status === 'preparing' ||
+                          exportContext.exportData.status === 'exporting' ||
+                          downloading()
+                        }
+                        aria-busy={exportContext.exportData.status === 'exporting' || downloading()}
                       >
-                        {downloading() ? 'Preserving...' : 'Preserve'}
+                        {exportContext.exportData.status === 'preparing' || exportContext.exportData.status === 'exporting'
+                          ? 'Downloading...'
+                          : 'Download my Data'}
                       </button>
+
+                      {/* Debug button - only visible in development mode */}
+                      {import.meta.env.DEV && (
+                        <button
+                          onClick={() => setShowDebugModal(prev => !prev)}
+                          class="debug-button"
+                        >
+                          🐛 Debug
+                        </button>
+                      )}
                     </div>
                   </>
                 )}
@@ -522,6 +730,7 @@ export default function Dashboard() {
       </main>
 
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
         .peach-preserve {
           background-color: #f5f0e5; /* Cork board color */
           min-height: 100vh;
@@ -541,7 +750,7 @@ export default function Dashboard() {
           background-color: var(--peach-primary);
           padding: 0.75rem 2rem;
           display: flex;
-          justify-content: space-between;
+          justify-content: center;
           align-items: center;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
           position: sticky;
@@ -571,14 +780,14 @@ export default function Dashboard() {
           gap: 0.75rem;
           font-weight: bold;
           font-size: 1.25rem;
-          color: white;
+          color: var(--peach-dark);
+          font-family: 'Nunito', sans-serif;
         }
 
         .logo-img {
           height: 42px;
           width: auto;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          background-color: transparent;
         }
 
         /* Preserve button */
@@ -592,36 +801,41 @@ export default function Dashboard() {
 
         .preserve-button {
           background-color: var(--peach-primary);
-          color: white;
-          border: none;
-          padding: 1rem 3rem;
+          color: var(--peach-dark);
+          border: 2px solid var(--peach-dark);
+          padding: 1rem 2.5rem;
           border-radius: 2rem;
           font-size: 1.25rem;
           font-weight: bold;
           cursor: pointer;
           transition: all 0.3s ease;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          font-family: 'Nunito', sans-serif;
         }
 
         .preserve-button:hover {
           transform: translateY(-2px);
           box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
           background-color: var(--peach-secondary);
+          color: white;
         }
 
         .preserve-button:disabled {
-          background-color: rgba(255, 154, 139, 0.6);
+          background-color: rgba(255, 221, 221, 0.6);
+          border-color: rgba(95, 56, 192, 0.4);
+          color: rgba(95, 56, 192, 0.6);
           cursor: not-allowed;
           transform: none;
         }
 
-        /* Cork board texture for the background */
+        /* Purple background with light purple spots */
         .interactive-canvas {
+          background-color: var(--canvas-background);
           background-image:
-            radial-gradient(rgba(160, 120, 90, 0.1) 15%, transparent 16%),
-            radial-gradient(rgba(160, 120, 90, 0.1) 15%, transparent 16%);
-          background-size: 10px 10px;
-          background-position: 0 0, 5px 5px;
+            radial-gradient(var(--canvas-spots) 8%, transparent 8%),
+            radial-gradient(var(--canvas-spots) 8%, transparent 8%);
+          background-size: 30px 30px;
+          background-position: 0 0, 15px 15px;
         }
 
         /* Add subtle texture */
@@ -637,7 +851,7 @@ export default function Dashboard() {
           pointer-events: none;
         }
 
-        /* Preservation complete modal */
+        /* Download complete modal */
         .download-complete {
           position: fixed;
           top: 50%;
@@ -682,6 +896,155 @@ export default function Dashboard() {
           animation: pulse 1s infinite alternate;
         }
 
+        /* Download progress modal */
+        .download-progress {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 1000;
+          background: rgba(0, 0, 0, 0.7);
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: fadeIn 0.3s ease-out;
+        }
+
+        .progress-container {
+          width: 90%;
+          max-width: 450px;
+          background: white;
+          border-radius: 8px;
+          padding: 1.5rem;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+          animation: slideIn 0.4s ease-out;
+        }
+
+        .progress-header {
+          margin-bottom: 1.5rem;
+          text-align: center;
+        }
+
+        .progress-header h3 {
+          color: var(--peach-secondary);
+          font-size: 1.5rem;
+          margin: 0;
+        }
+
+        .progress-details {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .progress-activity {
+          text-align: center;
+          font-size: 0.9rem;
+          color: #666;
+          min-height: 1.4em;
+        }
+
+        .progress-bar-wrapper {
+          height: 12px;
+          background-color: #f0f0f0;
+          border-radius: 6px;
+          overflow: hidden;
+        }
+
+        .progress-bar {
+          height: 100%;
+          background-color: var(--peach-primary);
+          border-radius: 6px;
+          transition: width 0.3s ease;
+        }
+
+        .progress-stats {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.8rem;
+          color: #666;
+        }
+
+        /* Error modal */
+        .error-modal {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 1000;
+          background: rgba(0, 0, 0, 0.7);
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: fadeIn 0.3s ease-out;
+        }
+
+        .error-container {
+          width: 90%;
+          max-width: 450px;
+          background: white;
+          border-radius: 8px;
+          padding: 1.5rem;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+          animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        .error-header {
+          margin-bottom: 1rem;
+          text-align: center;
+        }
+
+        .error-header h3 {
+          color: #e74c3c;
+          font-size: 1.5rem;
+          margin: 0;
+        }
+
+        .error-message {
+          text-align: center;
+          margin-bottom: 1.5rem;
+          color: #333;
+          font-size: 0.95rem;
+          line-height: 1.5;
+        }
+
+        .error-actions {
+          display: flex;
+          justify-content: center;
+          gap: 1rem;
+        }
+
+        .retry-button, .cancel-button {
+          padding: 0.75rem 1.5rem;
+          border: none;
+          border-radius: 4px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .retry-button {
+          background-color: var(--peach-secondary);
+          color: white;
+        }
+
+        .retry-button:hover {
+          background-color: #6745a0;
+        }
+
+        .cancel-button {
+          background-color: #f5f5f5;
+          color: #666;
+        }
+
+        .cancel-button:hover {
+          background-color: #e0e0e0;
+        }
+
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
@@ -696,6 +1059,24 @@ export default function Dashboard() {
             transform: rotate(-3deg) translateY(0);
             opacity: 1;
           }
+        }
+
+        @keyframes slideIn {
+          0% {
+            transform: translateY(-30px);
+            opacity: 0;
+          }
+          100% {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-1px, 0, 0); }
+          20%, 80% { transform: translate3d(2px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+          40%, 60% { transform: translate3d(4px, 0, 0); }
         }
 
         @keyframes pulse {
@@ -766,6 +1147,126 @@ export default function Dashboard() {
           100% { transform: rotate(360deg); }
         }
 
+        /* Debug modal and button styles */
+        .debug-button {
+          position: fixed;
+          bottom: 1rem;
+          right: 1rem;
+          background: rgba(0, 0, 0, 0.7);
+          color: #fff;
+          border: none;
+          padding: 0.5rem 1rem;
+          border-radius: 4px;
+          cursor: pointer;
+          font-family: monospace;
+          z-index: 9999;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .debug-button:hover {
+          background: rgba(0, 0, 0, 0.9);
+        }
+
+        .debug-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.8);
+          z-index: 9999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          overflow-y: auto;
+        }
+
+        .debug-container {
+          background: #f5f5f5;
+          border-radius: 6px;
+          width: 90%;
+          max-width: 800px;
+          max-height: 90vh;
+          overflow-y: auto;
+          box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .debug-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 15px 20px;
+          background: #333;
+          color: white;
+        }
+
+        .debug-header h3 {
+          margin: 0;
+          font-family: monospace;
+        }
+
+        .close-button {
+          background: none;
+          border: none;
+          color: white;
+          font-size: 24px;
+          cursor: pointer;
+        }
+
+        .debug-content {
+          padding: 20px;
+        }
+
+        .debug-section {
+          margin-bottom: 20px;
+          background: white;
+          border-radius: 4px;
+          padding: 15px;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .debug-section h4 {
+          margin-top: 0;
+          margin-bottom: 10px;
+          font-family: monospace;
+          color: #333;
+          border-bottom: 1px solid #eee;
+          padding-bottom: 5px;
+        }
+
+        .debug-section pre {
+          margin: 0;
+          padding: 10px;
+          background: #f8f8f8;
+          border-radius: 3px;
+          overflow-x: auto;
+          font-family: monospace;
+          font-size: 13px;
+          line-height: 1.4;
+        }
+
+        .debug-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 20px;
+        }
+
+        .debug-actions button {
+          background: #555;
+          color: white;
+          border: none;
+          padding: 8px 15px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-family: monospace;
+        }
+
+        .debug-actions button:hover {
+          background: #333;
+        }
+
         @media (max-width: 768px) {
           .header {
             padding: 0.5rem 1rem;
@@ -782,6 +1283,15 @@ export default function Dashboard() {
 
           .header-buttons {
             gap: 0.5rem;
+          }
+
+          .debug-container {
+            width: 95%;
+            max-height: 95vh;
+          }
+
+          .debug-section pre {
+            font-size: 11px;
           }
         }
       `}</style>

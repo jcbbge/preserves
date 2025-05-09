@@ -2,7 +2,7 @@
   "name": "example-bare",
   "type": "module",
   "scripts": {
-    "dev": "vinxi dev",
+    "dev": "vinxi dev --host",
     "build": "vinxi build",
     "start": "vinxi start"
   },
@@ -13,7 +13,9 @@
     "@solidjs/router": "^0.15.3",
     "@solidjs/start": "^1.1.0",
     "@thisbeyond/solid-dnd": "^0.7.5",
+    "@types/jszip": "^3.4.1",
     "axios": "^1.8.2",
+    "jszip": "^3.10.1",
     "solid-js": "^1.9.5",
     "vinxi": "^0.5.3"
   },

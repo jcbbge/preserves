@@ -3,6 +3,7 @@ import { Router } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
 import { MetaProvider } from "@solidjs/meta";
 import { PeachProvider } from "./context/peach";
+import { ExportProvider } from "./context/export";
 import "./app.css";
 
 export default function App() {
@@ -12,7 +13,9 @@ export default function App() {
         <Router root={(props) => (
           <Suspense fallback={<div class="loading">Loading...</div>}>
             <PeachProvider>
-              {props.children}
+              <ExportProvider>
+                {props.children}
+              </ExportProvider>
             </PeachProvider>
           </Suspense>
         )}>

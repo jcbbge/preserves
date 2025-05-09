@@ -50,11 +50,19 @@ export function PeachProvider(props: { children: JSX.Element }) {
   if (typeof window !== 'undefined') {
     try {
       savedToken = localStorage.getItem('peach_token');
+      console.log('[CONTEXT] Found token in localStorage:', savedToken ? 'present' : 'missing');
+      
       const savedUserData = localStorage.getItem('peach_user');
+      console.log('[CONTEXT] Found user data in localStorage:', savedUserData ? 'present' : 'missing');
+      
       if (savedUserData) {
         parsedUserData = JSON.parse(savedUserData);
-        console.log('[CONTEXT] Restored user data from localStorage:', 
-          parsedUserData ? `ID: ${parsedUserData.id}, Username: ${parsedUserData.username}` : 'null');
+        console.log('[CONTEXT] Restored user data from localStorage:', {
+          id: parsedUserData?.id || 'missing',
+          username: parsedUserData?.username || 'missing',
+          sessionId: parsedUserData?.sessionId || 'missing',
+          hasStreams: Boolean(parsedUserData?.streams?.length)
+        });
       }
     } catch (e) {
       console.error('[CONTEXT] Error restoring from localStorage:', e);
@@ -99,6 +107,18 @@ export function PeachProvider(props: { children: JSX.Element }) {
       console.log('[CONTEXT] Token data:', tokenData);
       console.log('[CONTEXT] Full userData:', userData);
 
+      // CRITICAL FIX: Always use the stream token which is what the API needs
+      const streamToken = userData?.streams?.[0]?.token;
+      console.log('[CONTEXT] Auth token vs Stream token:', { 
+        authToken: newToken?.substring(0, 20) + '...',
+        streamToken: streamToken?.substring(0, 20) + '...',
+        match: newToken === streamToken
+      });
+      
+      // Use the stream token as the primary token if available
+      const tokenToUse = streamToken || newToken;
+      console.log('[CONTEXT] Using token for context:', tokenToUse?.substring(0, 20) + '...');
+      
       // Prepare user data object with consistent structure
       const userDataObj = {
         id: tokenData?.userID || 'unknown',
@@ -109,14 +129,14 @@ export function PeachProvider(props: { children: JSX.Element }) {
 
       console.log('[CONTEXT] Prepared user data object:', userDataObj);
       
-      // Update state
-      setToken(newToken);
+      // Update state - CRITICAL FIX: Use the stream token
+      setToken(tokenToUse);
       setUser('data', userDataObj);
 
       // Save to localStorage - using try/catch for robustness
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem('peach_token', newToken);
+          localStorage.setItem('peach_token', tokenToUse);
           localStorage.setItem('peach_user', JSON.stringify(userDataObj));
           console.log('[CONTEXT] Saved authentication data to localStorage successfully');
           
