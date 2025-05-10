@@ -243,7 +243,7 @@ export async function downloadPeachData(
         // Process all media for this post
         for (let i = 0; i < postMediaUrls.length; i++) {
           const url = postMediaUrls[i];
-          const filename = generateMediaFilename(url, mediaMap.size);
+          const filename = generateMediaFilename(url, Object.keys(mediaMap).length);
           mediaUrlToFilename[url] = filename;
           
           try {
@@ -876,6 +876,7 @@ function generateMediaFilename(url: string, index: number): string {
 
 /**
  * Download a media file as a blob
+ * CRITICAL FIX: Complete rewrite with simplified approach that uses our working direct proxy
  */
 async function downloadMedia(url: string): Promise<Blob | null> {
   try {
@@ -887,74 +888,66 @@ async function downloadMedia(url: string): Promise<Blob | null> {
       return null;
     }
     
+    // CONFIRMED WORKING APPROACH: Use our direct server proxy that returns binary data correctly
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      // Create the proxy URL with the media URL as a query parameter
+      const proxyUrl = new URL('/api/media-proxy-direct', window.location.origin);
+      proxyUrl.searchParams.append('url', url);
       
-      // Use the media-proxy action to avoid CORS
-      const formData = new FormData();
-      formData.append('url', url);
+      console.log('[DEBUG-CRITICAL] Downloading media via direct proxy:', proxyUrl.toString());
       
-      debugLog('media', 'Sending media proxy request');
-      const response = await fetch('/api/media-proxy', {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal
+      // Use XMLHttpRequest for reliable binary data handling
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        xhr.onload = function() {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            // Check if we received HTML instead of an image (should never happen with our fixed proxy)
+            const contentType = xhr.getResponseHeader('Content-Type') || '';
+            if (contentType.includes('text/html') || contentType.includes('xhtml')) {
+              console.error('[DEBUG-CRITICAL] Received HTML instead of media:', contentType);
+              reject(new Error(`Received HTML instead of media: ${contentType}`));
+              return;
+            }
+            
+            // Verify the response is a valid blob with content
+            if (xhr.response instanceof Blob && xhr.response.size > 0) {
+              resolve(xhr.response);
+            } else {
+              reject(new Error('Empty or invalid blob received'));
+            }
+          } else {
+            reject(new Error(`Media download failed with status ${xhr.status}`));
+          }
+        };
+        
+        xhr.onerror = function() {
+          console.error('[DEBUG-CRITICAL] Network error when downloading media');
+          reject(new Error('Network error when downloading media'));
+        };
+        
+        xhr.ontimeout = function() {
+          console.error('[DEBUG-CRITICAL] Timeout when downloading media');
+          reject(new Error('Timeout when downloading media'));
+        };
+        
+        xhr.open('GET', proxyUrl.toString(), true);
+        xhr.responseType = 'blob';
+        xhr.timeout = 30000; // 30 second timeout for large files
+        
+        xhr.send();
       });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to download media: ${response.status}`);
-      }
-      
-      // IMPORTANT: We need to ensure we treat this as a binary blob
-      // The issue was that the binary data wasn't being properly preserved
-      const blob = await response.blob();
       
       if (blob.size === 0) {
         throw new Error('Empty blob received');
       }
       
-      // Extract the correct MIME type from URL or response headers
-      let contentType = response.headers.get('Content-Type');
+      // Log success details
+      debugLog('media', `Downloaded media: ${blob.size} bytes, type: ${blob.type}`);
       
-      // If no content type in headers, try to guess from URL
-      if (!contentType || contentType === 'application/octet-stream') {
-        const fileExtension = url.split('.').pop()?.toLowerCase();
-        if (fileExtension) {
-          switch (fileExtension) {
-            case 'jpg':
-            case 'jpeg':
-              contentType = 'image/jpeg';
-              break;
-            case 'png':
-              contentType = 'image/png';
-              break;
-            case 'gif':
-              contentType = 'image/gif';
-              break;
-            case 'mp4':
-              contentType = 'video/mp4';
-              break;
-            case 'webp':
-              contentType = 'image/webp';
-              break;
-            default:
-              contentType = 'application/octet-stream';
-          }
-        }
-      }
-      
-      // Create a new blob with the correct content type
-      // This ensures the binary data is properly preserved with the right MIME type
-      const properBlob = new Blob([await blob.arrayBuffer()], { type: contentType || blob.type });
-      
-      debugLog('media', `Downloaded media blob: ${properBlob.size} bytes, type: ${properBlob.type}`);
-      return properBlob;
+      return blob;
     } catch (error) {
-      console.warn('[API] Media download failed:', error);
-      // Don't use placeholder - let caller handle the error
+      console.error('[DEBUG-CRITICAL] Media download error:', error);
       return null;
     }
   } catch (error) {

@@ -14,9 +14,14 @@ export const mediaProxy = action(async (formData: FormData) => {
   }
   
   try {
-    // Directly fetch the media file
+    // CRITICAL FIX: Use proper headers for binary data fetch
+    // Directly fetch the media file with specific headers to ensure binary data
     const response = await fetch(url, {
       method: 'GET',
+      headers: {
+        'Accept': 'image/*,video/*,audio/*,*/*',
+        'User-Agent': 'Mozilla/5.0 Peach Preserves Media Proxy'
+      },
     });
     
     if (!response.ok) {
@@ -26,15 +31,27 @@ export const mediaProxy = action(async (formData: FormData) => {
     
     // Get the content type
     const contentType = response.headers.get('content-type') || 'application/octet-stream';
+    console.log('[SERVER-PROXY] Media content type:', contentType);
     
-    // Get the response as an array buffer
+    // CRITICAL FIX: Ensure we're not getting HTML content
+    if (contentType.includes('text/html') || contentType.includes('application/xhtml')) {
+      console.error('[SERVER-PROXY] Received HTML instead of media content');
+      return new Response('Received HTML instead of media content', { status: 422 });
+    }
+    
+    // Get the response as an array buffer - this is crucial for binary data
     const data = await response.arrayBuffer();
+    console.log('[SERVER-PROXY] Media size:', data.byteLength, 'bytes');
     
-    // Return the media data with the original content type
+    // CRITICAL FIX: Add additional headers to prevent caching of errors and ensure binary handling
+    // Return the media data with the original content type and improved headers
     return new Response(data, {
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=86400' // Cache for 24 hours
+        'Content-Length': String(data.byteLength),
+        'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
+        'X-Content-Type-Options': 'nosniff', // Prevent MIME type sniffing
+        'Access-Control-Allow-Origin': '*' // Allow CORS access from client
       }
     });
   } catch (error) {

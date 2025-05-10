@@ -1,0 +1,220 @@
+2025-05-10 00:48:40,613 - ra_aid - DEBUG - Logging configuration: log_mode=file, log_level=debug, root_level=10, logger_level=10, file_level=10, propagate=True
+2025-05-10 00:48:40,613 - ra_aid - INFO - Log file created: /Users/jcbbge/peach/preserves/.ra-aid/logs/ra_aid_20250510_004840.log
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.__main__ - DEBUG - Starting RA.Aid with arguments: Namespace(message=None, msg_file=None, research_only=False, provider='anthropic', model='claude-3-7-sonnet-20250219', num_ctx=262144, research_provider=None, research_model=None, planner_provider=None, planner_model=None, cowboy_mode=False, expert_provider='anthropic', expert_model='claude-3-7-sonnet-20250219', expert_num_ctx=262144, hil=True, chat=True, log_mode='file', pretty_logger=False, log_level='debug', temperature=None, disable_limit_tokens=True, experimental_fallback_handler=False, recursion_limit=100, aider_config=None, use_aider=False, test_cmd=None, auto_test=False, max_test_cmd_retries=3, test_cmd_timeout=300, server=False, server_host='0.0.0.0', server_port=1818, wipe_project_memory=False, project_state_dir=None, show_thoughts=False, show_cost=False, track_cost=False, reasoning_assistance=False, no_reasoning_assistance=False, custom_tools=None, set_default_provider=None, set_default_model=None)
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Base directory for database: /Users/jcbbge/peach/preserves
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Creating database directory at: /Users/jcbbge/peach/preserves/.ra-aid
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Directory already exists, skipping creation
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Directory verification: Path.exists=True, os.path.exists=True, os.path.isdir=True
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Parent directory /Users/jcbbge/peach/preserves permissions: 775
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Parent directory contents: ['pnpm-lock.yaml', '.DS_Store', '.ra-aid', 'node_modules', '_DOCS', '.claude', 'README.md', 'app.config.ts', 'public', '.gitignore', 'package.json', 'tsconfig.json', '.git', 'downloads', 'CLAUDE.md', 'src']
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Directory created/verified: /Users/jcbbge/peach/preserves/.ra-aid with permissions 755
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Directory contents: ['logs']
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Database path: /Users/jcbbge/peach/preserves/.ra-aid/pk.db
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Database file exists check: False
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Creating empty database file at: /Users/jcbbge/peach/preserves/.ra-aid/pk.db
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Empty database file created successfully
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Initializing SQLite database at: /Users/jcbbge/peach/preserves/.ra-aid/pk.db
+2025-05-10 00:48:40,613 - ra_aid.ra_aid.database.connection - DEBUG - Explicitly connecting to database
+2025-05-10 00:48:40,616 - peewee - DEBUG - ('SELECT 1', None)
+2025-05-10 00:48:40,616 - ra_aid.ra_aid.database.connection - DEBUG - Database connection verified with test query
+2025-05-10 00:48:40,616 - ra_aid.ra_aid.database.connection - DEBUG - Database file check after init: exists=True, size=4096 bytes
+2025-05-10 00:48:40,616 - ra_aid.ra_aid.database.connection - DEBUG - Database connection initialized successfully
+2025-05-10 00:48:40,616 - ra_aid.ra_aid.database.models - DEBUG - Initializing database proxy
+2025-05-10 00:48:40,616 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "session" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "start_time" DATETIME NOT NULL, "command_line" TEXT, "program_version" TEXT, "machine_info" TEXT, "status" VARCHAR(20) NOT NULL)', [])
+2025-05-10 00:48:40,616 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "session_status" ON "session" ("status")', [])
+2025-05-10 00:48:40,617 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "human_input" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "content" TEXT NOT NULL, "source" TEXT NOT NULL, "session_id" INTEGER, FOREIGN KEY ("session_id") REFERENCES "session" ("id"))', [])
+2025-05-10 00:48:40,617 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "humaninput_session_id" ON "human_input" ("session_id")', [])
+2025-05-10 00:48:40,617 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "key_fact" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "content" TEXT NOT NULL, "human_input_id" INTEGER, "session_id" INTEGER, FOREIGN KEY ("human_input_id") REFERENCES "human_input" ("id"), FOREIGN KEY ("session_id") REFERENCES "session" ("id"))', [])
+2025-05-10 00:48:40,617 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "keyfact_human_input_id" ON "key_fact" ("human_input_id")', [])
+2025-05-10 00:48:40,617 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "keyfact_session_id" ON "key_fact" ("session_id")', [])
+2025-05-10 00:48:40,617 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "key_snippet" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "filepath" TEXT NOT NULL, "line_number" INTEGER NOT NULL, "snippet" TEXT NOT NULL, "description" TEXT, "human_input_id" INTEGER, "session_id" INTEGER, FOREIGN KEY ("human_input_id") REFERENCES "human_input" ("id"), FOREIGN KEY ("session_id") REFERENCES "session" ("id"))', [])
+2025-05-10 00:48:40,618 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "keysnippet_human_input_id" ON "key_snippet" ("human_input_id")', [])
+2025-05-10 00:48:40,618 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "keysnippet_session_id" ON "key_snippet" ("session_id")', [])
+2025-05-10 00:48:40,618 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "research_note" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "content" TEXT NOT NULL, "human_input_id" INTEGER, "session_id" INTEGER, FOREIGN KEY ("human_input_id") REFERENCES "human_input" ("id"), FOREIGN KEY ("session_id") REFERENCES "session" ("id"))', [])
+2025-05-10 00:48:40,618 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "researchnote_human_input_id" ON "research_note" ("human_input_id")', [])
+2025-05-10 00:48:40,618 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "researchnote_session_id" ON "research_note" ("session_id")', [])
+2025-05-10 00:48:40,618 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "trajectory" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "human_input_id" INTEGER, "tool_name" TEXT, "tool_parameters" TEXT, "tool_result" TEXT, "step_data" TEXT, "record_type" TEXT, "current_cost" REAL, "input_tokens" INTEGER, "output_tokens" INTEGER, "is_error" INTEGER NOT NULL, "error_message" TEXT, "error_type" TEXT, "error_details" TEXT, "session_id" INTEGER, FOREIGN KEY ("human_input_id") REFERENCES "human_input" ("id"), FOREIGN KEY ("session_id") REFERENCES "session" ("id"))', [])
+2025-05-10 00:48:40,618 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "trajectory_human_input_id" ON "trajectory" ("human_input_id")', [])
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "trajectory_session_id" ON "trajectory" ("session_id")', [])
+2025-05-10 00:48:40,619 - ra_aid.ra_aid.database.models - DEBUG - Ensured database tables exist
+2025-05-10 00:48:40,619 - ra_aid.ra_aid.database.models - DEBUG - Database proxy already initialized
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "session" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "start_time" DATETIME NOT NULL, "command_line" TEXT, "program_version" TEXT, "machine_info" TEXT, "status" VARCHAR(20) NOT NULL)', [])
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "session_status" ON "session" ("status")', [])
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "human_input" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "content" TEXT NOT NULL, "source" TEXT NOT NULL, "session_id" INTEGER, FOREIGN KEY ("session_id") REFERENCES "session" ("id"))', [])
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "humaninput_session_id" ON "human_input" ("session_id")', [])
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "key_fact" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "content" TEXT NOT NULL, "human_input_id" INTEGER, "session_id" INTEGER, FOREIGN KEY ("human_input_id") REFERENCES "human_input" ("id"), FOREIGN KEY ("session_id") REFERENCES "session" ("id"))', [])
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "keyfact_human_input_id" ON "key_fact" ("human_input_id")', [])
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "keyfact_session_id" ON "key_fact" ("session_id")', [])
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "key_snippet" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "filepath" TEXT NOT NULL, "line_number" INTEGER NOT NULL, "snippet" TEXT NOT NULL, "description" TEXT, "human_input_id" INTEGER, "session_id" INTEGER, FOREIGN KEY ("human_input_id") REFERENCES "human_input" ("id"), FOREIGN KEY ("session_id") REFERENCES "session" ("id"))', [])
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "keysnippet_human_input_id" ON "key_snippet" ("human_input_id")', [])
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "keysnippet_session_id" ON "key_snippet" ("session_id")', [])
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "research_note" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "content" TEXT NOT NULL, "human_input_id" INTEGER, "session_id" INTEGER, FOREIGN KEY ("human_input_id") REFERENCES "human_input" ("id"), FOREIGN KEY ("session_id") REFERENCES "session" ("id"))', [])
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "researchnote_human_input_id" ON "research_note" ("human_input_id")', [])
+2025-05-10 00:48:40,619 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "researchnote_session_id" ON "research_note" ("session_id")', [])
+2025-05-10 00:48:40,620 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "trajectory" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "human_input_id" INTEGER, "tool_name" TEXT, "tool_parameters" TEXT, "tool_result" TEXT, "step_data" TEXT, "record_type" TEXT, "current_cost" REAL, "input_tokens" INTEGER, "output_tokens" INTEGER, "is_error" INTEGER NOT NULL, "error_message" TEXT, "error_type" TEXT, "error_details" TEXT, "session_id" INTEGER, FOREIGN KEY ("human_input_id") REFERENCES "human_input" ("id"), FOREIGN KEY ("session_id") REFERENCES "session" ("id"))', [])
+2025-05-10 00:48:40,620 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "trajectory_human_input_id" ON "trajectory" ("human_input_id")', [])
+2025-05-10 00:48:40,620 - peewee - DEBUG - ('CREATE INDEX IF NOT EXISTS "trajectory_session_id" ON "trajectory" ("session_id")', [])
+2025-05-10 00:48:40,620 - ra_aid.ra_aid.database.models - DEBUG - Ensured database tables exist
+2025-05-10 00:48:40,620 - ra_aid.ra_aid.database.migrations - DEBUG - Using migrations directory: /opt/homebrew/Cellar/ra-aid/0.30.2/libexec/lib/python3.12/site-packages/ra_aid/migrations
+2025-05-10 00:48:40,620 - ra_aid.ra_aid.database.migrations - DEBUG - Initialized migration router with table: migrationshistory
+2025-05-10 00:48:40,620 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "migrationshistory" ("id" INTEGER NOT NULL PRIMARY KEY, "name" VARCHAR(255) NOT NULL, "migrated_at" DATETIME NOT NULL)', [])
+2025-05-10 00:48:40,620 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,620 - ra_aid.ra_aid.database.migrations - DEBUG - Found 0 applied migrations and 14 pending migrations
+2025-05-10 00:48:40,620 - ra_aid.ra_aid.database.migrations - INFO - Applying 14 pending migrations...
+2025-05-10 00:48:40,620 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 002_20250301_212203_add_key_fact_model
+2025-05-10 00:48:40,620 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,620 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,620 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,621 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,621 - peewee_migrate.logs - INFO - Migrate "002_20250301_212203_add_key_fact_model"
+2025-05-10 00:48:40,621 - peewee_migrate.logs - INFO - Run create_table
+2025-05-10 00:48:40,621 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "key_fact" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "content" TEXT NOT NULL)', [])
+2025-05-10 00:48:40,621 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['002_20250301_212203_add_key_fact_model', datetime.datetime(2025, 5, 10, 5, 48, 40, 621526)])
+2025-05-10 00:48:40,621 - peewee_migrate.logs - INFO - Done 002_20250301_212203_add_key_fact_model
+2025-05-10 00:48:40,621 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 002_20250301_212203_add_key_fact_model
+2025-05-10 00:48:40,621 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 003_20250302_163752_add_key_snippet_model
+2025-05-10 00:48:40,621 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,621 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,626 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,626 - peewee_migrate.logs - INFO - Migrate "003_20250302_163752_add_key_snippet_model"
+2025-05-10 00:48:40,626 - peewee_migrate.logs - INFO - Run create_table
+2025-05-10 00:48:40,626 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "key_snippet" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "filepath" TEXT NOT NULL, "line_number" INTEGER NOT NULL, "snippet" TEXT NOT NULL, "description" TEXT)', [])
+2025-05-10 00:48:40,626 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['003_20250302_163752_add_key_snippet_model', datetime.datetime(2025, 5, 10, 5, 48, 40, 626574)])
+2025-05-10 00:48:40,626 - peewee_migrate.logs - INFO - Done 003_20250302_163752_add_key_snippet_model
+2025-05-10 00:48:40,626 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 003_20250302_163752_add_key_snippet_model
+2025-05-10 00:48:40,626 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 004_20250302_200312_add_human_input_model
+2025-05-10 00:48:40,626 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,626 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,627 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,627 - peewee_migrate.logs - INFO - Migrate "004_20250302_200312_add_human_input_model"
+2025-05-10 00:48:40,627 - peewee_migrate.logs - INFO - Run create_table
+2025-05-10 00:48:40,627 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "human_input" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "content" TEXT NOT NULL, "source" TEXT NOT NULL)', [])
+2025-05-10 00:48:40,627 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['004_20250302_200312_add_human_input_model', datetime.datetime(2025, 5, 10, 5, 48, 40, 627421)])
+2025-05-10 00:48:40,627 - peewee_migrate.logs - INFO - Done 004_20250302_200312_add_human_input_model
+2025-05-10 00:48:40,627 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 004_20250302_200312_add_human_input_model
+2025-05-10 00:48:40,627 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 005_20250302_201611_add_human_input_reference
+2025-05-10 00:48:40,627 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,627 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,628 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,628 - peewee_migrate.logs - INFO - Migrate "005_20250302_201611_add_human_input_reference"
+2025-05-10 00:48:40,628 - peewee - DEBUG - ('SELECT human_input_id FROM key_fact LIMIT 1', None)
+2025-05-10 00:48:40,628 - peewee - DEBUG - ('SELECT human_input_id FROM key_snippet LIMIT 1', None)
+2025-05-10 00:48:40,628 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['005_20250302_201611_add_human_input_reference', datetime.datetime(2025, 5, 10, 5, 48, 40, 628230)])
+2025-05-10 00:48:40,628 - peewee_migrate.logs - INFO - Done 005_20250302_201611_add_human_input_reference
+2025-05-10 00:48:40,628 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 005_20250302_201611_add_human_input_reference
+2025-05-10 00:48:40,628 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 006_20250303_211704_add_research_note_model
+2025-05-10 00:48:40,628 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,628 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,628 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,628 - peewee_migrate.logs - INFO - Migrate "006_20250303_211704_add_research_note_model"
+2025-05-10 00:48:40,628 - peewee - DEBUG - ('SELECT id FROM research_note LIMIT 1', None)
+2025-05-10 00:48:40,629 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['006_20250303_211704_add_research_note_model', datetime.datetime(2025, 5, 10, 5, 48, 40, 628988)])
+2025-05-10 00:48:40,629 - peewee_migrate.logs - INFO - Done 006_20250303_211704_add_research_note_model
+2025-05-10 00:48:40,629 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 006_20250303_211704_add_research_note_model
+2025-05-10 00:48:40,629 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 007_20250310_184046_add_trajectory_model
+2025-05-10 00:48:40,629 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,629 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,629 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,629 - peewee_migrate.logs - INFO - Migrate "007_20250310_184046_add_trajectory_model"
+2025-05-10 00:48:40,629 - peewee - DEBUG - ('SELECT id FROM trajectory LIMIT 1', None)
+2025-05-10 00:48:40,629 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['007_20250310_184046_add_trajectory_model', datetime.datetime(2025, 5, 10, 5, 48, 40, 629790)])
+2025-05-10 00:48:40,629 - peewee_migrate.logs - INFO - Done 007_20250310_184046_add_trajectory_model
+2025-05-10 00:48:40,629 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 007_20250310_184046_add_trajectory_model
+2025-05-10 00:48:40,629 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 008_20250311_191232_add_session_model
+2025-05-10 00:48:40,629 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,630 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,630 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,630 - peewee_migrate.logs - INFO - Migrate "008_20250311_191232_add_session_model"
+2025-05-10 00:48:40,630 - peewee - DEBUG - ('SELECT id FROM session LIMIT 1', None)
+2025-05-10 00:48:40,630 - peewee_migrate.logs - INFO - Run create_table
+2025-05-10 00:48:40,630 - peewee - DEBUG - ('CREATE TABLE IF NOT EXISTS "session" ("id" INTEGER NOT NULL PRIMARY KEY, "created_at" DATETIME NOT NULL, "updated_at" DATETIME NOT NULL, "start_time" DATETIME NOT NULL, "command_line" TEXT, "program_version" TEXT, "machine_info" TEXT)', [])
+2025-05-10 00:48:40,630 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['008_20250311_191232_add_session_model', datetime.datetime(2025, 5, 10, 5, 48, 40, 630725)])
+2025-05-10 00:48:40,630 - peewee_migrate.logs - INFO - Done 008_20250311_191232_add_session_model
+2025-05-10 00:48:40,630 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 008_20250311_191232_add_session_model
+2025-05-10 00:48:40,630 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 009_20250311_191517_add_session_fk_to_human_input
+2025-05-10 00:48:40,630 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,630 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,631 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,631 - peewee_migrate.logs - INFO - Migrate "009_20250311_191517_add_session_fk_to_human_input"
+2025-05-10 00:48:40,631 - peewee - DEBUG - ('SELECT session_id FROM human_input LIMIT 1', None)
+2025-05-10 00:48:40,631 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['009_20250311_191517_add_session_fk_to_human_input', datetime.datetime(2025, 5, 10, 5, 48, 40, 631434)])
+2025-05-10 00:48:40,631 - peewee_migrate.logs - INFO - Done 009_20250311_191517_add_session_fk_to_human_input
+2025-05-10 00:48:40,631 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 009_20250311_191517_add_session_fk_to_human_input
+2025-05-10 00:48:40,631 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 010_20250311_191617_add_session_fk_to_key_fact
+2025-05-10 00:48:40,631 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,631 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,632 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,632 - peewee_migrate.logs - INFO - Migrate "010_20250311_191617_add_session_fk_to_key_fact"
+2025-05-10 00:48:40,632 - peewee - DEBUG - ('SELECT session_id FROM key_fact LIMIT 1', None)
+2025-05-10 00:48:40,632 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['010_20250311_191617_add_session_fk_to_key_fact', datetime.datetime(2025, 5, 10, 5, 48, 40, 632129)])
+2025-05-10 00:48:40,632 - peewee_migrate.logs - INFO - Done 010_20250311_191617_add_session_fk_to_key_fact
+2025-05-10 00:48:40,632 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 010_20250311_191617_add_session_fk_to_key_fact
+2025-05-10 00:48:40,632 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 011_20250311_191732_add_session_fk_to_key_snippet
+2025-05-10 00:48:40,632 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,632 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,632 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,632 - peewee_migrate.logs - INFO - Migrate "011_20250311_191732_add_session_fk_to_key_snippet"
+2025-05-10 00:48:40,632 - peewee - DEBUG - ('SELECT session_id FROM key_snippet LIMIT 1', None)
+2025-05-10 00:48:40,633 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['011_20250311_191732_add_session_fk_to_key_snippet', datetime.datetime(2025, 5, 10, 5, 48, 40, 632979)])
+2025-05-10 00:48:40,633 - peewee_migrate.logs - INFO - Done 011_20250311_191732_add_session_fk_to_key_snippet
+2025-05-10 00:48:40,633 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 011_20250311_191732_add_session_fk_to_key_snippet
+2025-05-10 00:48:40,633 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 012_20250311_191832_add_session_fk_to_research_note
+2025-05-10 00:48:40,633 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,633 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,633 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,633 - peewee_migrate.logs - INFO - Migrate "012_20250311_191832_add_session_fk_to_research_note"
+2025-05-10 00:48:40,633 - peewee - DEBUG - ('SELECT session_id FROM research_note LIMIT 1', None)
+2025-05-10 00:48:40,633 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['012_20250311_191832_add_session_fk_to_research_note', datetime.datetime(2025, 5, 10, 5, 48, 40, 633629)])
+2025-05-10 00:48:40,633 - peewee_migrate.logs - INFO - Done 012_20250311_191832_add_session_fk_to_research_note
+2025-05-10 00:48:40,633 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 012_20250311_191832_add_session_fk_to_research_note
+2025-05-10 00:48:40,633 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 013_20250311_191701_add_session_fk_to_trajectory
+2025-05-10 00:48:40,633 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,633 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,634 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,634 - peewee_migrate.logs - INFO - Migrate "013_20250311_191701_add_session_fk_to_trajectory"
+2025-05-10 00:48:40,634 - peewee - DEBUG - ('SELECT session_id FROM trajectory LIMIT 1', None)
+2025-05-10 00:48:40,634 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['013_20250311_191701_add_session_fk_to_trajectory', datetime.datetime(2025, 5, 10, 5, 48, 40, 634254)])
+2025-05-10 00:48:40,634 - peewee_migrate.logs - INFO - Done 013_20250311_191701_add_session_fk_to_trajectory
+2025-05-10 00:48:40,634 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 013_20250311_191701_add_session_fk_to_trajectory
+2025-05-10 00:48:40,634 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 014_20250312_140700_add_token_fields_to_trajectory
+2025-05-10 00:48:40,634 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,634 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,635 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,635 - peewee_migrate.logs - INFO - Migrate "014_20250312_140700_add_token_fields_to_trajectory"
+2025-05-10 00:48:40,635 - peewee - DEBUG - ('SELECT id FROM trajectory LIMIT 1', None)
+2025-05-10 00:48:40,635 - peewee - DEBUG - ('SELECT input_tokens FROM trajectory LIMIT 1', None)
+2025-05-10 00:48:40,635 - peewee - DEBUG - ('SELECT output_tokens FROM trajectory LIMIT 1', None)
+2025-05-10 00:48:40,635 - peewee - DEBUG - ('SELECT current_cost FROM trajectory LIMIT 1', None)
+2025-05-10 00:48:40,635 - peewee - DEBUG - ('SELECT id FROM trajectory LIMIT 1', None)
+2025-05-10 00:48:40,635 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['014_20250312_140700_add_token_fields_to_trajectory', datetime.datetime(2025, 5, 10, 5, 48, 40, 635507)])
+2025-05-10 00:48:40,635 - peewee_migrate.logs - INFO - Done 014_20250312_140700_add_token_fields_to_trajectory
+2025-05-10 00:48:40,635 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 014_20250312_140700_add_token_fields_to_trajectory
+2025-05-10 00:48:40,635 - ra_aid.ra_aid.database.migrations - INFO - Applying migration: 015_20250408_140800_add_session_status
+2025-05-10 00:48:40,635 - peewee_migrate.logs - INFO - Starting migrations
+2025-05-10 00:48:40,635 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."name", "t1"."migrated_at" FROM "migrationshistory" AS "t1" ORDER BY "t1"."id"', [])
+2025-05-10 00:48:40,636 - peewee - DEBUG - ('BEGIN', None)
+2025-05-10 00:48:40,636 - peewee_migrate.logs - INFO - Migrate "015_20250408_140800_add_session_status"
+2025-05-10 00:48:40,636 - ra_aid.builtins - INFO - Adding status field to session table
+2025-05-10 00:48:40,636 - ra_aid.builtins - ERROR - Error checking or adding 'status' column: 'Migrator' object has no attribute 'router'
+2025-05-10 00:48:40,636 - peewee - DEBUG - ('INSERT INTO "migrationshistory" ("name", "migrated_at") VALUES (?, ?)', ['015_20250408_140800_add_session_status', datetime.datetime(2025, 5, 10, 5, 48, 40, 636311)])
+2025-05-10 00:48:40,636 - peewee_migrate.logs - INFO - Done 015_20250408_140800_add_session_status
+2025-05-10 00:48:40,636 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied migration: 015_20250408_140800_add_session_status
+2025-05-10 00:48:40,636 - ra_aid.ra_aid.database.migrations - INFO - Successfully applied 14 migrations
+2025-05-10 00:48:40,636 - ra_aid.ra_aid.database.connection - INFO - Database connection closed successfully
+2025-05-10 00:48:44,443 - ra_aid.ra_aid.__main__ - DEBUG - Initialized SessionRepository
+2025-05-10 00:48:44,443 - ra_aid.ra_aid.__main__ - DEBUG - Initialized KeyFactRepository
+2025-05-10 00:48:44,443 - ra_aid.ra_aid.__main__ - DEBUG - Initialized KeySnippetRepository
+2025-05-10 00:48:44,443 - ra_aid.ra_aid.__main__ - DEBUG - Initialized HumanInputRepository
+2025-05-10 00:48:44,443 - ra_aid.ra_aid.__main__ - DEBUG - Initialized ResearchNoteRepository
+2025-05-10 00:48:44,443 - ra_aid.ra_aid.__main__ - DEBUG - Initialized RelatedFilesRepository
+2025-05-10 00:48:44,443 - ra_aid.ra_aid.__main__ - DEBUG - Initialized TrajectoryRepository
+2025-05-10 00:48:44,443 - ra_aid.ra_aid.__main__ - DEBUG - Initialized WorkLogRepository
+2025-05-10 00:48:44,443 - ra_aid.ra_aid.__main__ - DEBUG - Initialized ConfigRepository
+2025-05-10 00:48:44,443 - ra_aid.ra_aid.__main__ - DEBUG - Initialized Environment Inventory
+2025-05-10 00:48:44,443 - ra_aid.ra_aid.__main__ - DEBUG - Initializing new session
+2025-05-10 00:48:44,444 - peewee - DEBUG - ('INSERT INTO "session" ("created_at", "updated_at", "start_time", "command_line", "program_version", "machine_info", "status") VALUES (?, ?, ?, ?, ?, ?, ?)', [datetime.datetime(2025, 5, 10, 0, 48, 44, 443718), datetime.datetime(2025, 5, 10, 0, 48, 44, 443736), datetime.datetime(2025, 5, 10, 0, 48, 44, 443699), '/opt/homebrew/bin/ra-aid --chat', '0.30.2', None, 'pending'])
+2025-05-10 00:48:44,444 - ra_aid.ra_aid.database.repositories.session_repository - DEBUG - Created new session with ID 1 and status pending
+2025-05-10 00:48:44,445 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."created_at", "t1"."updated_at", "t1"."start_time", "t1"."command_line", "t1"."program_version", "t1"."machine_info", "t1"."status" FROM "session" AS "t1" WHERE ("t1"."id" = ?) LIMIT ? OFFSET ?', [1, 1, 0])
+2025-05-10 00:48:44,445 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."created_at", "t1"."updated_at", "t1"."start_time", "t1"."command_line", "t1"."program_version", "t1"."machine_info", "t1"."status" FROM "session" AS "t1" WHERE ("t1"."id" = ?) LIMIT ? OFFSET ?', [1, 1, 0])
+2025-05-10 00:48:44,445 - peewee - DEBUG - ('SELECT "t1"."id", "t1"."created_at", "t1"."updated_at", "t1"."content", "t1"."source", "t1"."session_id" FROM "human_input" AS "t1" WHERE ("t1"."session_id" = ?) ORDER BY "t1"."id" LIMIT ?', [1, 1])
+2025-05-10 00:48:44,462 - ra_aid.ra_aid.database.connection - INFO - Database connection closed successfully
