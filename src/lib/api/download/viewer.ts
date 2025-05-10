@@ -523,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!posts || posts.length === 0) return;
     
     // 1. Emoji extraction and counting
-    const emojiRegex = /[\\p{Emoji}]/gu;
+    const emojiRegex = /[\p{Emoji}]/gu;
     let allEmojis = [];
     let totalEmojiCount = 0;
     let wordCount = 0;
@@ -549,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Count words and characters
       if (messageContent) {
         // Count words (crude approximation)
-        const words = messageContent.split(/\\s+/).filter(w => w.length > 0);
+        const words = messageContent.split(/\s+/).filter(w => w.length > 0);
         wordCount += words.length;
         
         // Count characters
@@ -994,13 +994,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (textParts.length > 0) {
-          return textParts.join('\\n\\n').replace(/\\n/g, '<br>');
+          return textParts.join('\n\n').replace(/\n/g, '<br>');
         }
       }
-      
+
       // Handle simple string messages
       if (typeof message === 'string') {
-        return message.replace(/\\n/g, '<br>');
+        return message.replace(/\n/g, '<br>');
       }
       
       return '';

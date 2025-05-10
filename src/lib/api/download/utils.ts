@@ -1,5 +1,29 @@
 import { MediaValidationResult } from './types';
 
+/**
+ * Create a safe path for files in the archive
+ */
+export function createSafeArchivePath(directory: string, filename: string): string {
+  // Make sure the directory doesn't have a trailing slash
+  const dir = directory.endsWith('/') ? directory.slice(0, -1) : directory;
+
+  // Make the filename safe
+  const safeName = filename.replace(/[^a-zA-Z0-9_\.-]/g, '_');
+
+  // Combine
+  return `${dir}/${safeName}`;
+}
+
+/**
+ * Format a file size in bytes to a human-readable string
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return bytes + ' bytes';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+}
+
 // Constants for development and debugging
 export const DEV_MODE = true;
 export const DEBUG = true;

@@ -1,6 +1,6 @@
 import { Title, useRouteData } from "solid-start";
 import { createServerData$ } from "solid-start/server";
-import { generateViewerCSS, generateViewerJS } from "~/lib/api/download/viewer";
+import { generateViewerCSS, generateViewerJS } from "~/lib/api/download/viewer-fixed";
 import { createSignal, onMount } from "solid-js";
 
 // Server function to generate test data
