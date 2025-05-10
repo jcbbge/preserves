@@ -198,7 +198,7 @@ export async function downloadPeachData(
     });
     
     const mediaMap: Record<string, Blob> = {};
-    const mediaUrlToFilename: Record<string, string> = {};
+    const mediaUrlToPath: Record<string, string> = {};
     
     if (options.includeImages) {
       const mediaUrls = extractMediaUrls(posts);
@@ -243,8 +243,9 @@ export async function downloadPeachData(
         // Process all media for this post
         for (let i = 0; i < postMediaUrls.length; i++) {
           const url = postMediaUrls[i];
-          const filename = generateMediaFilename(url, Object.keys(mediaMap).length);
-          mediaUrlToFilename[url] = filename;
+          // IMPROVED: Include post ID in filename to associate media with specific posts
+          const filename = generateMediaFilename(url, i, postId);
+          mediaUrlToPath[url] = filename;
           
           try {
             debugLog('media', `Downloading media for post ${postId}: ${url}`);
@@ -282,10 +283,10 @@ export async function downloadPeachData(
     
     let archiveData;
     try {
-      archiveData = createArchiveData(archiveUsername, posts, mediaUrlToFilename);
+      archiveData = createArchiveData(archiveUsername, posts, mediaUrlToPath);
       debugLog('archive', 'Archive data created successfully', { 
         postCount: archiveData.posts.length,
-        mediaCount: Object.keys(mediaUrlToFilename).length 
+        mediaCount: Object.keys(mediaUrlToPath).length 
       });
     } catch (err) {
       console.error('[API] Error creating archive data:', err);
@@ -837,9 +838,9 @@ function extractMediaUrls(posts: PeachPost[]): string[] {
 }
 
 /**
- * Generate a filename for a media URL
+ * Generate a filename for a media URL that includes post ID for proper association
  */
-function generateMediaFilename(url: string, index: number): string {
+function generateMediaFilename(url: string, index: number, postId?: string): string {
   try {
     // Ensure index is a valid number
     if (index === undefined || index === null) {
@@ -858,9 +859,21 @@ function generateMediaFilename(url: string, index: number): string {
     const extensionMatch = filename.match(/\.(jpg|jpeg|png|gif|mp4|webm)$/i);
     const extension = extensionMatch ? extensionMatch[1].toLowerCase() : 'jpg';
     
-    // Generate a consistent filename with index for uniqueness
-    const paddedIndex = (typeof index === 'number') ? index.toString().padStart(3, '0') : '000';
-    const result = `media_${paddedIndex}.${extension}`;
+    // Generate a consistent filename that includes:
+    // 1. post ID (if available) to associate media with specific posts
+    // 2. sequential index for uniqueness
+    let result;
+    if (postId) {
+      // Use post ID in the filename to make the association clear
+      // Use only the first 8 chars of the ID to keep filenames manageable
+      const shortPostId = postId.substring(0, 8);
+      const paddedIndex = index.toString().padStart(2, '0');
+      result = `post_${shortPostId}_img_${paddedIndex}.${extension}`;
+    } else {
+      // Fallback to old naming scheme if no post ID
+      const paddedIndex = index.toString().padStart(3, '0');
+      result = `media_${paddedIndex}.${extension}`;
+    }
     
     debugLog('media', `Generated filename for URL: ${result}`);
     return result;
@@ -1019,11 +1032,19 @@ function createArchiveData(
             return mediaUrlToPath[media.url];
           }
           
-          // If no mapping exists, generate a fallback path using the index
+          // If no mapping exists, generate a fallback path that includes the post ID
           if (media.url) {
             const url = media.url;
             const ext = url.split('.').pop()?.toLowerCase() || 'jpg';
-            return `media_${String(index).padStart(3, '0')}.${ext}`;
+            
+            // Use the same naming scheme as in generateMediaFilename
+            if (post.id) {
+              const shortPostId = post.id.substring(0, 8);
+              return `post_${shortPostId}_img_${String(index).padStart(2, '0')}.${ext}`;
+            } else {
+              // Legacy fallback
+              return `media_${String(index).padStart(3, '0')}.${ext}`;
+            }
           }
           
           return null;
@@ -1031,6 +1052,11 @@ function createArchiveData(
         .filter(Boolean) as string[];
       
       debugLog('archive', `Post ${post.id}: Added ${archivePost.localMediaPaths.length} local media paths`);
+      
+      // IMPORTANT: Add debug log to see exact media path mapping
+      if (archivePost.localMediaPaths.length > 0) {
+        debugLog('archive', `Media paths for post ${post.id}:`, archivePost.localMediaPaths);
+      }
     } else {
       archivePost.localMediaPaths = [];
     }
@@ -1080,6 +1106,16 @@ async function createArchive(
       Media Files: ${archiveData.metadata.mediaCount}
       
       This archive was created with Peach Preserves.
+      
+      MEDIA FILES:
+      -----------
+      Media files are stored in the /media directory using the naming convention:
+      post_[POST_ID]_img_[INDEX].[EXTENSION]
+      
+      Example: post_9fbd0e3b_img_00.jpg
+      
+      Each media file is associated with a specific post through this naming pattern.
+      The viewer.html file displays the media files alongside their corresponding posts.
       `);
     
     // Add data.json with all post data
@@ -1102,15 +1138,40 @@ async function createArchive(
     
     // Add a debug summary file to help troubleshoot the archive content
     if (DEBUG) {
+      // Create a more detailed debug summary to help with troubleshooting
+      // Don't rely on external variables that might be out of scope
+      const mediaMappingSamples = archiveData.posts
+        .filter(p => p.localMediaPaths && p.localMediaPaths.length > 0)
+        .flatMap(p => p.localMediaPaths || [])
+        .slice(0, 10)
+        .map(path => ({ localFilename: path }));
+
       const debugSummary = {
         metadata: archiveData.metadata,
         totalPosts: archiveData.posts.length,
         postsWithMedia: archiveData.posts.filter(p => p.media && p.media.length > 0).length,
+        postsWithLocalPaths: archiveData.posts.filter(p => p.localMediaPaths && p.localMediaPaths.length > 0).length,
         totalMediaFiles: Object.keys(mediaFiles).length,
+        // Don't reference possibly out-of-scope variables
+        // Include the first 10 media mappings for debugging (from archiveData instead)
+        mediaSampleMappings: mediaMappingSamples,
+        // Include posts with media but no local paths (this would indicate a problem)
+        problemPosts: archiveData.posts
+          .filter(p => 
+            (p.media && p.media.length > 0) && 
+            (!p.localMediaPaths || p.localMediaPaths.length === 0)
+          )
+          .map(p => ({
+            id: p.id,
+            mediaCount: p.media?.length || 0,
+            mediaUrls: p.media?.map(m => m.url).filter(Boolean) || []
+          })),
+        // Regular post summary
         postsSummary: archiveData.posts.map(p => ({
           id: p.id,
           createdTime: p.createdTime,
           mediaCount: p.media?.length || 0,
+          localMediaPathsCount: p.localMediaPaths?.length || 0,
           localMediaPaths: p.localMediaPaths || [],
           hasMessageText: Array.isArray(p.message) && p.message.some(m => m.type === 'text')
         }))
@@ -1822,6 +1883,23 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Calculate and display fun stats
   function calculateFunStats(posts) {
+    // Log some debug information to the console for easier troubleshooting
+    console.log('Calculating stats for', posts.length, 'posts');
+    
+    // Find posts with media for debugging
+    const postsWithMedia = posts.filter(post => 
+      (post.localMediaPaths && post.localMediaPaths.length > 0) || 
+      (post.media && post.media.length > 0)
+    );
+    
+    // Log media posts info to console - this is safer than trying to modify the DOM
+    console.log('Found', postsWithMedia.length, 'posts with media');
+    postsWithMedia.forEach(post => {
+      console.log('Post ID:', post.id);
+      console.log('Local media paths:', post.localMediaPaths || []);
+      console.log('Media count:', post.media ? post.media.length : 0);
+    });
+    
     if (!posts || posts.length === 0) return;
     
     // 1. Emoji extraction and counting
@@ -2259,7 +2337,7 @@ document.addEventListener('DOMContentLoaded', function() {
         \${post.localMediaPaths && post.localMediaPaths.length > 0 
           ? \`<div class="post-media">\${createMediaElements(post.localMediaPaths)}</div>\`
           : (post.media && post.media.length > 0)
-            ? \`<div class="post-media">\${createMediaElementsFromMedia(post.media)}</div>\`
+            ? \`<div class="post-media">\${createMediaElementsFromMedia(post.media, post.id)}</div>\`
             : ''}
         <div class="post-footer">
           <div class="post-stats">
@@ -2346,7 +2424,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Create HTML elements directly from media objects
-  function createMediaElementsFromMedia(mediaItems) {
+  function createMediaElementsFromMedia(mediaItems, postId) {
     if (!mediaItems || !Array.isArray(mediaItems)) return '';
     
     try {
@@ -2358,24 +2436,32 @@ document.addEventListener('DOMContentLoaded', function() {
         const ext = url.split('.').pop()?.toLowerCase() || '';
         const isVideo = ext === 'mp4' || ext === 'webm';
         
-        // For the archive viewer, we use simple numbering scheme
-        const filename = \`media_\${String(index).padStart(3, '0')}.\${ext || 'jpg'}\`;
+        // If we have a post ID, use the new naming scheme
+        let filename = '';
+        if (postId) {
+          // Replicate the same naming logic used in generateMediaFilename
+          const shortPostId = postId.substring(0, 8);
+          const paddedIndex = String(index).padStart(2, '0');
+          // Using string concatenation instead of template literals to avoid syntax issues
+          filename = "post_" + shortPostId + "_img_" + paddedIndex + "." + (ext || 'jpg');
+        } else {
+          // Fallback to old naming scheme
+          filename = "media_" + String(index).padStart(3, '0') + "." + (ext || 'jpg');
+        }
         
         if (isVideo) {
-          return \`
-            <div class="media-item">
-              <video controls>
-                <source src="media/\${filename}" type="video/\${ext}">
-                Your browser does not support the video tag.
-              </video>
-            </div>
-          \`;
+          // Use string concatenation instead of template literals
+          return '<div class="media-item">' +
+                 '<video controls>' +
+                 '<source src="media/' + filename + '" type="video/' + ext + '">' +
+                 'Your browser does not support the video tag.' +
+                 '</video>' +
+                 '</div>';
         } else {
-          return \`
-            <div class="media-item">
-              <img src="media/\${filename}" alt="Post media" loading="lazy">
-            </div>
-          \`;
+          // Use string concatenation instead of template literals
+          return '<div class="media-item">' +
+                 '<img src="media/' + filename + '" alt="Post media" loading="lazy">' +
+                 '</div>';
         }
       }).join('');
     } catch (error) {
