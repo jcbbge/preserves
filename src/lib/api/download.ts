@@ -840,21 +840,38 @@ function extractMediaUrls(posts: PeachPost[]): string[] {
  * Generate a filename for a media URL
  */
 function generateMediaFilename(url: string, index: number): string {
-  // Extract filename from URL
-  const urlParts = url.split('/');
-  let filename = urlParts[urlParts.length - 1];
-  
-  // Remove query parameters if any
-  filename = filename.split('?')[0];
-  
-  // Extract file extension
-  const extensionMatch = filename.match(/\.(jpg|jpeg|png|gif|mp4|webm)$/i);
-  const extension = extensionMatch ? extensionMatch[1].toLowerCase() : 'jpg';
-  
-  // Generate a consistent filename with index for uniqueness
-  const result = `media_${index.toString().padStart(3, '0')}.${extension}`;
-  debugLog('media', `Generated filename for URL: ${result}`);
-  return result;
+  try {
+    // Ensure index is a valid number
+    if (index === undefined || index === null) {
+      debugLog('media', `Invalid index for URL ${url}, using 0 as default`);
+      index = 0;
+    }
+    
+    // Extract filename from URL
+    const urlParts = url.split('/');
+    let filename = urlParts[urlParts.length - 1];
+    
+    // Remove query parameters if any
+    filename = filename.split('?')[0];
+    
+    // Extract file extension
+    const extensionMatch = filename.match(/\.(jpg|jpeg|png|gif|mp4|webm)$/i);
+    const extension = extensionMatch ? extensionMatch[1].toLowerCase() : 'jpg';
+    
+    // Generate a consistent filename with index for uniqueness
+    const paddedIndex = (typeof index === 'number') ? index.toString().padStart(3, '0') : '000';
+    const result = `media_${paddedIndex}.${extension}`;
+    
+    debugLog('media', `Generated filename for URL: ${result}`);
+    return result;
+  } catch (error) {
+    // If anything goes wrong, create a safe fallback filename
+    console.error('[API] Error generating media filename:', error);
+    const safeIndex = (typeof index === 'number') ? index : 0;
+    const fallbackName = `media_${safeIndex.toString().padStart(3, '0')}.jpg`;
+    debugLog('media', `Error generating filename, using fallback: ${fallbackName}`);
+    return fallbackName;
+  }
 }
 
 /**
