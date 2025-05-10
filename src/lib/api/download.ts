@@ -708,18 +708,18 @@ function extractUsername(token: string): string | null {
  */
 function extractMediaUrls(posts: PeachPost[]): string[] {
   debugLog('media', 'Extracting media URLs from posts');
-  
+
   const mediaUrls: string[] = [];
   const uniqueUrls = new Set<string>(); // To prevent duplicates
-  
+
   if (!posts || !Array.isArray(posts)) {
     console.warn('[API] Invalid posts data provided to extractMediaUrls');
     return [];
   }
-  
+
   // Debug: Check what the first few posts look like
   console.log('[DEBUG-MEDIA] First post sample:', JSON.stringify(posts[0], null, 2));
-  
+
   // Log media structure specifically for debugging
   console.log('[DEBUG-MEDIA] Media structure check:');
   const mediaCounts = {
@@ -729,28 +729,28 @@ function extractMediaUrls(posts: PeachPost[]): string[] {
     totalMediaItems: 0,
     mediaTypes: {}
   };
-  
+
   // Image URL regex patterns
   const imageUrlRegex = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|mp4|mov)(\?[^\s]*)?)/gi;
   const peachMediaRegex = /(https?:\/\/[^\s]+\.(peach\.cool|mxxn\.io|acorn\.mn)[^\s]*)/gi;
-  
+
   posts.forEach((post, index) => {
     if (index < 5) {
       console.log(`[DEBUG-MEDIA] Post ${index} media:`, post.media);
       console.log(`[DEBUG-MEDIA] Post ${index} message structure:`, post.message);
     }
-    
+
     let hasMedia = false;
-    
+
     // METHOD 1: Check for media in the standard media array
     if (post.media && post.media.length > 0) {
       hasMedia = true;
       mediaCounts.postsWithMedia++;
-      
+
       post.media.forEach(media => {
         mediaCounts.totalMediaItems++;
         mediaCounts.mediaTypes[media.type] = (mediaCounts.mediaTypes[media.type] || 0) + 1;
-        
+
         if (media.url && typeof media.url === 'string') {
           if (!uniqueUrls.has(media.url)) {
             uniqueUrls.add(media.url);
@@ -762,23 +762,23 @@ function extractMediaUrls(posts: PeachPost[]): string[] {
         }
       });
     }
-    
+
     // METHOD 2: Check for media in the message structure (some posts have it here)
     if (post.message && Array.isArray(post.message)) {
       for (const messagePart of post.message) {
         // Check for image type messages
-        if ((messagePart.type === 'image' || messagePart.type === 'video' || messagePart.type === 'gif') && 
+        if ((messagePart.type === 'image' || messagePart.type === 'video' || messagePart.type === 'gif') &&
              messagePart.src && typeof messagePart.src === 'string') {
           hasMedia = true;
           mediaCounts.postsWithMessageMedia++;
-          
+
           if (!uniqueUrls.has(messagePart.src)) {
             uniqueUrls.add(messagePart.src);
             mediaUrls.push(messagePart.src);
             debugLog('media', `Found media URL in post.message: ${messagePart.src.substring(0, 50)}...`);
           }
         }
-        
+
         // Check for image URLs embedded in text content
         if (messagePart.type === 'text' && messagePart.text && typeof messagePart.text === 'string') {
           // Extract image URLs from text content
@@ -786,11 +786,11 @@ function extractMediaUrls(posts: PeachPost[]): string[] {
             ...messagePart.text.matchAll(imageUrlRegex),
             ...messagePart.text.matchAll(peachMediaRegex)
           ];
-          
+
           if (urlMatches.length > 0) {
             hasMedia = true;
             mediaCounts.postsWithUrlInText++;
-            
+
             urlMatches.forEach(match => {
               const url = match[0];
               if (!uniqueUrls.has(url)) {
@@ -803,7 +803,7 @@ function extractMediaUrls(posts: PeachPost[]): string[] {
         }
       }
     }
-    
+
     // METHOD 3: Check for simple string messages with URLs
     if (typeof post.message === 'string') {
       // Extract image URLs from string content
@@ -811,11 +811,11 @@ function extractMediaUrls(posts: PeachPost[]): string[] {
         ...post.message.matchAll(imageUrlRegex),
         ...post.message.matchAll(peachMediaRegex)
       ];
-      
+
       if (urlMatches.length > 0) {
         hasMedia = true;
         mediaCounts.postsWithUrlInText++;
-        
+
         urlMatches.forEach(match => {
           const url = match[0];
           if (!uniqueUrls.has(url)) {
@@ -826,13 +826,14 @@ function extractMediaUrls(posts: PeachPost[]): string[] {
         });
       }
     }
-    
+
     if (!hasMedia && index < 10) {
       console.log(`[DEBUG-MEDIA] Post ${index} has no detected media:`, post.id);
     }
   });
-  
+
   console.log('[DEBUG-MEDIA] Media statistics:', mediaCounts);
+  console.log('[DEBUG-MEDIA] Media URLs found:', mediaUrls);
   debugLog('media', `Extracted ${mediaUrls.length} unique media URLs`);
   return mediaUrls;
 }
@@ -1024,19 +1025,22 @@ function createArchiveData(
     const archivePost: ArchivePost = { ...post };
     
     // Update media to include local paths
+    archivePost.localMediaPaths = [];
+
+    // 1. First collect media from post.media array
     if (post.media && post.media.length > 0) {
-      archivePost.localMediaPaths = post.media
+      const mediaPaths = post.media
         .map((media, index) => {
           // First try to get the path from the mediaUrlToPath mapping
           if (media.url && mediaUrlToPath[media.url]) {
             return mediaUrlToPath[media.url];
           }
-          
+
           // If no mapping exists, generate a fallback path that includes the post ID
           if (media.url) {
             const url = media.url;
             const ext = url.split('.').pop()?.toLowerCase() || 'jpg';
-            
+
             // Use the same naming scheme as in generateMediaFilename
             if (post.id) {
               const shortPostId = post.id.substring(0, 8);
@@ -1046,19 +1050,53 @@ function createArchiveData(
               return `media_${String(index).padStart(3, '0')}.${ext}`;
             }
           }
-          
+
           return null;
         })
         .filter(Boolean) as string[];
-      
-      debugLog('archive', `Post ${post.id}: Added ${archivePost.localMediaPaths.length} local media paths`);
-      
-      // IMPORTANT: Add debug log to see exact media path mapping
-      if (archivePost.localMediaPaths.length > 0) {
-        debugLog('archive', `Media paths for post ${post.id}:`, archivePost.localMediaPaths);
+
+      archivePost.localMediaPaths = [...mediaPaths];
+    }
+
+    // 2. Also collect media from message array for completeness
+    if (Array.isArray(post.message)) {
+      const mediaInMessage = post.message
+        .filter(item => item.type === 'image' && item.src)
+        .map((media, index) => {
+          // Check the mediaUrlToPath mapping first
+          if (media.src && mediaUrlToPath[media.src]) {
+            return mediaUrlToPath[media.src];
+          }
+
+          // Generate a path if not found in mapping
+          if (media.src) {
+            const url = media.src;
+            const ext = url.split('.').pop()?.toLowerCase() || 'jpg';
+            const offset = archivePost.localMediaPaths.length; // Start after existing media
+
+            if (post.id) {
+              const shortPostId = post.id.substring(0, 8);
+              return `post_${shortPostId}_img_${String(index + offset).padStart(2, '0')}.${ext}`;
+            } else {
+              return `media_${String(index + offset).padStart(3, '0')}.${ext}`;
+            }
+          }
+
+          return null;
+        })
+        .filter(Boolean) as string[];
+
+      // Add any new media paths from the message
+      if (mediaInMessage.length > 0) {
+        archivePost.localMediaPaths = [...archivePost.localMediaPaths, ...mediaInMessage];
       }
-    } else {
-      archivePost.localMediaPaths = [];
+    }
+
+    debugLog('archive', `Post ${post.id}: Added ${archivePost.localMediaPaths.length} local media paths`);
+
+    // IMPORTANT: Add debug log to see exact media path mapping
+    if (archivePost.localMediaPaths.length > 0) {
+      debugLog('archive', `Media paths for post ${post.id}:`, archivePost.localMediaPaths);
     }
     
     return archivePost;
@@ -1092,36 +1130,43 @@ async function createArchive(
   mediaFiles: Record<string, Blob>
 ): Promise<Blob> {
   debugLog('zip', 'Creating ZIP archive');
-  
+
   try {
     const zip = new JSZip();
-    
+
     // Add README file
     debugLog('zip', 'Adding README.txt to archive');
-    zip.file("README.txt", 
+    zip.file("README.txt",
       `Peach Preserves Archive
       Username: ${archiveData.metadata.username}
       Export Date: ${new Date(archiveData.metadata.exportDate).toLocaleString()}
       Total Posts: ${archiveData.metadata.postCount}
       Media Files: ${archiveData.metadata.mediaCount}
-      
+
       This archive was created with Peach Preserves.
-      
+
+      FILES:
+      ------
+      - viewer.html: The HTML viewer for browsing your archive
+      - data.json: Contains all your post data and metadata
+      - media/: Directory containing all media files
+
       MEDIA FILES:
       -----------
       Media files are stored in the /media directory using the naming convention:
       post_[POST_ID]_img_[INDEX].[EXTENSION]
-      
+
       Example: post_9fbd0e3b_img_00.jpg
-      
+
       Each media file is associated with a specific post through this naming pattern.
-      The viewer.html file displays the media files alongside their corresponding posts.
+      The viewer.html file loads data from data.json and displays the media files
+      alongside their corresponding posts.
       `);
-    
+
     // Add data.json with all post data
     debugLog('zip', 'Adding data.json to archive');
     zip.file("data.json", JSON.stringify(archiveData, null, 2));
-    
+
     // Create media folder and add all media files
     debugLog('zip', `Adding ${Object.keys(mediaFiles).length} media files to archive`);
     const mediaFolder = zip.folder("media");
@@ -1130,12 +1175,152 @@ async function createArchive(
         mediaFolder.file(filename, blob);
       });
     }
-    
-    // Add single HTML viewer file with everything inlined
-    debugLog('zip', 'Adding HTML viewer to archive');
-    const viewerHtml = generateViewerHTML(archiveData);
-    debugLog('zip', `Generated HTML viewer (${viewerHtml.length} bytes)`);
-    
+
+    // Get CSS and JS content from our imported functions
+    const cssContent = generateViewerCSS();
+    const jsContent = generateViewerJS();
+
+    // Generate modified JavaScript that loads from data.json
+    const modifiedJSContent = jsContent.replace(
+      "document.addEventListener('DOMContentLoaded', function() {",
+      "function initializeArchiveViewer() {"
+    );
+
+    // Get Peach logo (copy from public folder into the zip)
+    let peachLogoBlob;
+    try {
+      // Add the logo as a file in the zip
+      peachLogoBlob = await fetch('/peachdotcool.png').then(r => r.blob());
+      if (peachLogoBlob.size === 0) {
+        throw new Error("Could not load Peach logo");
+      }
+      debugLog('zip', 'Successfully loaded Peach logo, size: ' + peachLogoBlob.size + ' bytes');
+    } catch (logoError) {
+      console.error('[API] Error loading logo:', logoError);
+      // Create a fallback logo
+      peachLogoBlob = createPlaceholderImage('Peach Logo');
+      debugLog('zip', 'Using placeholder for Peach logo');
+    }
+
+  // Create HTML content with embedded data
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peach Archive - ${archiveData.metadata.username}</title>
+  <style>
+    ${cssContent}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo-container">
+      <img src="peachdotcool.png" alt="Peach Logo" class="logo">
+      <h1>Peach Archive</h1>
+    </div>
+    <div class="user-info">
+      <span class="username">@${archiveData.metadata.username}</span>
+      <span class="export-date">Exported: ${new Date(archiveData.metadata.exportDate).toLocaleDateString()}</span>
+    </div>
+  </header>
+
+  <div class="search-bar">
+    <div class="search-container">
+      <div class="search-field">
+        <label for="search-input">Search posts:</label>
+        <input type="text" id="search-input" placeholder="Search by content...">
+      </div>
+      <div class="time-filter">
+        <div class="year-filter">
+          <label for="year-select">Year:</label>
+          <select id="year-select">
+            <option value="">All Years</option>
+            <!-- Will be populated by JavaScript -->
+          </select>
+        </div>
+        <div class="month-filter">
+          <label for="month-select">Month:</label>
+          <select id="month-select">
+            <option value="">All Months</option>
+            <option value="0">January</option>
+            <option value="1">February</option>
+            <option value="2">March</option>
+            <option value="3">April</option>
+            <option value="4">May</option>
+            <option value="5">June</option>
+            <option value="6">July</option>
+            <option value="7">August</option>
+            <option value="8">September</option>
+            <option value="9">October</option>
+            <option value="10">November</option>
+            <option value="11">December</option>
+          </select>
+        </div>
+      </div>
+      <div class="search-buttons">
+        <button id="search-btn">Search</button>
+        <button id="reset-btn">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value">${archiveData.metadata.postCount}</span>
+        <span class="stat-label">Total Posts</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="visible-posts">${archiveData.metadata.postCount}</span>
+        <span class="stat-label">Visible Posts</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="emoji-count">-</span>
+        <span class="stat-label">Emojis</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="active-days">-</span>
+        <span class="stat-label">Active Days</span>
+      </div>
+    </div>
+
+    <div class="fun-stats">
+      <h3>Fun Stats</h3>
+      <div class="fun-stats-grid">
+        <div class="fun-stat" id="top-emojis">
+          <h4>Top Emojis</h4>
+          <div class="emoji-list">Loading...</div>
+        </div>
+        <div class="fun-stat" id="word-count">
+          <h4>Word Stats</h4>
+          <div class="word-stats">Loading...</div>
+        </div>
+        <div class="fun-stat" id="activity-chart">
+          <h4>Activity by Time</h4>
+          <div class="activity-data">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline" id="timeline">
+      <!-- Posts will be inserted here by JavaScript -->
+      <div class="loading">Loading posts...</div>
+    </div>
+  </main>
+
+  <footer>
+    <p>Created with Peach Preserves - © 2025 jcbbge</p>
+  </footer>
+
+  <script src="data.js"></script>
+
+  <script>
+    ${modifiedJSContent}
+  </script>
+</body>
+</html>`;
+
     // Add a debug summary file to help troubleshoot the archive content
     if (DEBUG) {
       // Create a more detailed debug summary to help with troubleshooting
@@ -1157,8 +1342,8 @@ async function createArchive(
         mediaSampleMappings: mediaMappingSamples,
         // Include posts with media but no local paths (this would indicate a problem)
         problemPosts: archiveData.posts
-          .filter(p => 
-            (p.media && p.media.length > 0) && 
+          .filter(p =>
+            (p.media && p.media.length > 0) &&
             (!p.localMediaPaths || p.localMediaPaths.length === 0)
           )
           .map(p => ({
@@ -1178,13 +1363,23 @@ async function createArchive(
       };
       zip.file("debug-info.json", JSON.stringify(debugSummary, null, 2));
     }
-    
+
+    // Create data.js file with the archive data
+    const dataJsContent = `const ARCHIVE_DATA_JSON = ${JSON.stringify(archiveData)};`;
+    zip.file("data.js", dataJsContent);
+
     // Add the HTML viewer
-    zip.file("viewer.html", viewerHtml);
-    
+    zip.file("viewer.html", htmlContent);
+
+    // Add the Peach logo
+    if (peachLogoBlob) {
+      zip.file("peachdotcool.png", peachLogoBlob);
+      debugLog('zip', 'Added Peach logo to archive');
+    }
+
     // Generate the zip file with progress callback
     debugLog('zip', 'Generating ZIP blob');
-    const blob = await zip.generateAsync({ 
+    const blob = await zip.generateAsync({
       type: "blob",
       compression: "DEFLATE",
       compressionOptions: { level: 6 }
@@ -1193,7 +1388,7 @@ async function createArchive(
         debugLog('zip', `ZIP generation progress: ${Math.round(metadata.percent)}%`);
       }
     });
-    
+
     debugLog('zip', 'ZIP blob generated successfully', { size: blob.size });
     return blob;
   } catch (error) {
@@ -1243,10 +1438,13 @@ function downloadBlob(blob: Blob, filename: string): void {
 /**
  * Generate HTML for the viewer with inlined CSS and JS
  */
+// Import from our separated viewer module
+import { generateViewerCSS, generateViewerJS } from './download/viewer-fixed';
+
 function generateViewerHTML(archiveData: PeachArchive): string {
   debugLog('viewer', 'Generating viewer HTML with inlined CSS and JS');
-  
-  // Get CSS and JS content (we'll inline them)
+
+  // Get CSS and JS content (we'll inline them) from our imported functions
   const cssContent = generateViewerCSS();
   const jsContent = generateViewerJS();
   
@@ -1383,1091 +1581,3 @@ function generateViewerHTML(archiveData: PeachArchive): string {
 /**
  * Generate CSS for the viewer
  */
-function generateViewerCSS(): string {
-  debugLog('viewer', 'Generating viewer CSS');
-  
-  return `/* Peach Archive Viewer Styles */
-:root {
-  --peach-primary: #ff98a8;
-  --peach-secondary: #7956b3;
-  --peach-accent: #d7c9fb;
-  --peach-dark: #333;
-  --peach-light: #f9f9f9;
-  --radius: 8px;
-  --shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  line-height: 1.6;
-  color: var(--peach-dark);
-  background-color: var(--peach-light);
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-header {
-  background-color: var(--peach-primary);
-  color: white;
-  padding: 1.5rem;
-  border-radius: var(--radius);
-  margin-bottom: 1rem;
-  text-align: center;
-  box-shadow: var(--shadow);
-}
-
-.logo-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.5rem;
-}
-
-.logo {
-  width: 40px;
-  height: 40px;
-  margin-right: 10px;
-}
-
-h1 {
-  margin: 0;
-  font-size: 1.8rem;
-}
-
-.user-info {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  font-size: 0.9rem;
-}
-
-.search-bar {
-  background-color: white;
-  border-radius: var(--radius);
-  padding: 1rem;
-  margin-bottom: 1rem;
-  box-shadow: var(--shadow);
-}
-
-.search-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.search-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex: 2;
-}
-
-.time-filter {
-  display: flex;
-  gap: 1rem;
-  flex: 2;
-}
-
-.year-filter, .month-filter {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.search-buttons {
-  display: flex;
-  gap: 0.5rem;
-  align-items: flex-end;
-}
-
-#search-input, #year-select, #month-select {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  width: 100%;
-}
-
-/* Fun Stats Styles */
-.fun-stats {
-  background-color: white;
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  margin: 1.5rem 0;
-  box-shadow: var(--shadow);
-}
-
-.fun-stats h3 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: var(--peach-secondary);
-}
-
-.fun-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-}
-
-.fun-stat {
-  background-color: #f9f9f9;
-  border-radius: var(--radius);
-  padding: 1rem;
-}
-
-.fun-stat h4 {
-  margin-top: 0;
-  color: var(--peach-primary);
-  margin-bottom: 0.8rem;
-}
-
-.emoji-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.emoji-item {
-  font-size: 1.5rem;
-}
-
-.emoji-count {
-  font-size: 0.8rem;
-  color: #666;
-  margin-left: 0.2rem;
-}
-
-.word-stats, .activity-data {
-  font-size: 0.9rem;
-  line-height: 1.6;
-}
-
-/* Timeline Month/Year Headers */
-.month-year-header {
-  background-color: var(--peach-accent);
-  color: var(--peach-secondary);
-  padding: 0.8rem 1.2rem;
-  margin: 1.5rem -1rem 1rem;
-  border-radius: var(--radius);
-  font-weight: bold;
-  box-shadow: var(--shadow);
-  position: sticky;
-  top: 10px;
-  z-index: 10;
-}
-
-#search-btn, #reset-btn {
-  padding: 0.5rem 1rem;
-  background-color: var(--peach-secondary);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-}
-
-#reset-btn {
-  background-color: #666;
-}
-
-#search-btn:hover {
-  background-color: #6745a0;
-}
-
-#reset-btn:hover {
-  background-color: #555;
-}
-
-.stats {
-  display: flex;
-  justify-content: space-around;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  background-color: white;
-  border-radius: var(--radius);
-  padding: 1rem;
-  box-shadow: var(--shadow);
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  min-width: 80px;
-}
-
-.stat-value {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: var(--peach-secondary);
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  color: #888;
-}
-
-.timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.post {
-  background-color: white;
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  box-shadow: var(--shadow);
-  transition: transform 0.2s;
-}
-
-.post:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.post-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.post-date {
-  font-weight: bold;
-}
-
-.post-content {
-  margin-bottom: 1rem;
-  line-height: 1.6;
-}
-
-.post-media {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0.8rem;
-  margin-top: 1rem;
-}
-
-.media-item {
-  width: 100%;
-  border-radius: calc(var(--radius) - 4px);
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.media-item img, .media-item video {
-  width: 100%;
-  height: auto;
-  display: block;
-  transition: transform 0.3s;
-}
-
-.media-item:hover img, .media-item:hover video {
-  transform: scale(1.03);
-}
-
-.post-footer {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-  font-size: 0.9rem;
-  color: #888;
-}
-
-.post-stats {
-  display: flex;
-  gap: 1rem;
-}
-
-.empty-timeline {
-  text-align: center;
-  padding: 2rem;
-  background-color: white;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-}
-
-.loading {
-  text-align: center;
-  padding: 2rem;
-  color: #888;
-}
-
-.post-error {
-  background-color: #fff5f5;
-  color: #e74c3c;
-  padding: 1rem;
-  border-radius: var(--radius);
-  border-left: 4px solid #e74c3c;
-}
-
-.media-error {
-  background-color: #f8f8f8;
-  color: #666;
-  padding: 1rem;
-  text-align: center;
-  border-radius: var(--radius);
-  font-size: 0.9rem;
-}
-
-.hidden {
-  display: none !important;
-}
-
-footer {
-  margin-top: 3rem;
-  text-align: center;
-  color: #888;
-  font-size: 0.8rem;
-  padding: 1rem;
-  border-top: 1px solid #eee;
-}
-
-/* Mobile Responsiveness */
-@media (max-width: 600px) {
-  body {
-    padding: 0.5rem;
-  }
-  
-  header {
-    padding: 1rem;
-  }
-  
-  .logo {
-    width: 30px;
-    height: 30px;
-  }
-  
-  h1 {
-    font-size: 1.5rem;
-  }
-  
-  .search-container {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.8rem;
-  }
-  
-  .search-field, .date-field, .search-buttons {
-    width: 100%;
-  }
-  
-  .search-buttons {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .search-buttons button {
-    width: 100%;
-    margin-bottom: 0.3rem;
-  }
-  
-  .post {
-    padding: 1rem;
-  }
-  
-  .stats {
-    padding: 0.8rem;
-  }
-  
-  .stat-value {
-    font-size: 1.5rem;
-  }
-  
-  .post-media {
-    grid-template-columns: 1fr;
-  }
-}`;
-}
-
-/**
- * Generate JavaScript for the viewer
- * Includes month and year organization and stats display
- */
-function generateViewerJS(): string {
-  debugLog('viewer', 'Generating viewer JavaScript');
-  
-  return `// Peach Archive Viewer Script
-document.addEventListener('DOMContentLoaded', function() {
-  const timeline = document.getElementById('timeline');
-  const searchInput = document.getElementById('search-input');
-  const dateFilter = document.getElementById('date-filter');
-  const searchBtn = document.getElementById('search-btn');
-  const resetBtn = document.getElementById('reset-btn');
-  const visiblePostsCounter = document.getElementById('visible-posts');
-  
-  // Embed the data right in the HTML file to make it completely self-contained
-  // The placeholder ARCHIVE_DATA_JSON will be replaced with actual JSON data
-  const archiveData = ARCHIVE_DATA_JSON;
-  
-  // Store sorted posts for filtering
-  let sortedPosts = [];
-  
-  // Display the posts
-  initializeViewer();
-  
-  // Initialize the viewer and set up event listeners
-  function initializeViewer() {
-    if (!archiveData || !archiveData.posts || archiveData.posts.length === 0) {
-      timeline.innerHTML = '<div class="empty-timeline">No posts found in this archive.</div>';
-      return;
-    }
-    
-    // Sort posts by creation time (newest first)
-    sortedPosts = [...archiveData.posts].sort((a, b) => b.createdTime - a.createdTime);
-    
-    // Populate year dropdown
-    const yearSelect = document.getElementById('year-select');
-    const monthSelect = document.getElementById('month-select');
-    const years = new Set();
-    
-    sortedPosts.forEach(post => {
-      if (post.createdTime) {
-        const date = new Date(post.createdTime * 1000);
-        years.add(date.getFullYear());
-      }
-    });
-    
-    // Sort years descending
-    const sortedYears = [...years].sort((a, b) => b - a);
-    
-    // Add year options
-    sortedYears.forEach(year => {
-      const option = document.createElement('option');
-      option.value = year;
-      option.textContent = year;
-      yearSelect.appendChild(option);
-    });
-    
-    // Display all posts initially
-    displayPosts(sortedPosts);
-    updateVisiblePostsCount(sortedPosts.length);
-    
-    // Set up event listeners
-    searchBtn.addEventListener('click', filterPosts);
-    resetBtn.addEventListener('click', resetFilter);
-    
-    yearSelect.addEventListener('change', function() {
-      filterPosts();
-    });
-    
-    monthSelect.addEventListener('change', function() {
-      filterPosts();
-    });
-    
-    // Also allow pressing Enter in the search input
-    searchInput.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        filterPosts();
-      }
-    });
-    
-    // Calculate fun stats
-    calculateFunStats(sortedPosts);
-  }
-  
-  // Calculate and display fun stats
-  function calculateFunStats(posts) {
-    // Log some debug information to the console for easier troubleshooting
-    console.log('Calculating stats for', posts.length, 'posts');
-    
-    // Find posts with media for debugging
-    const postsWithMedia = posts.filter(post => 
-      (post.localMediaPaths && post.localMediaPaths.length > 0) || 
-      (post.media && post.media.length > 0)
-    );
-    
-    // Log media posts info to console - this is safer than trying to modify the DOM
-    console.log('Found', postsWithMedia.length, 'posts with media');
-    postsWithMedia.forEach(post => {
-      console.log('Post ID:', post.id);
-      console.log('Local media paths:', post.localMediaPaths || []);
-      console.log('Media count:', post.media ? post.media.length : 0);
-    });
-    
-    if (!posts || posts.length === 0) return;
-    
-    // 1. Emoji extraction and counting
-    const emojiRegex = /[\p{Emoji}]/gu;
-    let allEmojis = [];
-    let totalEmojiCount = 0;
-    let wordCount = 0;
-    let totalChars = 0;
-    let activeDays = {};
-    
-    posts.forEach(post => {
-      // Extract message content
-      let messageContent = '';
-      
-      if (post.message) {
-        if (typeof post.message === 'string') {
-          messageContent = post.message;
-        } else if (Array.isArray(post.message)) {
-          post.message.forEach(part => {
-            if (part && part.type === 'text' && part.text) {
-              messageContent += part.text + ' ';
-            }
-          });
-        }
-      }
-      
-      // Count words and characters
-      if (messageContent) {
-        // Count words (crude approximation)
-        const words = messageContent.split(/\s+/).filter(w => w.length > 0);
-        wordCount += words.length;
-        
-        // Count characters
-        totalChars += messageContent.length;
-        
-        // Extract emojis
-        const emojis = messageContent.match(emojiRegex) || [];
-        allEmojis = allEmojis.concat(emojis);
-        totalEmojiCount += emojis.length;
-      }
-      
-      // Track activity by date
-      if (post.createdTime) {
-        const date = new Date(post.createdTime * 1000);
-        const dateKey = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
-        
-        if (!activeDays[dateKey]) {
-          activeDays[dateKey] = 0;
-        }
-        
-        activeDays[dateKey]++;
-      }
-    });
-    
-    // Update emoji count
-    document.getElementById('emoji-count').textContent = totalEmojiCount;
-    
-    // Update active days count
-    const activeDaysCount = Object.keys(activeDays).length;
-    document.getElementById('active-days').textContent = activeDaysCount;
-    
-    // Count emoji frequency
-    const emojiFrequency = {};
-    allEmojis.forEach(emoji => {
-      if (!emojiFrequency[emoji]) {
-        emojiFrequency[emoji] = 0;
-      }
-      emojiFrequency[emoji]++;
-    });
-    
-    // Sort and display top emojis
-    const topEmojis = Object.entries(emojiFrequency)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
-    
-    const emojiListEl = document.querySelector('#top-emojis .emoji-list');
-    if (topEmojis.length > 0) {
-      emojiListEl.innerHTML = topEmojis.map(function(item) {
-        var emoji = item[0];
-        var count = item[1];
-        return '<div class="emoji-item">' + emoji + '<span class="emoji-count">' + count + '</span></div>';
-      }).join('');
-    } else {
-      emojiListEl.innerHTML = 'No emojis found in your posts.';
-    }
-    
-    // Display word stats
-    const wordStatsEl = document.querySelector('#word-count .word-stats');
-    wordStatsEl.innerHTML = 
-      '<p>Total words: <strong>' + wordCount + '</strong></p>' +
-      '<p>Total characters: <strong>' + totalChars + '</strong></p>' +
-      '<p>Average words per post: <strong>' + Math.round(wordCount / posts.length) + '</strong></p>';
-    
-    // Display activity data
-    const activeDaysCount = Object.keys(activeDays).length;
-    const mostActiveDay = Object.entries(activeDays)
-      .sort((a, b) => b[1] - a[1])[0];
-    
-    const activityDataEl = document.querySelector('#activity-chart .activity-data');
-    
-    if (mostActiveDay) {
-      const [dateKey, count] = mostActiveDay;
-      const [year, month, day] = dateKey.split('-').map(Number);
-      const dateObj = new Date(year, month, day);
-      const formattedDate = dateObj.toLocaleDateString(undefined, { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric'
-      });
-      
-      activityDataEl.innerHTML = 
-        '<p>Active days: <strong>' + activeDaysCount + '</strong></p>' +
-        '<p>Most active day: <strong>' + formattedDate + '</strong> with ' + count + ' posts</p>' +
-        '<p>Average posts per active day: <strong>' + Math.round(posts.length / activeDaysCount) + '</strong></p>';
-    } else {
-      activityDataEl.innerHTML = 'No activity data available.';
-    }
-  }
-  
-  // Setup the date filter with appropriate min/max dates
-  function setupDateFilter() {
-    try {
-      // Find earliest and latest post dates
-      let earliestTimestamp = Infinity;
-      let latestTimestamp = 0;
-      
-      sortedPosts.forEach(post => {
-        if (post.createdTime) {
-          const timestamp = post.createdTime;
-          
-          if (timestamp < earliestTimestamp) {
-            earliestTimestamp = timestamp;
-          }
-          
-          if (timestamp > latestTimestamp) {
-            latestTimestamp = timestamp;
-          }
-        }
-      });
-      
-      // Convert to Date objects
-      const earliestDate = new Date(earliestTimestamp * 1000);
-      const latestDate = new Date(latestTimestamp * 1000);
-      
-      // Format as YYYY-MM-DD for input[type="date"]
-      const formatDateForInput = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return \`\${year}-\${month}-\${day}\`;
-      };
-      
-      // Set min and max dates for the input
-      dateFilter.min = formatDateForInput(earliestDate);
-      dateFilter.max = formatDateForInput(latestDate);
-      
-      // Set placeholder
-      dateFilter.setAttribute('placeholder', 'Select a date to filter posts');
-    } catch (error) {
-      console.error('Error setting up date filter:', error);
-    }
-  }
-  
-  // Search and filter posts by content and date
-  function filterByDate() {
-    const searchTerm = searchInput.value.trim().toLowerCase();
-    const selectedDate = dateFilter.value;
-    
-    if (!searchTerm && !selectedDate) {
-      alert('Please enter a search term or select a date');
-      return;
-    }
-    
-    try {
-      // Prepare date filter if selected
-      let selectedTimestamp = null;
-      if (selectedDate) {
-        const selectedDateObj = new Date(selectedDate);
-        selectedDateObj.setHours(0, 0, 0, 0);
-        selectedTimestamp = selectedDateObj.getTime() / 1000;
-      }
-      
-      // Filter posts based on search term and/or date
-      const filteredPosts = sortedPosts.filter(post => {
-        // Check date filter
-        let matchesDate = true;
-        if (selectedTimestamp) {
-          if (!post.createdTime) return false;
-          
-          // Convert post timestamp to date object
-          const postDate = new Date(post.createdTime * 1000);
-          postDate.setHours(0, 0, 0, 0);
-          const postTimestamp = postDate.getTime() / 1000;
-          
-          // Check if post date matches selected date
-          matchesDate = postTimestamp === selectedTimestamp;
-        }
-        
-        // Check content filter
-        let matchesContent = true;
-        if (searchTerm) {
-          matchesContent = false;
-          
-          // Search in message content
-          if (post.message) {
-            if (Array.isArray(post.message)) {
-              for (const msg of post.message) {
-                if (msg.type === 'text' && msg.text && msg.text.toLowerCase().includes(searchTerm)) {
-                  matchesContent = true;
-                  break;
-                }
-              }
-            } else if (typeof post.message === 'string' && post.message.toLowerCase().includes(searchTerm)) {
-              matchesContent = true;
-            }
-          }
-        }
-        
-        return matchesDate && matchesContent;
-      });
-      
-      // Display filtered posts
-      displayPosts(filteredPosts);
-      updateVisiblePostsCount(filteredPosts.length);
-      
-      // Scroll to top
-      window.scrollTo(0, 0);
-    } catch (error) {
-      console.error('Error filtering posts:', error);
-      alert('Error filtering posts. Please try again.');
-    }
-  }
-  
-  // Reset all filters
-  function resetFilter() {
-    // Clear all inputs
-    searchInput.value = '';
-    dateFilter.value = '';
-    
-    // Display all posts
-    displayPosts(sortedPosts);
-    updateVisiblePostsCount(sortedPosts.length);
-    
-    // Scroll to top
-    window.scrollTo(0, 0);
-  }
-  
-  // Update the visible posts counter
-  function updateVisiblePostsCount(count) {
-    if (visiblePostsCounter) {
-      visiblePostsCounter.textContent = count;
-    }
-  }
-  
-  // Display posts in the timeline with month/year organization
-  function displayPosts(posts) {
-    // Clear timeline
-    timeline.innerHTML = '';
-    
-    if (posts.length === 0) {
-      timeline.innerHTML = '<div class="empty-timeline">No posts found for the selected filters. Try different filters or reset.</div>';
-      return;
-    }
-    
-    // Group posts by year and month
-    const groupedPosts = {};
-    
-    posts.forEach(post => {
-      if (!post.createdTime) return;
-      
-      const postDate = new Date(post.createdTime * 1000);
-      const year = postDate.getFullYear();
-      const month = postDate.getMonth();
-      
-      if (!groupedPosts[year]) {
-        groupedPosts[year] = {};
-      }
-      
-      if (!groupedPosts[year][month]) {
-        groupedPosts[year][month] = [];
-      }
-      
-      groupedPosts[year][month].push(post);
-    });
-    
-    // Sort years (descending) and display posts
-    const years = Object.keys(groupedPosts).sort((a, b) => b - a);
-    
-    years.forEach(year => {
-      // Sort months descending (Dec to Jan)
-      const months = Object.keys(groupedPosts[year]).sort((a, b) => b - a);
-      
-      months.forEach(month => {
-        const monthPosts = groupedPosts[year][month];
-        if (monthPosts.length === 0) return;
-        
-        // Create month/year header
-        const monthHeader = document.createElement('div');
-        monthHeader.className = 'month-year-header';
-        
-        const monthNames = [
-          'January', 'February', 'March', 'April', 'May', 'June',
-          'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        
-        monthHeader.textContent = monthNames[month] + ' ' + year + ' (' + monthPosts.length + ' posts)';
-        monthHeader.dataset.year = year;
-        monthHeader.dataset.month = month;
-        
-        timeline.appendChild(monthHeader);
-        
-        // Add posts for this month
-        monthPosts.forEach(post => {
-          const postElement = createPostElement(post);
-          postElement.dataset.year = year;
-          postElement.dataset.month = month;
-          timeline.appendChild(postElement);
-        });
-      });
-    });
-    
-    // Update visible posts counter
-    updateVisiblePostsCount(posts.length);
-  }
-  
-  // Filter posts based on selected criteria
-  function filterPosts() {
-    const searchTerm = searchInput.value.trim().toLowerCase();
-    const selectedYear = document.getElementById('year-select').value;
-    const selectedMonth = document.getElementById('month-select').value;
-    
-    // Start with all posts
-    let filteredPosts = [...sortedPosts];
-    
-    // Apply year filter
-    if (selectedYear) {
-      filteredPosts = filteredPosts.filter(post => {
-        if (!post.createdTime) return false;
-        const postDate = new Date(post.createdTime * 1000);
-        return postDate.getFullYear().toString() === selectedYear;
-      });
-    }
-    
-    // Apply month filter
-    if (selectedMonth) {
-      filteredPosts = filteredPosts.filter(post => {
-        if (!post.createdTime) return false;
-        const postDate = new Date(post.createdTime * 1000);
-        return postDate.getMonth().toString() === selectedMonth;
-      });
-    }
-    
-    // Apply search term filter
-    if (searchTerm) {
-      filteredPosts = filteredPosts.filter(post => {
-        // Extract message content for searching
-        let messageContent = '';
-        
-        if (post.message) {
-          if (typeof post.message === 'string') {
-            messageContent = post.message.toLowerCase();
-          } else if (Array.isArray(post.message)) {
-            post.message.forEach(part => {
-              if (part && part.type === 'text' && part.text) {
-                messageContent += part.text.toLowerCase() + ' ';
-              }
-            });
-          }
-        }
-        
-        return messageContent.includes(searchTerm);
-      });
-    }
-    
-    // Display filtered posts
-    displayPosts(filteredPosts);
-    calculateFunStats(filteredPosts);
-  }
-  
-  // Reset all filters
-  function resetFilter() {
-    searchInput.value = '';
-    document.getElementById('year-select').selectedIndex = 0;
-    document.getElementById('month-select').selectedIndex = 0;
-    displayPosts(sortedPosts);
-    calculateFunStats(sortedPosts);
-  }
-  
-  // Create an HTML element for a post
-  function createPostElement(post) {
-    const postElement = document.createElement('article');
-    postElement.className = 'post';
-    postElement.setAttribute('data-id', post.id);
-    
-    try {
-      // Format the post date - handle potential timestamp format issues
-      let postDate;
-      let dateForAttribute = '';
-      const timestamp = post.createdTime;
-      
-      if (timestamp) {
-        // Check if it's in seconds (Peach API) or milliseconds
-        const dateObj = timestamp > 9999999999 
-          ? new Date(timestamp) // Already in milliseconds
-          : new Date(timestamp * 1000); // Convert from seconds to milliseconds
-        
-        // Format date for displaying
-        postDate = dateObj.toLocaleDateString(undefined, {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-        
-        // Format date for data attribute (for filtering)
-        const year = dateObj.getFullYear();
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        dateForAttribute = \`\${year}-\${month}-\${day}\`;
-      } else {
-        postDate = 'Unknown date';
-      }
-      
-      // Store date as data attribute for filtering
-      postElement.setAttribute('data-date', dateForAttribute);
-      
-      // Create post HTML structure
-      postElement.innerHTML = \`
-        <div class="post-header">
-          <span class="post-date">\${postDate}</span>
-          <span class="post-id">#\${post.id}</span>
-        </div>
-        <div class="post-content">\${formatMessage(post.message)}</div>
-        \${post.localMediaPaths && post.localMediaPaths.length > 0 
-          ? \`<div class="post-media">\${createMediaElements(post.localMediaPaths)}</div>\`
-          : (post.media && post.media.length > 0)
-            ? \`<div class="post-media">\${createMediaElementsFromMedia(post.media, post.id)}</div>\`
-            : ''}
-        <div class="post-footer">
-          <div class="post-stats">
-            \${post.likeCount ? \`<span class="likes">❤️ \${post.likeCount}</span>\` : ''}
-            \${post.commentCount ? \`<span class="comments">💬 \${post.commentCount}</span>\` : ''}
-          </div>
-        </div>
-      \`;
-    } catch (error) {
-      console.error('Error creating post element:', error, post);
-      postElement.innerHTML = \`
-        <div class="post-error">
-          <div class="post-header">Error displaying post #\${post.id || 'unknown'}</div>
-        </div>
-      \`;
-    }
-    
-    return postElement;
-  }
-  
-  // Format the message content for display with error handling
-  function formatMessage(message) {
-    try {
-      if (!message) return '';
-      
-      // Handle array-style messages
-      if (Array.isArray(message)) {
-        const textParts = [];
-        
-        for (let i = 0; i < message.length; i++) {
-          if (message[i] && message[i].type === 'text') {
-            textParts.push(message[i].text);
-          }
-        }
-        
-        if (textParts.length > 0) {
-          return textParts.join('\\n\\n').replace(/\\n/g, '<br>');
-        }
-      }
-      
-      // Handle simple string messages
-      if (typeof message === 'string') {
-        return message.replace(/\\n/g, '<br>');
-      }
-      
-      return '';
-    } catch (error) {
-      console.error('Error formatting message:', error, message);
-      return '<em>Error displaying message content</em>';
-    }
-  }
-  
-  // Create HTML elements for media files using paths
-  function createMediaElements(mediaPaths) {
-    if (!mediaPaths || !Array.isArray(mediaPaths)) return '';
-    
-    try {
-      return mediaPaths.map(path => {
-        if (!path) return '';
-        
-        const isVideo = path.endsWith('.mp4') || path.endsWith('.webm');
-        
-        if (isVideo) {
-          return \`
-            <div class="media-item">
-              <video controls>
-                <source src="media/\${path}" type="video/\${path.endsWith('.mp4') ? 'mp4' : 'webm'}">
-                Your browser does not support the video tag.
-              </video>
-            </div>
-          \`;
-        } else {
-          return \`
-            <div class="media-item">
-              <img src="media/\${path}" alt="Post media" loading="lazy">
-            </div>
-          \`;
-        }
-      }).join('');
-    } catch (error) {
-      console.error('Error creating media elements:', error);
-      return '<div class="media-error">Error displaying media</div>';
-    }
-  }
-  
-  // Create HTML elements directly from media objects
-  function createMediaElementsFromMedia(mediaItems, postId) {
-    if (!mediaItems || !Array.isArray(mediaItems)) return '';
-    
-    try {
-      return mediaItems.map((media, index) => {
-        if (!media || !media.url) return '';
-        
-        // Get file extension from URL
-        const url = media.url;
-        const ext = url.split('.').pop()?.toLowerCase() || '';
-        const isVideo = ext === 'mp4' || ext === 'webm';
-        
-        // If we have a post ID, use the new naming scheme
-        let filename = '';
-        if (postId) {
-          // Replicate the same naming logic used in generateMediaFilename
-          const shortPostId = postId.substring(0, 8);
-          const paddedIndex = String(index).padStart(2, '0');
-          // Using string concatenation instead of template literals to avoid syntax issues
-          filename = "post_" + shortPostId + "_img_" + paddedIndex + "." + (ext || 'jpg');
-        } else {
-          // Fallback to old naming scheme
-          filename = "media_" + String(index).padStart(3, '0') + "." + (ext || 'jpg');
-        }
-        
-        if (isVideo) {
-          // Use string concatenation instead of template literals
-          return '<div class="media-item">' +
-                 '<video controls>' +
-                 '<source src="media/' + filename + '" type="video/' + ext + '">' +
-                 'Your browser does not support the video tag.' +
-                 '</video>' +
-                 '</div>';
-        } else {
-          // Use string concatenation instead of template literals
-          return '<div class="media-item">' +
-                 '<img src="media/' + filename + '" alt="Post media" loading="lazy">' +
-                 '</div>';
-        }
-      }).join('');
-    } catch (error) {
-      console.error('Error creating media elements from media objects:', error);
-      return '<div class="media-error">Error displaying media</div>';
-    }
-  }
-});`;
-}
