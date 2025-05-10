@@ -891,12 +891,50 @@ async function downloadMedia(url: string): Promise<Blob | null> {
         throw new Error(`Failed to download media: ${response.status}`);
       }
       
+      // IMPORTANT: We need to ensure we treat this as a binary blob
+      // The issue was that the binary data wasn't being properly preserved
       const blob = await response.blob();
+      
       if (blob.size === 0) {
         throw new Error('Empty blob received');
       }
       
-      return blob;
+      // Extract the correct MIME type from URL or response headers
+      let contentType = response.headers.get('Content-Type');
+      
+      // If no content type in headers, try to guess from URL
+      if (!contentType || contentType === 'application/octet-stream') {
+        const fileExtension = url.split('.').pop()?.toLowerCase();
+        if (fileExtension) {
+          switch (fileExtension) {
+            case 'jpg':
+            case 'jpeg':
+              contentType = 'image/jpeg';
+              break;
+            case 'png':
+              contentType = 'image/png';
+              break;
+            case 'gif':
+              contentType = 'image/gif';
+              break;
+            case 'mp4':
+              contentType = 'video/mp4';
+              break;
+            case 'webp':
+              contentType = 'image/webp';
+              break;
+            default:
+              contentType = 'application/octet-stream';
+          }
+        }
+      }
+      
+      // Create a new blob with the correct content type
+      // This ensures the binary data is properly preserved with the right MIME type
+      const properBlob = new Blob([await blob.arrayBuffer()], { type: contentType || blob.type });
+      
+      debugLog('media', `Downloaded media blob: ${properBlob.size} bytes, type: ${properBlob.type}`);
+      return properBlob;
     } catch (error) {
       console.warn('[API] Media download failed:', error);
       // Don't use placeholder - let caller handle the error
