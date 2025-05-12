@@ -27,16 +27,11 @@ export async function downloadPeachData(
   exportContext?: ReturnType<typeof useExport>,
   userData?: any
 ): Promise<string> {
-  debugLog('download', 'Starting download process', { 
-    hasToken: !!token, 
-    options, 
-    hasContext: !!exportContext,
-    hasUserData: !!userData 
-  });
+
   
   // Setup progress tracking if export context is provided
   if (exportContext) {
-    debugLog('context', 'Starting export context', exportContext);
+
     
     try {
       // Start the export process using the context's startExport function
@@ -49,7 +44,7 @@ export async function downloadPeachData(
         try {
           // Always use the proper way to update the export context
           if (exportContext.setExportData) {
-            debugLog('progress', 'Updating progress', update);
+
             exportContext.setExportData('progress', prev => ({
               ...prev,
               ...update
@@ -68,13 +63,13 @@ export async function downloadPeachData(
     }
   } else {
     // Dummy progress updater if no context is provided
-    debugLog('context', 'No export context provided, using dummy updater');
+
     updateExportProgress = () => {};
   }
   
   try {
     // Step 1: Gather posts
-    debugLog('posts', 'Starting post collection');
+
     updateExportProgress({ 
       phase: 'discovery', 
       percentage: 10,
@@ -85,7 +80,7 @@ export async function downloadPeachData(
     
     // Get username directly from user data
     const username = userData?.username || options.username;
-    debugLog('user', `Using username: ${username}`);
+
     
     // Get posts directly from user data or fetch them
     let posts: PeachPost[] = [];
@@ -94,14 +89,14 @@ export async function downloadPeachData(
     if (userData && userData.streams && userData.streams[0] && userData.streams[0].posts) {
       // Use posts from user data if available
       posts = userData.streams[0].posts;
-      debugLog('posts', `Found ${posts.length} posts in user data`);
+
       
       // In dev mode, limit the number of posts
       const isDevMode = options.devMode !== undefined ? options.devMode : DEV_MODE;
       if (isDevMode) {
         const maxPosts = 10; // Get 10 posts for testing
         if (posts.length > maxPosts) {
-          debugLog('dev', `Limiting posts to ${maxPosts} (from ${posts.length})`);
+
           posts = posts.slice(0, maxPosts);
         }
       }
@@ -120,7 +115,7 @@ export async function downloadPeachData(
         posts = result.posts;
         paginationState = result.paginationState;
         
-        debugLog('posts', `Fetched ${posts.length} posts with pagination`, paginationState);
+
       } catch (err) {
         console.error('[API] Error fetching posts with pagination:', err);
         throw new Error(`Failed to fetch posts: ${err instanceof Error ? err.message : String(err)}`);
@@ -142,7 +137,7 @@ export async function downloadPeachData(
     });
     
     // Step 2: Download media if enabled
-    debugLog('media', 'Starting media processing');
+
     updateExportProgress({ 
       phase: 'media', 
       percentage: 40,
@@ -156,7 +151,7 @@ export async function downloadPeachData(
     
     if (options.includeImages) {
       const mediaUrls = extractMediaUrls(posts);
-      debugLog('media', `Found ${mediaUrls.length} media URLs across ${posts.length} posts`);
+
       
       // Process media in batches to avoid too many progress updates
       const totalPosts = posts.length;
@@ -201,11 +196,11 @@ export async function downloadPeachData(
           mediaUrlToPath[url] = filename;
           
           try {
-            debugLog('media', `Downloading media for post ${postId}: ${url}`);
+
             const blob = await downloadMedia(url);
             if (blob) {
               mediaMap[filename] = blob;
-              debugLog('media', `Downloaded media: ${filename} (${blob.size} bytes)`);
+
             }
           } catch (err) {
             console.error(`[API] Error with media for post ${postId}:`, err);
@@ -223,7 +218,7 @@ export async function downloadPeachData(
     }
     
     // Step 3: Create archive data structure
-    debugLog('archive', 'Creating archive data structure');
+
     updateExportProgress({ 
       phase: 'content', 
       percentage: 70,
@@ -232,7 +227,7 @@ export async function downloadPeachData(
     
     // Get username from user data or other sources
     const archiveUsername = username || 'user';
-    debugLog('archive', `Using username for archive: ${archiveUsername}`);
+
     
     let archiveData;
     try {
@@ -247,17 +242,14 @@ export async function downloadPeachData(
         };
       }
       
-      debugLog('archive', 'Archive data created successfully', { 
-        postCount: archiveData.posts.length,
-        mediaCount: Object.keys(mediaUrlToPath).length 
-      });
+
     } catch (err) {
       console.error('[API] Error creating archive data:', err);
       throw new Error(`Failed to create archive data structure: ${err instanceof Error ? err.message : String(err)}`);
     }
     
     // Step 4: Create and trigger download
-    debugLog('zip', 'Starting ZIP creation');
+
     updateExportProgress({ 
       phase: 'packaging', 
       percentage: 80,
@@ -265,14 +257,14 @@ export async function downloadPeachData(
     });
     
     try {
-      debugLog('zip', 'Creating archive with media files', { mediaCount: Object.keys(mediaMap).length });
+
       const archiveBlob = await createArchive(archiveData, mediaMap);
       
       if (!archiveBlob || archiveBlob.size === 0) {
         throw new Error('Failed to create archive - empty or invalid ZIP file');
       }
       
-      debugLog('zip', 'Archive created successfully', { size: archiveBlob.size });
+
       
       // Generate a filename with timestamp
       const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
@@ -285,7 +277,7 @@ export async function downloadPeachData(
       
       // Trigger download
       try {
-        debugLog('download', 'Triggering browser download', { filename, size: archiveBlob.size });
+
         downloadBlob(archiveBlob, filename);
         
         // Complete the export process
@@ -301,7 +293,7 @@ export async function downloadPeachData(
           
           // Then update the export status using proper method
           if (exportContext.setExportData) {
-            debugLog('context', 'Marking export as complete');
+
             exportContext.setExportData({
               ...exportContext.exportData,
               status: 'complete',
@@ -311,7 +303,7 @@ export async function downloadPeachData(
           }
         }
         
-        debugLog('download', 'Download process completed successfully');
+
         return filename;
       } catch (downloadError) {
         console.error('[API] Error triggering download:', downloadError);
@@ -334,7 +326,7 @@ export async function downloadPeachData(
         details: error
       };
       
-      debugLog('error', 'Setting export status to error', errorData);
+
       
       // Update the export status
       if (exportContext.setExportData) {

@@ -1,5 +1,11 @@
 import { createSignal, createEffect, onMount, For, JSX } from "solid-js";
-import { DragDropProvider, DragDropSensors, DragOverlay, DragEventHandler, createDraggable } from "@thisbeyond/solid-dnd";
+import {
+  DragDropProvider,
+  DragDropSensors,
+  DragOverlay,
+  DragEventHandler,
+  createDraggable,
+} from "@thisbeyond/solid-dnd";
 import { useBounds } from "@solid-primitives/bounds";
 import { createEventListener } from "@solid-primitives/event-listener";
 
@@ -32,58 +38,61 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
   const [isDraggingCanvas, setIsDraggingCanvas] = createSignal(false);
   const [dragStart, setDragStart] = createSignal({ x: 0, y: 0 });
   const [activeDragId, setActiveDragId] = createSignal<string | null>(null);
-  
+
   // Get canvas bounds for positioning
   const bounds = useBounds(canvasRef);
-  
+
   // Handle canvas drag
   const onCanvasMouseDown = (e: MouseEvent) => {
     // Only start canvas drag if not on a photo
-    if ((e.target as HTMLElement).closest('.polaroid')) return;
-    
+    if ((e.target as HTMLElement).closest(".polaroid")) return;
+
     setIsDraggingCanvas(true);
-    setDragStart({ x: e.clientX - canvasPosition().x, y: e.clientY - canvasPosition().y });
+    setDragStart({
+      x: e.clientX - canvasPosition().x,
+      y: e.clientY - canvasPosition().y,
+    });
     e.preventDefault();
   };
-  
+
   // Move canvas with mouse
   const onCanvasMouseMove = (e: MouseEvent) => {
     if (!isDraggingCanvas()) return;
-    
+
     const newX = e.clientX - dragStart().x;
     const newY = e.clientY - dragStart().y;
     setCanvasPosition({ x: newX, y: newY });
     e.preventDefault();
   };
-  
+
   // Stop canvas drag
   const onCanvasMouseUp = () => {
     setIsDraggingCanvas(false);
   };
-  
+
   // Handle zoom with wheel
   const onCanvasWheel = (e: WheelEvent) => {
     e.preventDefault();
-    
+
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
     const newScale = Math.max(0.5, Math.min(3, canvasScale() + delta));
-    
+
     // Zoom toward cursor position
     const canvasBounds = bounds?.();
     if (canvasBounds) {
       const mouseX = e.clientX - canvasBounds.x;
       const mouseY = e.clientY - canvasBounds.y;
-      
-      const newX = canvasPosition().x - ((mouseX / canvasScale()) * delta);
-      const newY = canvasPosition().y - ((mouseY / canvasScale()) * delta);
-      
+
+      const newX = canvasPosition().x - (mouseX / canvasScale()) * delta;
+      const newY = canvasPosition().y - (mouseY / canvasScale()) * delta;
+
       setCanvasScale(newScale);
       setCanvasPosition({ x: newX, y: newY });
     } else {
       setCanvasScale(newScale);
     }
   };
-  
+
   // Set up event listeners
   onMount(() => {
     const canvas = canvasRef();
@@ -93,39 +102,41 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
       createEventListener(window, "mouseup", onCanvasMouseUp);
       createEventListener(canvas, "wheel", onCanvasWheel, { passive: false });
     }
-    
+
     // Initialize canvas position to center
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    setCanvasPosition({ 
+    setCanvasPosition({
       x: viewportWidth / 2 - 500, // Center the 1000px canvas
-      y: viewportHeight / 2 - 400  // Center vertically
+      y: viewportHeight / 2 - 400, // Center vertically
     });
   });
-  
+
   // Handle photo drag end
   const onDragEnd: DragEventHandler = ({ draggable }) => {
     if (draggable) {
       const id = draggable.id as string;
       const element = document.getElementById(`photo-${id}`);
-      
+
       if (element) {
         const rect = element.getBoundingClientRect();
-        const x = (rect.left - bounds?.().left) / canvasScale() - canvasPosition().x;
-        const y = (rect.top - bounds?.().top) / canvasScale() - canvasPosition().y;
-        
+        const x =
+          (rect.left - bounds?.().left) / canvasScale() - canvasPosition().x;
+        const y =
+          (rect.top - bounds?.().top) / canvasScale() - canvasPosition().y;
+
         props.onPhotoMove(id, { x, y });
       }
-      
+
       setActiveDragId(null);
     }
   };
-  
+
   // Toggle photo flip
   const onPhotoClick = (id: string, e: MouseEvent) => {
     // Don't flip if we're dragging
     if (isDraggingCanvas()) return;
-    
+
     // Double click to flip
     if (e.detail === 2) {
       props.onPhotoFlip(id);
@@ -133,32 +144,32 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
       e.stopPropagation();
     }
   };
-  
+
   // Pin a photo in place
   const onPinClick = (id: string, e: MouseEvent) => {
     e.stopPropagation();
     props.onPhotoPin(id);
   };
-  
+
   // Rotate a photo
   const onRotateStart = (id: string, e: MouseEvent) => {
     e.stopPropagation();
     // Implement rotation logic here
-    const photo = props.photos.find(p => p.id === id);
+    const photo = props.photos.find((p) => p.id === id);
     if (photo) {
       const newRotation = (photo.rotation || 0) + 15;
       props.onPhotoRotate(id, newRotation);
     }
   };
-  
+
   return (
     <div class="canvas-container">
-      <div 
-        ref={setCanvasRef} 
+      <div
+        ref={setCanvasRef}
         class="photo-canvas"
         style={{
           transform: `translate(${canvasPosition().x}px, ${canvasPosition().y}px) scale(${canvasScale()})`,
-          cursor: isDraggingCanvas() ? 'grabbing' : 'grab'
+          cursor: isDraggingCanvas() ? "grabbing" : "grab",
         }}
       >
         <DragDropProvider onDragEnd={onDragEnd}>
@@ -167,14 +178,14 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
             {(photo) => {
               // Create draggable for this photo
               const draggable = createDraggable(photo.id);
-              
+
               return (
-                <div 
+                <div
                   id={`photo-${photo.id}`}
-                  class={`polaroid ${photo.isFlipped ? 'flipped' : ''} ${photo.isPinned ? 'pinned' : ''}`}
+                  class={`polaroid ${photo.isFlipped ? "flipped" : ""} ${photo.isPinned ? "pinned" : ""}`}
                   style={{
                     transform: `translate(${photo.position?.x || 0}px, ${photo.position?.y || 0}px) rotate(${photo.rotation || 0}deg)`,
-                    "z-index": photo.zIndex || 1
+                    "z-index": photo.zIndex || 1,
                   }}
                   onClick={[onPhotoClick, photo.id]}
                   use:draggable
@@ -189,15 +200,17 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
                     </div>
                     <div class="polaroid-caption">
                       <div class="polaroid-date">
-                        {new Date(photo.createdTime * 1000).toLocaleDateString()}
+                        {new Date(
+                          photo.createdTime * 1000,
+                        ).toLocaleDateString()}
                       </div>
                       {photo.likeCount > 0 && (
                         <div class="polaroid-likes">❤️ {photo.likeCount}</div>
                       )}
                     </div>
                     <div class="polaroid-controls">
-                      <button 
-                        class={`pin-button ${photo.isPinned ? 'pinned' : ''}`}
+                      <button
+                        class={`pin-button ${photo.isPinned ? "pinned" : ""}`}
                         onClick={[onPinClick, photo.id]}
                         title={photo.isPinned ? "Unpin" : "Pin"}
                       >
@@ -218,11 +231,15 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
                         <div class="sticky-note-title">PEACH MEMORY</div>
                         <div class="sticky-note-text">{photo.messageText}</div>
                         <div class="sticky-note-date">
-                          {new Date(photo.createdTime * 1000).toLocaleDateString()}
+                          {new Date(
+                            photo.createdTime * 1000,
+                          ).toLocaleDateString()}
                         </div>
                         {photo.commentCount > 0 && (
                           <div class="sticky-note-comments">
-                            <div class="comments-count">{photo.commentCount} comments</div>
+                            <div class="comments-count">
+                              {photo.commentCount} comments
+                            </div>
                           </div>
                         )}
                       </div>
@@ -243,25 +260,34 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           </DragOverlay>
         </DragDropProvider>
       </div>
-      
+
       <div class="canvas-controls">
-        <button class="zoom-in" onClick={() => setCanvasScale(s => Math.min(3, s + 0.1))}>
+        <button
+          class="zoom-in"
+          onClick={() => setCanvasScale((s) => Math.min(3, s + 0.1))}
+        >
           +
         </button>
-        <button class="zoom-out" onClick={() => setCanvasScale(s => Math.max(0.5, s - 0.1))}>
+        <button
+          class="zoom-out"
+          onClick={() => setCanvasScale((s) => Math.max(0.5, s - 0.1))}
+        >
           -
         </button>
-        <button class="reset-view" onClick={() => {
-          setCanvasScale(1);
-          setCanvasPosition({ 
-            x: window.innerWidth / 2 - 500,
-            y: window.innerHeight / 2 - 400
-          });
-        }}>
+        <button
+          class="reset-view"
+          onClick={() => {
+            setCanvasScale(1);
+            setCanvasPosition({
+              x: window.innerWidth / 2 - 500,
+              y: window.innerHeight / 2 - 400,
+            });
+          }}
+        >
           Reset View
         </button>
       </div>
-      
+
       <style jsx>{`
         .canvas-container {
           position: relative;
@@ -269,13 +295,17 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           height: 100vh;
           overflow: hidden;
           background-color: #f5f0e5; /* Cork board color */
-          background-image: 
-            radial-gradient(rgba(160, 120, 90, 0.1) 15%, transparent 16%),
+          background-image: radial-gradient(
+              rgba(160, 120, 90, 0.1) 15%,
+              transparent 16%
+            ),
             radial-gradient(rgba(160, 120, 90, 0.1) 15%, transparent 16%);
           background-size: 10px 10px;
-          background-position: 0 0, 5px 5px;
+          background-position:
+            0 0,
+            5px 5px;
         }
-        
+
         .photo-canvas {
           position: absolute;
           width: 100%;
@@ -285,7 +315,7 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           min-width: 1000px;
           min-height: 800px;
         }
-        
+
         .polaroid {
           position: absolute;
           width: 280px;
@@ -294,25 +324,27 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           padding: 1rem;
           padding-bottom: 2.5rem;
           box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-          transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28), box-shadow 0.3s ease;
+          transition:
+            transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28),
+            box-shadow 0.3s ease;
           transform-style: preserve-3d;
           backface-visibility: hidden;
           cursor: grab;
           transform-origin: center center;
         }
-        
+
         .polaroid:hover {
           box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
           z-index: 10 !important;
         }
-        
+
         .polaroid.dragging {
           cursor: grabbing;
           opacity: 0.8;
           transform: scale(1.05) !important;
           z-index: 100 !important;
         }
-        
+
         .polaroid.pinned::before {
           content: "📌";
           position: absolute;
@@ -322,9 +354,9 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           font-size: 24px;
           z-index: 5;
         }
-        
+
         .polaroid::after {
-          content: '';
+          content: "";
           position: absolute;
           bottom: -5px;
           left: 0;
@@ -335,8 +367,9 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           border-radius: 50%;
           z-index: -1;
         }
-        
-        .polaroid-front, .polaroid-back {
+
+        .polaroid-front,
+        .polaroid-back {
           position: absolute;
           width: 100%;
           height: 100%;
@@ -344,15 +377,15 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           left: 0;
           backface-visibility: hidden;
         }
-        
+
         .polaroid-back {
           transform: rotateY(180deg);
         }
-        
+
         .polaroid.flipped {
           transform: rotateY(180deg) !important;
         }
-        
+
         .polaroid-content {
           width: 100%;
           height: 260px;
@@ -364,13 +397,13 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           margin-bottom: 0.5rem;
           position: relative;
         }
-        
+
         .polaroid-content img {
           width: 100%;
           height: 100%;
           object-fit: cover;
         }
-        
+
         .text-content {
           padding: 1rem;
           font-size: 1rem;
@@ -386,7 +419,7 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           overflow-wrap: break-word;
           line-height: 1.5;
         }
-        
+
         .polaroid-caption {
           position: absolute;
           bottom: 0.5rem;
@@ -397,9 +430,9 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           justify-content: space-between;
           font-size: 0.8rem;
           color: var(--text-dark);
-          font-family: 'Courier New', monospace;
+          font-family: "Courier New", monospace;
         }
-        
+
         .polaroid-controls {
           position: absolute;
           top: 0.5rem;
@@ -409,12 +442,13 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           opacity: 0;
           transition: opacity 0.2s ease;
         }
-        
+
         .polaroid:hover .polaroid-controls {
           opacity: 1;
         }
-        
-        .pin-button, .rotate-button {
+
+        .pin-button,
+        .rotate-button {
           background: none;
           border: none;
           font-size: 1.2rem;
@@ -424,17 +458,18 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           transition: all 0.2s ease;
           background: rgba(255, 255, 255, 0.7);
         }
-        
-        .pin-button:hover, .rotate-button:hover {
+
+        .pin-button:hover,
+        .rotate-button:hover {
           transform: scale(1.1);
           background: rgba(255, 255, 255, 0.9);
         }
-        
+
         .pin-button.pinned {
           transform: scale(1.1);
           color: var(--peach-primary);
         }
-        
+
         /* Sticky note back */
         .sticky-note {
           background-color: #fffee0;
@@ -443,15 +478,15 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           padding: 1rem;
           display: flex;
           flex-direction: column;
-          font-family: 'Courier New', monospace;
+          font-family: "Courier New", monospace;
         }
-        
+
         .sticky-note-content {
           display: flex;
           flex-direction: column;
           height: 100%;
         }
-        
+
         .sticky-note-title {
           font-weight: bold;
           text-align: center;
@@ -459,7 +494,7 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           transform: rotate(-1deg);
           color: var(--peach-secondary);
         }
-        
+
         .sticky-note-text {
           flex: 1;
           overflow-y: auto;
@@ -467,19 +502,19 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           line-height: 1.4;
           margin-bottom: 1rem;
         }
-        
+
         .sticky-note-date {
           text-align: right;
           font-size: 0.8rem;
           margin-bottom: 0.5rem;
         }
-        
+
         .sticky-note-comments {
           border-top: 1px dashed var(--peach-accent);
           padding-top: 0.5rem;
           font-size: 0.8rem;
         }
-        
+
         /* Canvas controls */
         .canvas-controls {
           position: fixed;
@@ -489,7 +524,7 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           gap: 0.5rem;
           z-index: 1000;
         }
-        
+
         .canvas-controls button {
           background-color: white;
           border: 1px solid rgba(0, 0, 0, 0.1);
@@ -499,7 +534,7 @@ export function PhotoCanvas(props: PhotoCanvasProps) {
           cursor: pointer;
           transition: all 0.2s ease;
         }
-        
+
         .canvas-controls button:hover {
           background-color: var(--peach-accent);
           transform: translateY(-2px);

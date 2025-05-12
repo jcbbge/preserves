@@ -1,43 +1,43 @@
 // Media handling functions for the download module
-import { debugLog } from './utils';
-import { PeachPost } from '~/context/peach';
+import { debugLog } from "./utils";
+import { PeachPost } from "~/context/peach";
 
 /**
  * Extract media URLs from posts
  * Enhanced to find media in multiple possible locations
  */
 export function extractMediaUrls(posts: PeachPost[]): string[] {
-  debugLog('media', 'Extracting media URLs from posts');
+  debugLog("media", "Extracting media URLs from posts");
 
   const mediaUrls: string[] = [];
   const uniqueUrls = new Set<string>(); // To prevent duplicates
 
   if (!posts || !Array.isArray(posts)) {
-    console.warn('[API] Invalid posts data provided to extractMediaUrls');
+    console.warn("[API] Invalid posts data provided to extractMediaUrls");
     return [];
   }
 
-  // Debug: Check what the first few posts look like
-  console.log('[DEBUG-MEDIA] First post sample:', JSON.stringify(posts[0], null, 2));
-
-  // Log media structure specifically for debugging
-  console.log('[DEBUG-MEDIA] Media structure check:');
   const mediaCounts = {
     postsWithMedia: 0,
     postsWithMessageMedia: 0,
     postsWithUrlInText: 0,
     totalMediaItems: 0,
-    mediaTypes: {}
+    mediaTypes: {},
   };
 
   // Image URL regex patterns
-  const imageUrlRegex = /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|mp4|mov)(\?[^\s]*)?)/gi;
-  const peachMediaRegex = /(https?:\/\/[^\s]+\.(peach\.cool|mxxn\.io|acorn\.mn)[^\s]*)/gi;
+  const imageUrlRegex =
+    /(https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|mp4|mov)(\?[^\s]*)?)/gi;
+  const peachMediaRegex =
+    /(https?:\/\/[^\s]+\.(peach\.cool|mxxn\.io|acorn\.mn)[^\s]*)/gi;
 
   posts.forEach((post, index) => {
     if (index < 5) {
       console.log(`[DEBUG-MEDIA] Post ${index} media:`, post.media);
-      console.log(`[DEBUG-MEDIA] Post ${index} message structure:`, post.message);
+      console.log(
+        `[DEBUG-MEDIA] Post ${index} message structure:`,
+        post.message,
+      );
     }
 
     let hasMedia = false;
@@ -47,18 +47,25 @@ export function extractMediaUrls(posts: PeachPost[]): string[] {
       hasMedia = true;
       mediaCounts.postsWithMedia++;
 
-      post.media.forEach(media => {
+      post.media.forEach((media) => {
         mediaCounts.totalMediaItems++;
-        mediaCounts.mediaTypes[media.type] = (mediaCounts.mediaTypes[media.type] || 0) + 1;
+        mediaCounts.mediaTypes[media.type] =
+          (mediaCounts.mediaTypes[media.type] || 0) + 1;
 
-        if (media.url && typeof media.url === 'string') {
+        if (media.url && typeof media.url === "string") {
           if (!uniqueUrls.has(media.url)) {
             uniqueUrls.add(media.url);
             mediaUrls.push(media.url);
-            debugLog('media', `Found media URL in post.media: ${media.url.substring(0, 50)}...`);
+            debugLog(
+              "media",
+              `Found media URL in post.media: ${media.url.substring(0, 50)}...`,
+            );
           }
         } else {
-          console.log('[DEBUG-MEDIA] Media object without URL or invalid URL:', media);
+          console.log(
+            "[DEBUG-MEDIA] Media object without URL or invalid URL:",
+            media,
+          );
         }
       });
     }
@@ -67,36 +74,51 @@ export function extractMediaUrls(posts: PeachPost[]): string[] {
     if (post.message && Array.isArray(post.message)) {
       for (const messagePart of post.message) {
         // Check for image type messages
-        if ((messagePart.type === 'image' || messagePart.type === 'video' || messagePart.type === 'gif') &&
-            messagePart.src && typeof messagePart.src === 'string') {
+        if (
+          (messagePart.type === "image" ||
+            messagePart.type === "video" ||
+            messagePart.type === "gif") &&
+          messagePart.src &&
+          typeof messagePart.src === "string"
+        ) {
           hasMedia = true;
           mediaCounts.postsWithMessageMedia++;
 
           if (!uniqueUrls.has(messagePart.src)) {
             uniqueUrls.add(messagePart.src);
             mediaUrls.push(messagePart.src);
-            debugLog('media', `Found media URL in post.message: ${messagePart.src.substring(0, 50)}...`);
+            debugLog(
+              "media",
+              `Found media URL in post.message: ${messagePart.src.substring(0, 50)}...`,
+            );
           }
         }
 
         // Check for image URLs embedded in text content
-        if (messagePart.type === 'text' && messagePart.text && typeof messagePart.text === 'string') {
+        if (
+          messagePart.type === "text" &&
+          messagePart.text &&
+          typeof messagePart.text === "string"
+        ) {
           // Extract image URLs from text content
           const urlMatches = [
             ...messagePart.text.matchAll(imageUrlRegex),
-            ...messagePart.text.matchAll(peachMediaRegex)
+            ...messagePart.text.matchAll(peachMediaRegex),
           ];
 
           if (urlMatches.length > 0) {
             hasMedia = true;
             mediaCounts.postsWithUrlInText++;
 
-            urlMatches.forEach(match => {
+            urlMatches.forEach((match) => {
               const url = match[0];
               if (!uniqueUrls.has(url)) {
                 uniqueUrls.add(url);
                 mediaUrls.push(url);
-                debugLog('media', `Found media URL in text content: ${url.substring(0, 50)}...`);
+                debugLog(
+                  "media",
+                  `Found media URL in text content: ${url.substring(0, 50)}...`,
+                );
               }
             });
           }
@@ -105,61 +127,71 @@ export function extractMediaUrls(posts: PeachPost[]): string[] {
     }
 
     // METHOD 3: Check for simple string messages with URLs
-    if (typeof post.message === 'string') {
+    if (typeof post.message === "string") {
       // Extract image URLs from string content
       const urlMatches = [
         ...post.message.matchAll(imageUrlRegex),
-        ...post.message.matchAll(peachMediaRegex)
+        ...post.message.matchAll(peachMediaRegex),
       ];
 
       if (urlMatches.length > 0) {
         hasMedia = true;
         mediaCounts.postsWithUrlInText++;
 
-        urlMatches.forEach(match => {
+        urlMatches.forEach((match) => {
           const url = match[0];
           if (!uniqueUrls.has(url)) {
             uniqueUrls.add(url);
             mediaUrls.push(url);
-            debugLog('media', `Found media URL in string message: ${url.substring(0, 50)}...`);
+            debugLog(
+              "media",
+              `Found media URL in string message: ${url.substring(0, 50)}...`,
+            );
           }
         });
       }
     }
 
     if (!hasMedia && index < 10) {
-      console.log(`[DEBUG-MEDIA] Post ${index} has no detected media:`, post.id);
+      console.log(
+        `[DEBUG-MEDIA] Post ${index} has no detected media:`,
+        post.id,
+      );
     }
   });
 
-  console.log('[DEBUG-MEDIA] Media statistics:', mediaCounts);
-  console.log('[DEBUG-MEDIA] Media URLs found:', mediaUrls);
-  debugLog('media', `Extracted ${mediaUrls.length} unique media URLs`);
+  console.log("[DEBUG-MEDIA] Media statistics:", mediaCounts);
+  console.log("[DEBUG-MEDIA] Media URLs found:", mediaUrls);
+  debugLog("media", `Extracted ${mediaUrls.length} unique media URLs`);
   return mediaUrls;
 }
 
 /**
  * Generate a filename for a media URL that includes post ID for proper association
  */
-export function generateMediaFilename(url: string, index: number, postId?: string): string {
+export function generateMediaFilename(
+  url: string,
+  index: number,
+  postId?: string,
+): string {
   try {
     // Ensure index is a valid number
     if (index === undefined || index === null) {
-      debugLog('media', `Invalid index for URL ${url}, using 0 as default`);
+      debugLog("media", `Invalid index for URL ${url}, using 0 as default`);
       index = 0;
     }
-    
+
     // Extract filename from URL
-    const urlParts = url.split('/');
+    const urlParts = url.split("/");
     let filename = urlParts[urlParts.length - 1];
-    
+
     // Remove query parameters if any
-    filename = filename.split('?')[0];
-    
+    filename = filename.split("?")[0];
+
     // Extract file extension
     const extensionMatch = filename.match(/\.(jpg|jpeg|png|gif|mp4|webm)$/i);
-    const extension = extensionMatch ? extensionMatch[1].toLowerCase() : 'jpg';
-    
+    const extension = extensionMatch ? extensionMatch[1].toLowerCase() : "jpg";
+
     // Generate a consistent filename that includes:
     // 1. post ID (if available) to associate media with specific posts
     // 2. sequential index for uniqueness
@@ -168,22 +200,25 @@ export function generateMediaFilename(url: string, index: number, postId?: strin
       // Use post ID in the filename to make the association clear
       // Use only the first 8 chars of the ID to keep filenames manageable
       const shortPostId = postId.substring(0, 8);
-      const paddedIndex = index.toString().padStart(2, '0');
+      const paddedIndex = index.toString().padStart(2, "0");
       result = `post_${shortPostId}_img_${paddedIndex}.${extension}`;
     } else {
       // Fallback to old naming scheme if no post ID
-      const paddedIndex = index.toString().padStart(3, '0');
+      const paddedIndex = index.toString().padStart(3, "0");
       result = `media_${paddedIndex}.${extension}`;
     }
-    
-    debugLog('media', `Generated filename for URL: ${result}`);
+
+    debugLog("media", `Generated filename for URL: ${result}`);
     return result;
   } catch (error) {
     // If anything goes wrong, create a safe fallback filename
-    console.error('[API] Error generating media filename:', error);
-    const safeIndex = (typeof index === 'number') ? index : 0;
-    const fallbackName = `media_${safeIndex.toString().padStart(3, '0')}.jpg`;
-    debugLog('media', `Error generating filename, using fallback: ${fallbackName}`);
+    console.error("[API] Error generating media filename:", error);
+    const safeIndex = typeof index === "number" ? index : 0;
+    const fallbackName = `media_${safeIndex.toString().padStart(3, "0")}.jpg`;
+    debugLog(
+      "media",
+      `Error generating filename, using fallback: ${fallbackName}`,
+    );
     return fallbackName;
   }
 }
@@ -194,78 +229,99 @@ export function generateMediaFilename(url: string, index: number, postId?: strin
  */
 export async function downloadMedia(url: string): Promise<Blob | null> {
   try {
-    debugLog('media', `Downloading media from URL: ${url}`);
-    
+    debugLog("media", `Downloading media from URL: ${url}`);
+
     // Validate URL before attempting fetch
-    if (!url || typeof url !== 'string' || !url.startsWith('http')) {
-      console.warn('[API] Invalid media URL:', url);
+    if (!url || typeof url !== "string" || !url.startsWith("http")) {
+      console.warn("[API] Invalid media URL:", url);
       return null;
     }
-    
+
     // CONFIRMED WORKING APPROACH: Use our direct server proxy that returns binary data correctly
     try {
       // Create the proxy URL with the media URL as a query parameter
-      const proxyUrl = new URL('/api/media-proxy-direct', window.location.origin);
-      proxyUrl.searchParams.append('url', url);
-      
-      console.log('[DEBUG-CRITICAL] Downloading media via direct proxy:', proxyUrl.toString());
-      
+      const proxyUrl = new URL(
+        "/api/media-proxy-direct",
+        window.location.origin,
+      );
+      proxyUrl.searchParams.append("url", url);
+
+      console.log(
+        "[DEBUG-CRITICAL] Downloading media via direct proxy:",
+        proxyUrl.toString(),
+      );
+
       // Use XMLHttpRequest for reliable binary data handling
       const blob = await new Promise<Blob>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        
-        xhr.onload = function() {
+
+        xhr.onload = function () {
           if (xhr.status >= 200 && xhr.status < 300) {
             // Check if we received HTML instead of an image (should never happen with our fixed proxy)
-            const contentType = xhr.getResponseHeader('Content-Type') || '';
-            if (contentType.includes('text/html') || contentType.includes('xhtml')) {
-              console.error('[DEBUG-CRITICAL] Received HTML instead of media:', contentType);
-              reject(new Error(`Received HTML instead of media: ${contentType}`));
+            const contentType = xhr.getResponseHeader("Content-Type") || "";
+            if (
+              contentType.includes("text/html") ||
+              contentType.includes("xhtml")
+            ) {
+              console.error(
+                "[DEBUG-CRITICAL] Received HTML instead of media:",
+                contentType,
+              );
+              reject(
+                new Error(`Received HTML instead of media: ${contentType}`),
+              );
               return;
             }
-            
+
             // Verify the response is a valid blob with content
             if (xhr.response instanceof Blob && xhr.response.size > 0) {
               resolve(xhr.response);
             } else {
-              reject(new Error('Empty or invalid blob received'));
+              reject(new Error("Empty or invalid blob received"));
             }
           } else {
-            reject(new Error(`Media download failed with status ${xhr.status}`));
+            reject(
+              new Error(`Media download failed with status ${xhr.status}`),
+            );
           }
         };
-        
-        xhr.onerror = function() {
-          console.error('[DEBUG-CRITICAL] Network error when downloading media');
-          reject(new Error('Network error when downloading media'));
+
+        xhr.onerror = function () {
+          console.error(
+            "[DEBUG-CRITICAL] Network error when downloading media",
+          );
+          reject(new Error("Network error when downloading media"));
         };
-        
-        xhr.ontimeout = function() {
-          console.error('[DEBUG-CRITICAL] Timeout when downloading media');
-          reject(new Error('Timeout when downloading media'));
+
+        xhr.ontimeout = function () {
+          console.error("[DEBUG-CRITICAL] Timeout when downloading media");
+          reject(new Error("Timeout when downloading media"));
         };
-        
-        xhr.open('GET', proxyUrl.toString(), true);
-        xhr.responseType = 'blob';
+
+        xhr.open("GET", proxyUrl.toString(), true);
+        xhr.responseType = "blob";
         xhr.timeout = 30000; // 30 second timeout for large files
-        
+
         xhr.send();
       });
-      
+
       if (blob.size === 0) {
-        throw new Error('Empty blob received');
+        throw new Error("Empty blob received");
       }
-      
+
       // Log success details
-      debugLog('media', `Downloaded media: ${blob.size} bytes, type: ${blob.type}`);
-      
+      debugLog(
+        "media",
+        `Downloaded media: ${blob.size} bytes, type: ${blob.type}`,
+      );
+
       return blob;
     } catch (error) {
-      console.error('[DEBUG-CRITICAL] Media download error:', error);
+      console.error("[DEBUG-CRITICAL] Media download error:", error);
       return null;
     }
   } catch (error) {
-    console.error('[API] Media download error:', error);
+    console.error("[API] Media download error:", error);
     return null;
   }
 }
@@ -275,8 +331,8 @@ export async function downloadMedia(url: string): Promise<Blob | null> {
  * This creates an attractive SVG placeholder
  */
 export function createPlaceholderImage(errorText: string): Blob {
-  debugLog('media', `Creating placeholder image: ${errorText}`);
-  
+  debugLog("media", `Creating placeholder image: ${errorText}`);
+
   // Create a more visually appealing SVG with a peach-themed design
   const svgContent = `
     <svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200">
@@ -297,7 +353,7 @@ export function createPlaceholderImage(errorText: string): Blob {
       </text>
     </svg>
   `;
-  
+
   // Convert to Blob
-  return new Blob([svgContent], { type: 'image/svg+xml' });
+  return new Blob([svgContent], { type: "image/svg+xml" });
 }

@@ -38,10 +38,10 @@ interface PeachContextValue {
 }
 
 const PeachContext = createContext<PeachContextValue>();
-console.log('[CONTEXT] PeachContext created');
+
 
 export function PeachProvider(props: { children: JSX.Element }) {
-  console.log('[CONTEXT] PeachProvider rendering');
+
   
   // Initialize from localStorage if available - with robust checking
   let savedToken = null;
@@ -50,19 +50,14 @@ export function PeachProvider(props: { children: JSX.Element }) {
   if (typeof window !== 'undefined') {
     try {
       savedToken = localStorage.getItem('peach_token');
-      console.log('[CONTEXT] Found token in localStorage:', savedToken ? 'present' : 'missing');
+
       
       const savedUserData = localStorage.getItem('peach_user');
-      console.log('[CONTEXT] Found user data in localStorage:', savedUserData ? 'present' : 'missing');
+
       
       if (savedUserData) {
         parsedUserData = JSON.parse(savedUserData);
-        console.log('[CONTEXT] Restored user data from localStorage:', {
-          id: parsedUserData?.id || 'missing',
-          username: parsedUserData?.username || 'missing',
-          sessionId: parsedUserData?.sessionId || 'missing',
-          hasStreams: Boolean(parsedUserData?.streams?.length)
-        });
+
       }
     } catch (e) {
       console.error('[CONTEXT] Error restoring from localStorage:', e);
@@ -77,7 +72,7 @@ export function PeachProvider(props: { children: JSX.Element }) {
   const isAuthenticated = createMemo(() => {
     const hasToken = Boolean(token());
     const hasUser = Boolean(user.data);
-    console.log('[CONTEXT] Authentication check:', { hasToken, hasUser });
+
     return hasToken && hasUser;
   });
 
@@ -93,10 +88,7 @@ export function PeachProvider(props: { children: JSX.Element }) {
   };
 
   const login = (newToken: string, userData: any) => {
-    console.log('[CONTEXT] login called with token and data', {
-      tokenPresent: Boolean(newToken),
-      userDataKeys: userData ? Object.keys(userData) : 'no data'
-    });
+
 
     try {
       if (!newToken) {
@@ -117,7 +109,7 @@ export function PeachProvider(props: { children: JSX.Element }) {
       
       // Use the stream token as the primary token if available
       const tokenToUse = streamToken || newToken;
-      console.log('[CONTEXT] Using token for context:', tokenToUse?.substring(0, 20) + '...');
+
       
       // Prepare user data object with consistent structure
       const userDataObj = {
@@ -127,7 +119,7 @@ export function PeachProvider(props: { children: JSX.Element }) {
         streams: userData?.streams || []
       };
 
-      console.log('[CONTEXT] Prepared user data object:', userDataObj);
+
       
       // Update state - CRITICAL FIX: Use the stream token
       setToken(tokenToUse);
@@ -138,21 +130,18 @@ export function PeachProvider(props: { children: JSX.Element }) {
         try {
           localStorage.setItem('peach_token', tokenToUse);
           localStorage.setItem('peach_user', JSON.stringify(userDataObj));
-          console.log('[CONTEXT] Saved authentication data to localStorage successfully');
+
           
           // Verify it was saved correctly
           const verifyToken = localStorage.getItem('peach_token');
           const verifyUser = localStorage.getItem('peach_user');
-          console.log('[CONTEXT] Verified localStorage save:', {
-            tokenSaved: Boolean(verifyToken),
-            userSaved: Boolean(verifyUser)
-          });
+
         } catch (e) {
           console.error('[CONTEXT] Error saving to localStorage:', e);
         }
       }
       
-      console.log('[CONTEXT] User data set successfully - isAuthenticated:', isAuthenticated());
+
     } catch (error) {
       console.error('[CONTEXT] Error in login:', error);
       
@@ -167,7 +156,7 @@ export function PeachProvider(props: { children: JSX.Element }) {
   };
 
   const logout = () => {
-    console.log('[CONTEXT] logout called');
+
     
     // Clear state
     setToken(null);
@@ -177,12 +166,12 @@ export function PeachProvider(props: { children: JSX.Element }) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('peach_token');
       localStorage.removeItem('peach_user');
-      console.log('[CONTEXT] Cleared authentication data from localStorage');
+
     }
   };
 
   onMount(() => {
-    console.log('[CONTEXT] PeachProvider mounted');
+
   });
 
   const value: PeachContextValue = {
@@ -202,7 +191,7 @@ export function PeachProvider(props: { children: JSX.Element }) {
 
 export const usePeach = () => {
   const context = useContext(PeachContext);
-  console.log('[CONTEXT] usePeach called', context);
+
   if (!context) {
     throw new Error("usePeach must be used within a PeachProvider");
   }

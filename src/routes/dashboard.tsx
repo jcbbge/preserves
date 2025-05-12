@@ -5,7 +5,10 @@ import { usePeach } from "~/context/peach";
 import { useExport } from "~/context/export";
 import { fetchStream } from "./api/stream";
 import { downloadPeachData as fetchPeachData } from "~/lib/api/download";
-import { SimplePhotoCanvas, PolaroidPhoto } from "~/components/SimplePhotoCanvas";
+import {
+  SimplePhotoCanvas,
+  PolaroidPhoto,
+} from "~/components/SimplePhotoCanvas";
 import { analyzePostMedia } from "~/lib/api/debug-peach";
 import { createStore, produce } from "solid-js/store";
 
@@ -15,26 +18,26 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   // Get stored username from user context to use as key for user-specific storage
-  const getUserName = () => user.data?.username || 'unknown';
+  const getUserName = () => user.data?.username || "unknown";
   const storageKeyPrefix = () => `peach_preserves_${getUserName()}_`;
 
   // Get stored posts and cursor from localStorage if available
   const getStoredPosts = () => {
     // During initial client render or SSR, return empty array
-    if (typeof window === 'undefined' || !user.data?.username) return [];
+    if (typeof window === "undefined" || !user.data?.username) return [];
 
     try {
       const stored = localStorage.getItem(`${storageKeyPrefix()}posts`);
       return stored ? JSON.parse(stored) : [];
     } catch (e) {
-      console.error('[DASHBOARD] Error loading stored posts:', e);
+      console.error("[DASHBOARD] Error loading stored posts:", e);
       return [];
     }
   };
 
   const getStoredCursor = () => {
     // During initial client render or SSR, return null
-    if (typeof window === 'undefined' || !user.data?.username) return null;
+    if (typeof window === "undefined" || !user.data?.username) return null;
 
     return localStorage.getItem(`${storageKeyPrefix()}cursor`);
   };
@@ -53,8 +56,8 @@ export default function Dashboard() {
   // Redirect if not authenticated
   const redirectIfNotAuth = () => {
     if (!isAuthenticated()) {
-      console.log('[DASHBOARD] User not authenticated, redirecting to login');
-      setTimeout(() => navigate('/'), 0);
+      console.log("[DASHBOARD] User not authenticated, redirecting to login");
+      setTimeout(() => navigate("/"), 0);
       return true;
     }
     return false;
@@ -67,13 +70,10 @@ export default function Dashboard() {
   const currentUsername = user.data?.username;
   const currentToken = token();
 
-  console.log('[DEBUG] Username:', currentUsername);
-  console.log('[DEBUG] Token:', currentToken ? 'present' : 'missing');
-
   // Check credentials after we're sure we're not redirecting
   onMount(() => {
     if (isAuthenticated() && (!currentUsername || !currentToken)) {
-      setError('Missing username or token');
+      setError("Missing username or token");
       setLoading(false);
     }
   });
@@ -81,7 +81,9 @@ export default function Dashboard() {
   // Load user posts - only called after authentication is confirmed
   const loadPosts = async () => {
     if (!user.data || !isAuthenticated()) {
-      console.log('[DASHBOARD] Aborting loadPosts - no user data or not authenticated');
+      console.log(
+        "[DASHBOARD] Aborting loadPosts - no user data or not authenticated",
+      );
       return;
     }
 
@@ -92,39 +94,28 @@ export default function Dashboard() {
       const username = user.data.username;
       const streamToken = user.data.streams[0].token;
 
-      // Debug log exactly what's in the user data
-      console.log('[DEBUG-AUTH] DASHBOARD LOAD - FULL USER DATA:', JSON.stringify(user.data, null, 2));
-      console.log('[DEBUG-AUTH] DASHBOARD LOAD - USERNAME:', username);
-      console.log('[DEBUG-AUTH] DASHBOARD LOAD - TOKEN:', streamToken);
-      console.log('[DEBUG-AUTH] DASHBOARD LOAD - EXACT TOKEN TYPE:', typeof streamToken);
-      console.log('[DEBUG-AUTH] DASHBOARD LOAD - STREAM DATA:', JSON.stringify(user.data.streams[0], null, 2));
-
       // Create form data for server action
       const formData = new FormData();
-      formData.append('username', username);
-      formData.append('token', streamToken);
+      formData.append("username", username);
+      formData.append("token", streamToken);
 
-      // Use server action to avoid CORS
-      console.log('[DASHBOARD] Calling server action with username:', username);
       const response = await fetchStream(formData);
-      console.log('[DASHBOARD] Server action response:', response);
 
       // Extract data from server response
       const data = response.success ? response.data : null;
 
       // From example: var posts = stream.data.data.posts;
       if (data && data.data && data.data.posts) {
-        console.log('[DASHBOARD] Posts metrics:', {
+        console.log("[DASHBOARD] Posts metrics:", {
           newPostsCount: data.data.posts.length,
           existingPostsCount: posts().length,
           totalAfterMerge: posts().length + data.data.posts.length,
-          cursor: data.data.cursor || 'none'
+          cursor: data.data.cursor || "none",
         });
 
-        // Debug posts to find media structure
-        console.log('[DASHBOARD] Analyzing posts for media structure');
-        const postsWithMedia = data.data.posts.filter(p => p.media && p.media.length > 0);
-        console.log(`[DASHBOARD] Posts with media array: ${postsWithMedia.length} / ${data.data.posts.length}`);
+        const postsWithMedia = data.data.posts.filter(
+          (p) => p.media && p.media.length > 0,
+        );
 
         // Analyze first 3 posts with media
         for (let i = 0; i < Math.min(3, postsWithMedia.length); i++) {
@@ -132,8 +123,10 @@ export default function Dashboard() {
         }
 
         // Analyze first 3 posts with no media to check message structure
-        const postsWithoutMedia = data.data.posts.filter(p => !p.media || p.media.length === 0);
-        console.log(`[DASHBOARD] Posts without media array: ${postsWithoutMedia.length} / ${data.data.posts.length}`);
+        const postsWithoutMedia = data.data.posts.filter(
+          (p) => !p.media || p.media.length === 0,
+        );
+
         for (let i = 0; i < Math.min(3, postsWithoutMedia.length); i++) {
           analyzePostMedia(postsWithoutMedia[i], i);
         }
@@ -143,26 +136,32 @@ export default function Dashboard() {
         setCursor(data.data.cursor);
 
         // Store in localStorage
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(`${storageKeyPrefix()}posts`, JSON.stringify(data.data.posts));
+        if (typeof window !== "undefined") {
+          localStorage.setItem(
+            `${storageKeyPrefix()}posts`,
+            JSON.stringify(data.data.posts),
+          );
           if (data.data.cursor) {
-            localStorage.setItem(`${storageKeyPrefix()}cursor`, data.data.cursor);
+            localStorage.setItem(
+              `${storageKeyPrefix()}cursor`,
+              data.data.cursor,
+            );
           }
-          console.log('[DASHBOARD] Saved posts and cursor to localStorage');
+          console.log("[DASHBOARD] Saved posts and cursor to localStorage");
         }
       } else {
-        console.log('[DASHBOARD] No posts found in response');
+        console.log("[DASHBOARD] No posts found in response");
         setPosts([]);
 
         // Clear localStorage items
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           localStorage.removeItem(`${storageKeyPrefix()}posts`);
           localStorage.removeItem(`${storageKeyPrefix()}cursor`);
         }
       }
     } catch (err) {
-      console.error('[DASHBOARD] Error loading posts:', err);
-      setError('Failed to load your posts. Please try again.');
+      console.error("[DASHBOARD] Error loading posts:", err);
+      setError("Failed to load your posts. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -181,27 +180,39 @@ export default function Dashboard() {
 
       // Create form data for server action
       const formData = new FormData();
-      formData.append('username', username);
-      formData.append('token', streamToken);
-      formData.append('cursor', currentCursor);
+      formData.append("username", username);
+      formData.append("token", streamToken);
+      formData.append("cursor", currentCursor);
 
       // Use server action to avoid CORS
-      console.log('[DASHBOARD] Calling server action with cursor:', currentCursor);
+      console.log(
+        "[DASHBOARD] Calling server action with cursor:",
+        currentCursor,
+      );
       const response = await fetchStream(formData);
-      console.log('[DASHBOARD] Server action response for more posts:', response);
+      console.log(
+        "[DASHBOARD] Server action response for more posts:",
+        response,
+      );
 
       // Extract data from server response
       const data = response.success ? response.data : null;
 
       // Same data structure as initial load
       if (data && data.data && data.data.posts) {
-        console.log('[DASHBOARD] Additional posts metrics:', {
+        console.log("[DASHBOARD] Additional posts metrics:", {
           newPostsCount: data.data.posts.length,
           existingPostsCount: posts().length,
           totalAfterMerge: posts().length + data.data.posts.length,
-          oldestNewPost: data.data.posts.length ? new Date(data.data.posts[data.data.posts.length-1].createdTime).toISOString() : 'none',
-          newestNewPost: data.data.posts.length ? new Date(data.data.posts[0].createdTime).toISOString() : 'none',
-          cursor: data.data.cursor || 'none'
+          oldestNewPost: data.data.posts.length
+            ? new Date(
+                data.data.posts[data.data.posts.length - 1].createdTime,
+              ).toISOString()
+            : "none",
+          newestNewPost: data.data.posts.length
+            ? new Date(data.data.posts[0].createdTime).toISOString()
+            : "none",
+          cursor: data.data.cursor || "none",
         });
 
         // Update posts with new ones appended
@@ -210,18 +221,24 @@ export default function Dashboard() {
         setCursor(data.data.cursor);
 
         // Update localStorage
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(`${storageKeyPrefix()}posts`, JSON.stringify(updatedPosts));
+        if (typeof window !== "undefined") {
+          localStorage.setItem(
+            `${storageKeyPrefix()}posts`,
+            JSON.stringify(updatedPosts),
+          );
           if (data.data.cursor) {
-            localStorage.setItem(`${storageKeyPrefix()}cursor`, data.data.cursor);
+            localStorage.setItem(
+              `${storageKeyPrefix()}cursor`,
+              data.data.cursor,
+            );
           } else {
             localStorage.removeItem(`${storageKeyPrefix()}cursor`);
           }
-          console.log('[DASHBOARD] Updated posts and cursor in localStorage');
+          console.log("[DASHBOARD] Updated posts and cursor in localStorage");
         }
       }
     } catch (err) {
-      console.error('[DASHBOARD] Error loading more posts:', err);
+      console.error("[DASHBOARD] Error loading more posts:", err);
     } finally {
       setLoadingMore(false);
     }
@@ -234,18 +251,7 @@ export default function Dashboard() {
 
     try {
       // Pass current username to preserve function for better archive naming
-      const username = user.data?.username || 'peach-user';
-
-      // Debug - dump all user info to ensure token availability
-      console.log('[DEBUG-AUTH] DOWNLOAD CLICK - USER DATA:', JSON.stringify(user.data, null, 2));
-      console.log('[DEBUG-AUTH] DOWNLOAD CLICK - USER STREAMS:', JSON.stringify(user.data?.streams, null, 2));
-      console.log('[DEBUG-AUTH] DOWNLOAD CLICK - TOKEN:', token());
-      console.log('[DEBUG-AUTH] DOWNLOAD CLICK - TOKEN TYPE:', typeof token());
-      console.log('[DEBUG-AUTH] DOWNLOAD CLICK - AUTH STATUS:', isAuthenticated());
-
-      console.log('[DASHBOARD] Starting download process for user:', username);
-
-      console.log('[DASHBOARD] Starting download process with user context data');
+      const username = user.data?.username || "peach-user";
 
       // Call the download API directly with user data from context
       const archiveFilename = await fetchPeachData(
@@ -253,29 +259,28 @@ export default function Dashboard() {
         {
           includeComments: true,
           includeImages: true,
-          devMode: true // Set to true for testing, false for production
+          devMode: true, // Set to true for testing, false for production
         },
         exportContext,
-        user.data // Pass the entire user data from context
+        user.data, // Pass the entire user data from context
       );
 
-      console.log('[DASHBOARD] Archive created:', archiveFilename);
       setDownloadComplete(true);
 
       // After successful download, show completion message for 5 seconds
       setTimeout(() => {
         setDownloadComplete(false);
         // Reset the export context to allow new downloads
-        console.log('[DASHBOARD] Resetting export context after completion');
         exportContext.resetExport();
       }, 5000);
     } catch (err) {
-      console.error('[DASHBOARD] Download error:', err);
+      console.error("[DASHBOARD] Download error:", err);
 
       // Show more detailed error to help with debugging
-      const errorMessage = err instanceof Error
-        ? `Error: ${err.message}`
-        : 'Failed to download your Peach data. Please try again.';
+      const errorMessage =
+        err instanceof Error
+          ? `Error: ${err.message}`
+          : "Failed to download your Peach data. Please try again.";
 
       setError(errorMessage);
 
@@ -288,7 +293,7 @@ export default function Dashboard() {
 
   // Format a post message - EXACT match from example structure
   const formatMessage = (message: any) => {
-    if (!message) return 'Empty post';
+    if (!message) return "Empty post";
 
     // EXACT MATCH from example code:
     // post.message[i].type == 'text' && post.message[i].text
@@ -296,22 +301,22 @@ export default function Dashboard() {
       const textParts = [];
 
       for (let i = 0; i < message.length; i++) {
-        if (message[i].type === 'text') {
+        if (message[i].type === "text") {
           textParts.push(message[i].text);
         }
       }
 
       if (textParts.length > 0) {
-        return textParts.join('\n\n');
+        return textParts.join("\n\n");
       }
     }
 
     // Fallback for simple string message
-    if (typeof message === 'string') {
+    if (typeof message === "string") {
       return message;
     }
 
-    return 'Post with content';
+    return "Post with content";
   };
 
   // Get media from a post if available - following example structure
@@ -322,7 +327,7 @@ export default function Dashboard() {
     // if ( posts[i].message[j].type == 'image')
     if (Array.isArray(post.message)) {
       for (let j = 0; j < post.message.length; j++) {
-        if (post.message[j].type === 'image') {
+        if (post.message[j].type === "image") {
           return post.message[j].src;
         }
       }
@@ -342,8 +347,9 @@ export default function Dashboard() {
 
       // Random initial position if not stored
       const randomX = storedPosition?.x || Math.random() * 500 - 250;
-      const randomY = storedPosition?.y || Math.random() * 300 - 100 + (index * 30);
-      const randomRotation = storedRotation || (Math.random() * 20 - 10);
+      const randomY =
+        storedPosition?.y || Math.random() * 300 - 100 + index * 30;
+      const randomRotation = storedRotation || Math.random() * 20 - 10;
 
       return {
         id: post.id,
@@ -356,100 +362,110 @@ export default function Dashboard() {
         rotation: randomRotation,
         zIndex: posts.length - index,
         isFlipped: storedFlipped || false,
-        isPinned: storedPinned || false
+        isPinned: storedPinned || false,
       };
     });
   };
 
   // Storage helper functions for individual photo properties
   const getStoredPhotoPosition = (id: string) => {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === "undefined") return null;
     try {
-      const stored = localStorage.getItem(`${storageKeyPrefix()}photo_${id}_position`);
+      const stored = localStorage.getItem(
+        `${storageKeyPrefix()}photo_${id}_position`,
+      );
       return stored ? JSON.parse(stored) : null;
     } catch (e) {
-      console.error('[DASHBOARD] Error loading stored photo position:', e);
+      console.error("[DASHBOARD] Error loading stored photo position:", e);
       return null;
     }
   };
 
   const getStoredPhotoRotation = (id: string) => {
-    if (typeof window === 'undefined') return null;
-    const stored = localStorage.getItem(`${storageKeyPrefix()}photo_${id}_rotation`);
+    if (typeof window === "undefined") return null;
+    const stored = localStorage.getItem(
+      `${storageKeyPrefix()}photo_${id}_rotation`,
+    );
     return stored ? parseFloat(stored) : null;
   };
 
   const getStoredPhotoFlipped = (id: string) => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem(`${storageKeyPrefix()}photo_${id}_flipped`) === 'true';
+    if (typeof window === "undefined") return false;
+    return (
+      localStorage.getItem(`${storageKeyPrefix()}photo_${id}_flipped`) ===
+      "true"
+    );
   };
 
   const getStoredPhotoPinned = (id: string) => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem(`${storageKeyPrefix()}photo_${id}_pinned`) === 'true';
+    if (typeof window === "undefined") return false;
+    return (
+      localStorage.getItem(`${storageKeyPrefix()}photo_${id}_pinned`) === "true"
+    );
   };
 
   // Handle photo interaction events
   const handlePhotoFlip = (id: string) => {
     setPolaroidPhotos(
-      p => p.id === id,
-      produce(photo => {
+      (p) => p.id === id,
+      produce((photo) => {
         photo.isFlipped = !photo.isFlipped;
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           localStorage.setItem(
             `${storageKeyPrefix()}photo_${id}_flipped`,
-            photo.isFlipped ? 'true' : 'false'
+            photo.isFlipped ? "true" : "false",
           );
         }
-      })
+      }),
     );
   };
 
   const handlePhotoPin = (id: string) => {
     setPolaroidPhotos(
-      p => p.id === id,
-      produce(photo => {
+      (p) => p.id === id,
+      produce((photo) => {
         photo.isPinned = !photo.isPinned;
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           localStorage.setItem(
             `${storageKeyPrefix()}photo_${id}_pinned`,
-            photo.isPinned ? 'true' : 'false'
+            photo.isPinned ? "true" : "false",
           );
         }
-      })
+      }),
     );
   };
 
   const handlePhotoMove = (id: string, position: { x: number; y: number }) => {
     setPolaroidPhotos(
-      p => p.id === id,
-      produce(photo => {
+      (p) => p.id === id,
+      produce((photo) => {
         // Bring moved photo to front
-        const newZIndex = Math.max(...polaroidPhotos.map(p => p.zIndex || 0)) + 1;
+        const newZIndex =
+          Math.max(...polaroidPhotos.map((p) => p.zIndex || 0)) + 1;
         photo.position = position;
         photo.zIndex = newZIndex;
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           localStorage.setItem(
             `${storageKeyPrefix()}photo_${id}_position`,
-            JSON.stringify(position)
+            JSON.stringify(position),
           );
         }
-      })
+      }),
     );
   };
 
   const handlePhotoRotate = (id: string, rotation: number) => {
     setPolaroidPhotos(
-      p => p.id === id,
-      produce(photo => {
+      (p) => p.id === id,
+      produce((photo) => {
         photo.rotation = rotation;
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           localStorage.setItem(
             `${storageKeyPrefix()}photo_${id}_rotation`,
-            rotation.toString()
+            rotation.toString(),
           );
         }
-      })
+      }),
     );
   };
 
@@ -468,7 +484,9 @@ export default function Dashboard() {
           console.log(`Skipping duplicate post with id ${post.id}`);
         }
       }
-      console.log(`Filtered ${currentPosts.length - uniquePosts.length} duplicate posts`);
+      console.log(
+        `Filtered ${currentPosts.length - uniquePosts.length} duplicate posts`,
+      );
       setPolaroidPhotos(mapPostsToPolaroids(uniquePosts));
     }
   });
@@ -477,24 +495,18 @@ export default function Dashboard() {
   onMount(() => {
     // Check authentication first
     if (!isAuthenticated()) {
-      console.log('[DASHBOARD] Not authenticated, skipping post loading');
+      console.log("[DASHBOARD] Not authenticated, skipping post loading");
       return;
     }
 
     // Only load posts if we don't have any stored
     if (posts().length === 0) {
-      console.log('[DASHBOARD] No stored posts found, loading from API');
+      console.log("[DASHBOARD] No stored posts found, loading from API");
       // Small delay to ensure auth is fully processed
       setTimeout(() => loadPosts(), 100);
     } else {
       const storedPosts = posts();
-      console.log('[DASHBOARD] Using stored posts:', {
-        totalPosts: storedPosts.length,
-        uniquePosts: new Set(storedPosts.map(p => p.id)).size,
-        postsWithMedia: storedPosts.filter(p => p.media && p.media.length > 0).length,
-        oldestPost: storedPosts.length ? new Date(storedPosts[storedPosts.length-1].createdTime).toISOString() : 'none',
-        newestPost: storedPosts.length ? new Date(storedPosts[0].createdTime).toISOString() : 'none'
-      });
+
       setPolaroidPhotos(mapPostsToPolaroids(storedPosts));
       setLoading(false);
     }
@@ -539,7 +551,8 @@ export default function Dashboard() {
             )}
 
             {/* Download progress modal */}
-            {(exportContext.exportData.status === 'exporting' || exportContext.exportData.status === 'preparing') && (
+            {(exportContext.exportData.status === "exporting" ||
+              exportContext.exportData.status === "preparing") && (
               <div class="download-progress" role="region" aria-live="polite">
                 <div class="progress-container">
                   <div class="progress-header">
@@ -554,9 +567,13 @@ export default function Dashboard() {
                     <div class="progress-bar-wrapper">
                       <div
                         class="progress-bar"
-                        style={{width: `${exportContext.exportData.progress.percentage}%`}}
+                        style={{
+                          width: `${exportContext.exportData.progress.percentage}%`,
+                        }}
                         role="progressbar"
-                        aria-valuenow={exportContext.exportData.progress.percentage}
+                        aria-valuenow={
+                          exportContext.exportData.progress.percentage
+                        }
                         aria-valuemin="0"
                         aria-valuemax="100"
                       ></div>
@@ -564,11 +581,15 @@ export default function Dashboard() {
 
                     <div class="progress-stats">
                       <span class="progress-percentage">
-                        {Math.round(exportContext.exportData.progress.percentage)}%
+                        {Math.round(
+                          exportContext.exportData.progress.percentage,
+                        )}
+                        %
                       </span>
                       {exportContext.exportData.progress.completedItems > 0 && (
                         <span class="progress-count">
-                          {exportContext.exportData.progress.completedItems} / {exportContext.exportData.progress.totalItems}
+                          {exportContext.exportData.progress.completedItems} /{" "}
+                          {exportContext.exportData.progress.totalItems}
                         </span>
                       )}
                     </div>
@@ -578,32 +599,33 @@ export default function Dashboard() {
             )}
 
             {/* Error modal - Shows when export status is error */}
-            {exportContext.exportData.status === 'error' && exportContext.exportData.error && (
-              <div class="error-modal">
-                <div class="error-container">
-                  <div class="error-header">
-                    <h3>Download Failed</h3>
-                  </div>
-                  <div class="error-message">
-                    {exportContext.exportData.error.message}
-                  </div>
-                  <div class="error-actions">
-                    <button
-                      onClick={() => exportContext.retryExport()}
-                      class="retry-button"
-                    >
-                      Try Again
-                    </button>
-                    <button
-                      onClick={() => exportContext.resetExport()}
-                      class="cancel-button"
-                    >
-                      Cancel
-                    </button>
+            {exportContext.exportData.status === "error" &&
+              exportContext.exportData.error && (
+                <div class="error-modal">
+                  <div class="error-container">
+                    <div class="error-header">
+                      <h3>Download Failed</h3>
+                    </div>
+                    <div class="error-message">
+                      {exportContext.exportData.error.message}
+                    </div>
+                    <div class="error-actions">
+                      <button
+                        onClick={() => exportContext.retryExport()}
+                        class="retry-button"
+                      >
+                        Try Again
+                      </button>
+                      <button
+                        onClick={() => exportContext.resetExport()}
+                        class="cancel-button"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Debug Modal - only visible in development mode */}
             {showDebugModal() && import.meta.env.DEV && (
@@ -611,47 +633,83 @@ export default function Dashboard() {
                 <div class="debug-container">
                   <div class="debug-header">
                     <h3>📊 Export Debug Information</h3>
-                    <button onClick={() => setShowDebugModal(false)} class="close-button">×</button>
+                    <button
+                      onClick={() => setShowDebugModal(false)}
+                      class="close-button"
+                    >
+                      ×
+                    </button>
                   </div>
 
                   <div class="debug-content">
                     <div class="debug-section">
                       <h4>Export State</h4>
-                      <pre>{JSON.stringify({
-                        status: exportContext.exportData.status,
-                        jobId: exportContext.exportData.jobId,
-                        startTime: exportContext.exportData.startTime,
-                        completedTime: exportContext.exportData.completedTime,
-                        downloadUrl: exportContext.exportData.downloadUrl,
-                      }, null, 2)}</pre>
+                      <pre>
+                        {JSON.stringify(
+                          {
+                            status: exportContext.exportData.status,
+                            jobId: exportContext.exportData.jobId,
+                            startTime: exportContext.exportData.startTime,
+                            completedTime:
+                              exportContext.exportData.completedTime,
+                            downloadUrl: exportContext.exportData.downloadUrl,
+                          },
+                          null,
+                          2,
+                        )}
+                      </pre>
                     </div>
 
                     <div class="debug-section">
                       <h4>Progress Data</h4>
-                      <pre>{JSON.stringify({
-                        percentage: exportContext.exportData.progress.percentage,
-                        phase: exportContext.exportData.progress.phase,
-                        currentActivity: exportContext.exportData.progress.currentActivity,
-                        completedItems: exportContext.exportData.progress.completedItems,
-                        totalItems: exportContext.exportData.progress.totalItems,
-                        estimatedTimeRemaining: exportContext.exportData.progress.estimatedTimeRemaining,
-                      }, null, 2)}</pre>
+                      <pre>
+                        {JSON.stringify(
+                          {
+                            percentage:
+                              exportContext.exportData.progress.percentage,
+                            phase: exportContext.exportData.progress.phase,
+                            currentActivity:
+                              exportContext.exportData.progress.currentActivity,
+                            completedItems:
+                              exportContext.exportData.progress.completedItems,
+                            totalItems:
+                              exportContext.exportData.progress.totalItems,
+                            estimatedTimeRemaining:
+                              exportContext.exportData.progress
+                                .estimatedTimeRemaining,
+                          },
+                          null,
+                          2,
+                        )}
+                      </pre>
                     </div>
 
                     <div class="debug-section">
                       <h4>Component State</h4>
-                      <pre>{JSON.stringify({
-                        downloading: downloading(),
-                        downloadComplete: downloadComplete(),
-                        postsCount: posts().length,
-                        error: error(),
-                      }, null, 2)}</pre>
+                      <pre>
+                        {JSON.stringify(
+                          {
+                            downloading: downloading(),
+                            downloadComplete: downloadComplete(),
+                            postsCount: posts().length,
+                            error: error(),
+                          },
+                          null,
+                          2,
+                        )}
+                      </pre>
                     </div>
 
                     <div class="debug-actions">
-                      <button onClick={() => exportContext.resetExport()}>Reset Export</button>
-                      <button onClick={() => setDownloadComplete(true)}>Show Complete Modal</button>
-                      <button onClick={() => console.log(exportContext)}>Log Context to Console</button>
+                      <button onClick={() => exportContext.resetExport()}>
+                        Reset Export
+                      </button>
+                      <button onClick={() => setDownloadComplete(true)}>
+                        Show Complete Modal
+                      </button>
+                      <button onClick={() => console.log(exportContext)}>
+                        Log Context to Console
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -694,21 +752,25 @@ export default function Dashboard() {
                         class="preserve-button"
                         disabled={
                           // Only disable during active processes
-                          exportContext.exportData.status === 'preparing' ||
-                          exportContext.exportData.status === 'exporting' ||
+                          exportContext.exportData.status === "preparing" ||
+                          exportContext.exportData.status === "exporting" ||
                           downloading()
                         }
-                        aria-busy={exportContext.exportData.status === 'exporting' || downloading()}
+                        aria-busy={
+                          exportContext.exportData.status === "exporting" ||
+                          downloading()
+                        }
                       >
-                        {exportContext.exportData.status === 'preparing' || exportContext.exportData.status === 'exporting'
-                          ? 'Downloading...'
-                          : 'Download my Data'}
+                        {exportContext.exportData.status === "preparing" ||
+                        exportContext.exportData.status === "exporting"
+                          ? "Downloading..."
+                          : "Download my Data"}
                       </button>
 
                       {/* Debug button - only visible in development mode */}
                       {import.meta.env.DEV && (
                         <button
-                          onClick={() => setShowDebugModal(prev => !prev)}
+                          onClick={() => setShowDebugModal((prev) => !prev)}
                           class="debug-button"
                         >
                           🐛 Debug
