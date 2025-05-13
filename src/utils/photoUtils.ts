@@ -1,4 +1,5 @@
 import { PolaroidPhoto } from "~/types/polaroid";
+import { predefinedPositions as defaultPredefinedPositions } from "~/data/stockImages";
 
 /**
  * Generate a CSS transform string for a polaroid
@@ -286,4 +287,57 @@ export function preprocessPolaroidPhotos(
   });
 
   return photos;
+}
+
+/**
+ * Initialize polaroid photos for display
+ * @param imageData Source image data
+ * @param options Configuration options
+ * @returns Processed polaroid photos ready for display
+ */
+export function initializePolaroidPhotos(
+  imageData: { id: string; src: string; caption: string; date: string }[],
+  options?: {
+    predefinedPositions?: Record<string, { x: number; y: number }>;
+    storageKeyPrefix?: string;
+    centerX?: number;
+    centerY?: number;
+  }
+) {
+  // Set default centerX and centerY if window is available
+  const defaultOptions = {
+    predefinedPositions: defaultPredefinedPositions,
+    storageKeyPrefix: "peach_preserves_login_",
+    centerX: typeof window !== "undefined" ? window.innerWidth / 2 : 0,
+    centerY: typeof window !== "undefined" ? window.innerHeight / 2 : 0,
+  };
+
+  // Merge provided options with defaults
+  const mergedOptions = { ...defaultOptions, ...options };
+
+  // Process photos and return them
+  return preprocessPolaroidPhotos(imageData, mergedOptions);
+}
+
+/**
+ * Store initial positions to localStorage if they don't exist yet
+ * @param predefinedPositions The predefined positions to store
+ * @param storageKeyPrefix The prefix for localStorage keys
+ */
+export function storeInitialPositions(
+  predefinedPositions = defaultPredefinedPositions,
+  storageKeyPrefix = "peach_preserves_login_"
+) {
+  if (typeof window === "undefined") return;
+  
+  Object.entries(predefinedPositions).forEach(([id, position]) => {
+    try {
+      // Only save if position doesn't already exist
+      if (!localStorage.getItem(`${storageKeyPrefix}photo_${id}_position`)) {
+        savePhotoPositionToStorage(id, position, storageKeyPrefix);
+      }
+    } catch (err) {
+      console.error("[UTILS] Error saving initial position:", err);
+    }
+  });
 }
