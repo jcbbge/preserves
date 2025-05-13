@@ -9,7 +9,6 @@ import {
   SimplePhotoCanvas,
   PolaroidPhoto,
 } from "~/components/SimplePhotoCanvas";
-import { analyzePostMedia } from "~/lib/api/debug-peach";
 import { createStore, produce } from "solid-js/store";
 import styles from './dashboard.module.css';
 
@@ -52,7 +51,6 @@ export default function Dashboard() {
   const [cursor, setCursor] = createSignal<string | null>(getStoredCursor());
   const [loadingMore, setLoadingMore] = createSignal(false);
   const [polaroidPhotos, setPolaroidPhotos] = createStore<PolaroidPhoto[]>([]);
-  const [showDebugModal, setShowDebugModal] = createSignal(false); // Control debug modal visibility
 
   // Redirect if not authenticated
   const redirectIfNotAuth = () => {
@@ -118,19 +116,10 @@ export default function Dashboard() {
           (p) => p.media && p.media.length > 0,
         );
 
-        // Analyze first 3 posts with media
-        for (let i = 0; i < Math.min(3, postsWithMedia.length); i++) {
-          analyzePostMedia(postsWithMedia[i], i);
-        }
-
-        // Analyze first 3 posts with no media to check message structure
+        // Check for posts with no media to track message structure
         const postsWithoutMedia = data.data.posts.filter(
           (p) => !p.media || p.media.length === 0,
         );
-
-        for (let i = 0; i < Math.min(3, postsWithoutMedia.length); i++) {
-          analyzePostMedia(postsWithoutMedia[i], i);
-        }
 
         // Update state
         setPosts(data.data.posts);
@@ -665,94 +654,7 @@ export default function Dashboard() {
                 </div>
               )}
 
-            {/* Debug Modal - only visible in development mode */}
-            {showDebugModal() && import.meta.env.DEV && (
-              <div class={styles["debug-modal"]}>
-                <div class={styles["debug-container"]}>
-                  <div class={styles["debug-header"]}>
-                    <h3>📊 Export Debug Information</h3>
-                    <button
-                      onClick={() => setShowDebugModal(false)}
-                      class={styles["close-button"]}
-                    >
-                      ×
-                    </button>
-                  </div>
 
-                  <div class={styles["debug-content"]}>
-                    <div class={styles["debug-section"]}>
-                      <h4>Export State</h4>
-                      <pre>
-                        {JSON.stringify(
-                          {
-                            status: exportContext.exportData.status,
-                            jobId: exportContext.exportData.jobId,
-                            startTime: exportContext.exportData.startTime,
-                            completedTime:
-                              exportContext.exportData.completedTime,
-                            downloadUrl: exportContext.exportData.downloadUrl,
-                          },
-                          null,
-                          2,
-                        )}
-                      </pre>
-                    </div>
-
-                    <div class={styles["debug-section"]}>
-                      <h4>Progress Data</h4>
-                      <pre>
-                        {JSON.stringify(
-                          {
-                            percentage:
-                              exportContext.exportData.progress.percentage,
-                            phase: exportContext.exportData.progress.phase,
-                            currentActivity:
-                              exportContext.exportData.progress.currentActivity,
-                            completedItems:
-                              exportContext.exportData.progress.completedItems,
-                            totalItems:
-                              exportContext.exportData.progress.totalItems,
-                            estimatedTimeRemaining:
-                              exportContext.exportData.progress
-                                .estimatedTimeRemaining,
-                          },
-                          null,
-                          2,
-                        )}
-                      </pre>
-                    </div>
-
-                    <div class={styles["debug-section"]}>
-                      <h4>Component State</h4>
-                      <pre>
-                        {JSON.stringify(
-                          {
-                            downloading: downloading(),
-                            downloadComplete: downloadComplete(),
-                            postsCount: posts().length,
-                            error: error(),
-                          },
-                          null,
-                          2,
-                        )}
-                      </pre>
-                    </div>
-
-                    <div class={styles["debug-actions"]}>
-                      <button onClick={() => exportContext.resetExport()}>
-                        Reset Export
-                      </button>
-                      <button onClick={() => setDownloadComplete(true)}>
-                        Show Complete Modal
-                      </button>
-                      <button onClick={() => console.log(exportContext)}>
-                        Log Context to Console
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Error notification */}
             {error() && (
@@ -805,15 +707,7 @@ export default function Dashboard() {
                           : "Download my Data"}
                       </button>
 
-                      {/* Debug button - only visible in development mode */}
-                      {import.meta.env.DEV && (
-                        <button
-                          onClick={() => setShowDebugModal((prev) => !prev)}
-                          class={styles["debug-button"]}
-                        >
-                          🐛 Debug
-                        </button>
-                      )}
+
                     </div>
                   </>
                 )}

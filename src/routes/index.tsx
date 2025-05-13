@@ -4,7 +4,7 @@ import { Show, createSignal, onMount, For } from "solid-js";
 import { usePeach } from "~/context/peach";
 import { Title } from "@solidjs/meta";
 import { createStore, produce } from "solid-js/store";
-import styles from './index.module.css';
+import styles from "./index.module.css";
 
 // Function to generate consistent random values based on seed
 function seededRandom(seed: string, min: number, max: number) {
@@ -194,19 +194,19 @@ export default function Home() {
 
   // Predefined positions for stock images
   const predefinedPositions = {
-    "stock1": { x: 796, y: 632.5 },
-    "stock2": { x: 812.2606284458755, y: 181.04631805511508 },
-    "stock3": { x: 422.3742249073924, y: -109.37895001717351 },
-    "stock4": { x: 680.3695385621181, y: 730.967306452139 },
-    "stock5": { x: -17.937571158825392, y: 641.6346437554041 },
-    "stock6": { x: 707.6914814808155, y: 46.51864804656071 },
-    "stock7": { x: 92.35800509573659, y: 810.0368818696267 },
-    "stock8": { x: 46.11590233770039, y: -17.328164275597544 },
-    "stock9": { x: 693.651630471095, y: 883.6041257004499 },
-    "stock10": { x: -48.34153247423609, y: 107.87514749648301 },
-    "stock11": { x: 757.1371798814184, y: -149.86902237054204 },
-    "stock12": { x: 387.1332206033734, y: 843.0005601461124 },
-    "stock13": { x: 336.35871498447614, y: -106.32491281242051 }
+    stock1: { x: 796, y: 632.5 },
+    stock2: { x: 812.2606284458755, y: 181.04631805511508 },
+    stock3: { x: 422.3742249073924, y: -109.37895001717351 },
+    stock4: { x: 680.3695385621181, y: 730.967306452139 },
+    stock5: { x: -17.937571158825392, y: 641.6346437554041 },
+    stock6: { x: 707.6914814808155, y: 46.51864804656071 },
+    stock7: { x: 92.35800509573659, y: 810.0368818696267 },
+    stock8: { x: 46.11590233770039, y: -17.328164275597544 },
+    stock9: { x: 693.651630471095, y: 883.6041257004499 },
+    stock10: { x: -48.34153247423609, y: 107.87514749648301 },
+    stock11: { x: 757.1371798814184, y: -149.86902237054204 },
+    stock12: { x: 387.1332206033734, y: 843.0005601461124 },
+    stock13: { x: 336.35871498447614, y: -106.32491281242051 },
   };
 
   // Storage key for persistable state
@@ -234,9 +234,6 @@ export default function Home() {
     return stored ? parseFloat(stored) : null;
   };
 
-  // No longer needed
-  const getStoredPhotoFlipped = () => false;
-
   // Initialize polaroid positions with a pleasing arrangement
   const initializePolaroidPositions = () => {
     const photos: PolaroidPhoto[] = [];
@@ -254,13 +251,19 @@ export default function Home() {
       const storedPosition = getStoredPhotoPosition(image.id);
       const storedRotation = getStoredPhotoRotation(image.id);
       // No longer using flipped state
-      
+
       // Use predefined positions or fallback to calculated position
       const predefinedPosition = predefinedPositions[image.id];
-      
+
       // Calculate position - prioritize user's stored positions over predefined ones
-      const x = storedPosition?.x || predefinedPosition?.x || (centerX + Math.cos(index * 2.4) * Math.sqrt(index) * 80 - 110);
-      const y = storedPosition?.y || predefinedPosition?.y || (centerY + Math.sin(index * 2.4) * Math.sqrt(index) * 80 - 135);
+      const x =
+        storedPosition?.x ||
+        predefinedPosition?.x ||
+        centerX + Math.cos(index * 2.4) * Math.sqrt(index) * 80 - 110;
+      const y =
+        storedPosition?.y ||
+        predefinedPosition?.y ||
+        centerY + Math.sin(index * 2.4) * Math.sqrt(index) * 80 - 135;
 
       // Use small random rotation for natural look
       const rotation = storedRotation || seededRandom(image.id, -10, 10);
@@ -293,11 +296,11 @@ export default function Home() {
         if (!localStorage.getItem(`${storageKeyPrefix}photo_${id}_position`)) {
           localStorage.setItem(
             `${storageKeyPrefix}photo_${id}_position`,
-            JSON.stringify(position)
+            JSON.stringify(position),
           );
         }
       } catch (err) {
-        console.error('[LOGIN] Error saving initial position:', err);
+        console.error("[LOGIN] Error saving initial position:", err);
       }
     });
   };
@@ -349,8 +352,6 @@ export default function Home() {
       setLoading(false);
     }
   };
-
-  // Removed flip handler
 
   // Handle drag start
   const handleDragStart = (e: MouseEvent, id: string) => {
@@ -605,7 +606,9 @@ export default function Home() {
         <div class={styles["login-container"]}>
           {/* Login polaroid */}
           <div class={`${styles.polaroid} ${styles["login-polaroid"]}`}>
-            <div class={`${styles["polaroid-image-area"]} ${styles["login-image-area"]}`}>
+            <div
+              class={`${styles["polaroid-image-area"]} ${styles["login-image-area"]}`}
+            >
               <img
                 src="/peachdotcool.png"
                 alt="Peach"
@@ -636,7 +639,9 @@ export default function Home() {
                   />
                 </div>
                 {error() && (
-                  <div class={`${styles["error-message"]} ${styles["polaroid-handwritten"]}`}>
+                  <div
+                    class={`${styles["error-message"]} ${styles["polaroid-handwritten"]}`}
+                  >
                     {error()}
                   </div>
                 )}
@@ -655,7 +660,9 @@ export default function Home() {
             }
             disabled={loading()}
           >
-            <div class={`${styles["polaroid-image-area"]} ${styles["connect-image-area"]}`}>
+            <div
+              class={`${styles["polaroid-image-area"]} ${styles["connect-image-area"]}`}
+            >
               <div class={styles["connect-photo"]}>
                 {loading() ? "Connecting..." : "Connect"}
               </div>
@@ -667,15 +674,15 @@ export default function Home() {
               <div class={styles["polaroid-grit-overlay"]}></div>
             </div>
             <div class={styles["polaroid-caption"]}>
-              <span class={`${styles["polaroid-handwritten"]} ${styles["connect-text"]}`}>
+              <span
+                class={`${styles["polaroid-handwritten"]} ${styles["connect-text"]}`}
+              >
                 Connect Peach Account
               </span>
             </div>
           </button>
         </div>
       </div>
-
-
     </div>
   );
 }
