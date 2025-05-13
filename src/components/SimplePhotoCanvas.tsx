@@ -1,4 +1,5 @@
 import { createSignal, createEffect, onMount, For, Show } from "solid-js";
+import styles from "./SimplePhotoCanvas.module.css";
 
 export interface PolaroidPhoto {
   id: string;
@@ -96,7 +97,7 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
     draggedPhoto = id;
 
     // Visual feedback
-    element.classList.add("dragging");
+    element.classList.add(styles.dragging);
 
     // Bring to front
     const maxZIndex = Math.max(...props.photos.map(p => p.zIndex || 0)) + 1;
@@ -169,7 +170,7 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
     draggedPhoto = null;
 
     // Finish visual changes
-    element.classList.remove("dragging");
+    element.classList.remove(styles.dragging);
     element.style.willChange = "auto";
 
     // Notify parent of the move with final position
@@ -261,10 +262,10 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
   return (
     <div
       ref={setCorkboardRef}
-      class="corkboard"
+      class={styles.corkboard}
     >
       <Show when={props.photos.length === 0}>
-        <div class="no-photos">
+        <div class={styles["no-photos"]}>
           <p>No photos found yet.</p>
         </div>
       </Show>
@@ -300,7 +301,7 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
           return (
             <div
               id={`photo-${photo.id}`}
-              class={`polaroid ${photo.isFlipped ? 'flipped' : ''} ${photo.isPinned ? 'pinned' : ''}`}
+              class={`${styles.polaroid} ${photo.isFlipped ? styles.flipped : ''} ${photo.isPinned ? styles.pinned : ''}`}
               style={{
                 "transform": `translate(${photo.position?.x || 0}px, ${photo.position?.y || 0}px) rotate(${photo.rotation || 0}deg)`,
                 "z-index": photo.zIndex || 1,
@@ -309,22 +310,22 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
               onMouseDown={(e) => handleDragStart(photo.id, e)}
               onTouchStart={(e) => handleTouchStart(photo.id, e)}
             >
-              <div class="polaroid-image-area">
+              <div class={styles["polaroid-image-area"]}>
                 {photo.mediaUrl ? (
                   <img
-                    class="polaroid-photo"
+                    class={styles["polaroid-photo"]}
                     src={photo.mediaUrl}
                     alt="Photo"
                     loading="lazy"
                   />
                 ) : (
-                  <div class="polaroid-photo polaroid-text-content">{photo.messageText}</div>
+                  <div class={`${styles["polaroid-photo"]} ${styles["polaroid-text-content"]}`}>{photo.messageText}</div>
                 )}
                 {/* Gritty texture overlay */}
-                <div class="polaroid-grit-overlay" />
+                <div class={styles["polaroid-grit-overlay"]} />
                 {/* Coffee ring stain overlay */}
                 {showCoffeeRing && (
-                  <div class="coffee-ring-overlay">
+                  <div class={styles["coffee-ring-overlay"]}>
                     <svg width="90" height="90" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <ellipse cx="45" cy="45" rx="36" ry="18" stroke="#b89c6d" stroke-width="3" opacity="0.32"/>
                       <ellipse cx="60" cy="60" rx="8" ry="3" stroke="#b89c6d" stroke-width="1.5" opacity="0.18"/>
@@ -332,10 +333,10 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
                   </div>
                 )}
               </div>
-              <div class="polaroid-caption">
+              <div class={styles["polaroid-caption"]}>
                 {hasText && (
                   <span
-                    class="polaroid-handwritten"
+                    class={styles["polaroid-handwritten"]}
                     style={{
                       display: 'inline-block',
                       transform: `rotate(${randomAngleText}deg) translate(${randomXText}px, ${randomYText}px)`
@@ -345,7 +346,7 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
                   </span>
                 )}
                 <span
-                  class="polaroid-handwritten"
+                  class={styles["polaroid-handwritten"]}
                   style={{
                     display: 'inline-block',
                     transform: `rotate(${randomAngleDate}deg) translate(${randomXDate}px, ${randomYDate}px)`
@@ -354,204 +355,17 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
                   {new Date(photo.createdTime).toLocaleDateString()}
                 </span>
               </div>
-              <div class="polaroid-actions">
-                <button class="polaroid-action flip-btn" onClick={(e) => handleFlip(photo.id, e)}>↺</button>
-                <button class="polaroid-action rotate-btn" onClick={(e) => handleRotate(photo.id, e)}>⟳</button>
-                <button class={`polaroid-action pin-btn ${photo.isPinned ? 'active' : ''}`} onClick={(e) => handlePin(photo.id, e)}>📌</button>
+              <div class={styles["polaroid-actions"]}>
+                <button class={`${styles["polaroid-action"]} ${styles["flip-btn"]}`} onClick={(e) => handleFlip(photo.id, e)}>↺</button>
+                <button class={`${styles["polaroid-action"]} ${styles["rotate-btn"]}`} onClick={(e) => handleRotate(photo.id, e)}>⟳</button>
+                <button class={`${styles["polaroid-action"]} ${styles["pin-btn"]} ${photo.isPinned ? styles.active : ''}`} onClick={(e) => handlePin(photo.id, e)}>📌</button>
               </div>
             </div>
           );
         }}
       </For>
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap');
-        .corkboard {
-          width: 100%;
-          height: 100%;
-          position: relative;
-          overflow: hidden;
-          user-select: none;
-          touch-action: none;
-        }
 
-        .polaroid {
-          position: absolute;
-          width: 220px;
-          height: 270px;
-          background: #fff;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-          border-radius: 8px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 12px 12px 32px 12px;
-          box-sizing: border-box;
-          cursor: grab;
-          transition: box-shadow 0.2s, border 0.2s;
-        }
-        .polaroid.dragging {
-          box-shadow: 0 12px 32px rgba(0,0,0,0.28);
-          z-index: 1000 !important;
-          transition: none !important;
-          cursor: grabbing;
-        }
-        .polaroid.pinned {
-          box-shadow: 0 10px 28px rgba(0,0,0,0.22);
-        }
-        .polaroid.pinned:before {
-          content: '';
-          position: absolute;
-          top: 10px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 16px;
-          height: 16px;
-          background: #cc0000;
-          border-radius: 50%;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-          z-index: 3;
-        }
-        
-        .polaroid-image-area {
-          position: relative;
-          width: 196px;
-          height: 196px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .polaroid-photo {
-          width: 196px;
-          height: 196px;
-          object-fit: cover;
-          border-radius: 4px;
-          background: #eee;
-          box-shadow: 0 1.5px 4px rgba(0,0,0,0.06) inset;
-          margin-bottom: 0;
-          display: block;
-        }
-        .polaroid-grit-overlay {
-          pointer-events: none;
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          width: 100%; height: 100%;
-          z-index: 2;
-          background: url('data:image/svg+xml;utf8,<svg width="196" height="196" xmlns="http://www.w3.org/2000/svg"><filter id="f1" x="0" y="0"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" result="turb"/><feColorMatrix type="saturate" values="0.2"/><feComponentTransfer><feFuncA type="table" tableValues="0 0 0.08 0.12 0.18 0.12 0.08 0 0"/></feComponentTransfer><feBlend in2="SourceGraphic" mode="multiply"/></filter><rect width="196" height="196" fill="none" filter="url(%23f1)"/></svg>');
-          opacity: 0.22;
-          border-radius: 4px;
-        }
-        .coffee-ring-overlay {
-          pointer-events: none;
-          position: absolute;
-          left: 0; top: 0;
-          z-index: 3;
-          opacity: 0.7;
-          mix-blend-mode: multiply;
-        }
-        .polaroid-text-content {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1rem;
-          color: #333;
-          background: #f5f5f5;
-          text-align: center;
-          height: 196px;
-          width: 196px;
-          border-radius: 4px;
-          font-family: 'Courier New', Courier, monospace;
-          white-space: pre-line;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 196px;
-          max-height: 196px;
-        }
-        .polaroid-caption {
-          margin-top: 10px;
-          width: 100%;
-          min-height: 32px;
-          text-align: center;
-          font-size: 1.05rem;
-          color: #444;
-          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
-          letter-spacing: 0.04em;
-          background: transparent;
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          justify-content: flex-start;
-          position: relative;
-          overflow: visible;
-          max-width: 196px;
-        }
-        .polaroid-handwritten {
-          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
-          font-size: 1.2rem;
-          color: #333;
-          margin-bottom: 2px;
-          line-height: 1.1;
-          white-space: pre;
-          pointer-events: none;
-          overflow: visible;
-          max-width: 180px;
-        }
-        
-        .polaroid-actions {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          opacity: 0;
-          transition: opacity 0.2s;
-          z-index: 5;
-        }
-        
-        .polaroid:hover .polaroid-actions {
-          opacity: 1;
-        }
-        
-        .polaroid-action {
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.8);
-          border: none;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-          transition: transform 0.1s, background-color 0.2s;
-        }
-        
-        .polaroid-action:hover {
-          background: rgba(255,255,255,0.95);
-          transform: scale(1.1);
-        }
-        
-        .polaroid-action:active {
-          transform: scale(0.95);
-        }
-        
-        .polaroid-action.active {
-          background: rgba(255, 220, 100, 0.9);
-        }
-
-        .no-photos {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: white;
-          padding: 2rem;
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          text-align: center;
-        }
-      `}</style>
     </div>
   );
 }

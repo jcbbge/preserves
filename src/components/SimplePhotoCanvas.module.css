@@ -1,0 +1,201 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap');
+
+.corkboard {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+}
+
+.polaroid {
+  position: absolute;
+  width: 220px;
+  height: 270px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 12px 32px 12px;
+  box-sizing: border-box;
+  cursor: grab;
+  transition: box-shadow 0.2s, border 0.2s;
+}
+
+.polaroid.dragging {
+  box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+  z-index: 1000 !important;
+  transition: none !important;
+  cursor: grabbing;
+}
+
+.polaroid.pinned {
+  box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+}
+
+.polaroid.pinned:before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 16px;
+  background: #cc0000;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  z-index: 3;
+}
+
+.polaroid-image-area {
+  position: relative;
+  width: 196px;
+  height: 196px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.polaroid-photo {
+  width: 196px;
+  height: 196px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #eee;
+  box-shadow: 0 1.5px 4px rgba(0,0,0,0.06) inset;
+  margin-bottom: 0;
+  display: block;
+}
+
+.polaroid-grit-overlay {
+  pointer-events: none;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 100%;
+  z-index: 2;
+  background: url('data:image/svg+xml;utf8,<svg width="196" height="196" xmlns="http://www.w3.org/2000/svg"><filter id="f1" x="0" y="0"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" result="turb"/><feColorMatrix type="saturate" values="0.2"/><feComponentTransfer><feFuncA type="table" tableValues="0 0 0.08 0.12 0.18 0.12 0.08 0 0"/></feComponentTransfer><feBlend in2="SourceGraphic" mode="multiply"/></filter><rect width="196" height="196" fill="none" filter="url(%23f1)"/></svg>');
+  opacity: 0.22;
+  border-radius: 4px;
+}
+
+.coffee-ring-overlay {
+  pointer-events: none;
+  position: absolute;
+  left: 0; top: 0;
+  z-index: 3;
+  opacity: 0.7;
+  mix-blend-mode: multiply;
+}
+
+.polaroid-text-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #333;
+  background: #f5f5f5;
+  text-align: center;
+  height: 196px;
+  width: 196px;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  white-space: pre-line;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 196px;
+  max-height: 196px;
+}
+
+.polaroid-caption {
+  margin-top: 10px;
+  width: 100%;
+  min-height: 32px;
+  text-align: center;
+  font-size: 1.05rem;
+  color: #444;
+  font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
+  letter-spacing: 0.04em;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  position: relative;
+  overflow: visible;
+  max-width: 196px;
+}
+
+.polaroid-handwritten {
+  font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 2px;
+  line-height: 1.1;
+  white-space: pre;
+  pointer-events: none;
+  overflow: visible;
+  max-width: 180px;
+}
+
+.polaroid-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 5;
+}
+
+.polaroid:hover .polaroid-actions {
+  opacity: 1;
+}
+
+.polaroid-action {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.8);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  transition: transform 0.1s, background-color 0.2s;
+}
+
+.polaroid-action:hover {
+  background: rgba(255,255,255,0.95);
+  transform: scale(1.1);
+}
+
+.polaroid-action:active {
+  transform: scale(0.95);
+}
+
+.polaroid-action.active {
+  background: rgba(255, 220, 100, 0.9);
+}
+
+.no-photos {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.flip-btn {}
+.rotate-btn {}
+.pin-btn {}
+.flipped {}

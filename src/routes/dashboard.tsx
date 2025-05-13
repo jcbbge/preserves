@@ -11,6 +11,7 @@ import {
 } from "~/components/SimplePhotoCanvas";
 import { analyzePostMedia } from "~/lib/api/debug-peach";
 import { createStore, produce } from "solid-js/store";
+import styles from './dashboard.module.css';
 
 export default function Dashboard() {
   const { isAuthenticated, user, token } = usePeach();
@@ -523,27 +524,29 @@ export default function Dashboard() {
   });
 
   return (
-    <div class="peach-preserve">
+    <div class={styles["peach-preserve"]}>
       <Title>Peach Preserves</Title>
-      <header class="header">
-        <div class="logo">
-          <img src="/peachdotcool.png" alt="Peach" class="logo-img" />
+      <header class={styles.header}>
+        <div class={styles.logo}>
+          <img src="/peachdotcool.png" alt="Peach" class={styles["logo-img"]} />
           <span>Peach Preserves</span>
         </div>
       </header>
 
-      <main class="interactive-canvas">
+      <main class={styles["interactive-canvas"]}>
         {/* Only render dynamic content on client */}
         {clientOnly() ? (
           <>
             {/* Download complete modal */}
             {downloadComplete() && (
-              <div class="download-complete">
-                <div class="polaroid">
-                  <div class="polaroid-content success-content">
-                    <div class="success-icon">✓</div>
+              <div class={styles["download-complete"]}>
+                <div class={styles.polaroid}>
+                  <div
+                    class={`${styles["polaroid-content"]} ${styles["success-content"]}`}
+                  >
+                    <div class={styles["success-icon"]}>✓</div>
                   </div>
-                  <div class="polaroid-caption">
+                  <div class={styles["polaroid-caption"]}>
                     Downloaded! Your memories have been safely archived.
                   </div>
                 </div>
@@ -553,22 +556,30 @@ export default function Dashboard() {
             {/* Download progress modal - Polaroid style */}
             {(exportContext.exportData.status === "exporting" ||
               exportContext.exportData.status === "preparing") && (
-              <div class="download-progress" role="region" aria-live="polite">
-                <div class="polaroid progress-polaroid">
-                  <div class="polaroid-image-area">
-                    <div class="polaroid-photo progress-content">
-                      <div class="progress-header">
+              <div
+                class={styles["download-progress"]}
+                role="region"
+                aria-live="polite"
+              >
+                <div
+                  class={`${styles.polaroid} ${styles["progress-polaroid"]}`}
+                >
+                  <div class={styles["polaroid-image-area"]}>
+                    <div
+                      class={`${styles["polaroid-photo"]} ${styles["progress-content"]}`}
+                    >
+                      <div class={styles["progress-header"]}>
                         <h3>Downloading Your Peach Data</h3>
                       </div>
 
-                      <div class="progress-details">
-                        <div class="progress-activity">
+                      <div class={styles["progress-details"]}>
+                        <div class={styles["progress-activity"]}>
                           {exportContext.exportData.progress.currentActivity}
                         </div>
 
-                        <div class="progress-bar-wrapper">
+                        <div class={styles["progress-bar-wrapper"]}>
                           <div
-                            class="progress-bar"
+                            class={styles["progress-bar"]}
                             style={{
                               width: `${exportContext.exportData.progress.percentage}%`,
                             }}
@@ -581,27 +592,30 @@ export default function Dashboard() {
                           ></div>
                         </div>
 
-                        <div class="progress-stats">
-                          <span class="progress-percentage">
+                        <div class={styles["progress-stats"]}>
+                          <span class={styles["progress-percentage"]}>
                             {Math.round(
                               exportContext.exportData.progress.percentage,
                             )}
                             %
                           </span>
-                          {exportContext.exportData.progress.completedItems > 0 && (
-                            <span class="progress-count">
-                              {exportContext.exportData.progress.completedItems} /{" "}
-                              {exportContext.exportData.progress.totalItems}
+                          {exportContext.exportData.progress.completedItems >
+                            0 && (
+                            <span class={styles["progress-count"]}>
+                              {exportContext.exportData.progress.completedItems}{" "}
+                              / {exportContext.exportData.progress.totalItems}
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div class="polaroid-grit-overlay" />
+                    <div class={styles["polaroid-grit-overlay"]} />
                   </div>
-                  <div class="polaroid-caption">
-                    <div class="caption-content">
-                      <span class="polaroid-handwritten">Preserving your peaches</span>
+                  <div class={styles["polaroid-caption"]}>
+                    <div class={styles["caption-content"]}>
+                      <span class={styles["polaroid-handwritten"]}>
+                        Preserving your peaches
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -611,36 +625,40 @@ export default function Dashboard() {
             {/* Error modal - Shows when export status is error - Polaroid style */}
             {exportContext.exportData.status === "error" &&
               exportContext.exportData.error && (
-                <div class="error-modal">
-                  <div class="polaroid error-polaroid">
-                    <div class="polaroid-image-area">
-                      <div class="polaroid-photo error-content">
-                        <div class="error-header">
+                <div class={styles["error-modal"]}>
+                  <div class={`${styles.polaroid} ${styles["error-polaroid"]}`}>
+                    <div class={styles["polaroid-image-area"]}>
+                      <div
+                        class={`${styles["polaroid-photo"]} ${styles["error-content"]}`}
+                      >
+                        <div class={styles["error-header"]}>
                           <h3>Download Failed</h3>
                         </div>
-                        <div class="error-message">
+                        <div class={styles["error-message"]}>
                           {exportContext.exportData.error.message}
                         </div>
-                        <div class="error-actions">
+                        <div class={styles["error-actions"]}>
                           <button
                             onClick={() => exportContext.retryExport()}
-                            class="retry-button"
+                            class={styles["retry-button"]}
                           >
                             Try Again
                           </button>
                           <button
                             onClick={() => exportContext.resetExport()}
-                            class="cancel-button"
+                            class={styles["cancel-button"]}
                           >
                             Cancel
                           </button>
                         </div>
                       </div>
-                      <div class="polaroid-grit-overlay" />
+                      <div class={styles["polaroid-grit-overlay"]} />
                     </div>
-                    <div class="polaroid-caption">
-                      <div class="caption-content">
-                        <span class="polaroid-handwritten">Oops! Something went wrong</span>
+                    <div class={styles["polaroid-caption"]}>
+                      <div class={styles["caption-content"]}>
+                        <span class={styles["polaroid-handwritten"]}>
+                          Oops! Something went wrong
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -649,20 +667,20 @@ export default function Dashboard() {
 
             {/* Debug Modal - only visible in development mode */}
             {showDebugModal() && import.meta.env.DEV && (
-              <div class="debug-modal">
-                <div class="debug-container">
-                  <div class="debug-header">
+              <div class={styles["debug-modal"]}>
+                <div class={styles["debug-container"]}>
+                  <div class={styles["debug-header"]}>
                     <h3>📊 Export Debug Information</h3>
                     <button
                       onClick={() => setShowDebugModal(false)}
-                      class="close-button"
+                      class={styles["close-button"]}
                     >
                       ×
                     </button>
                   </div>
 
-                  <div class="debug-content">
-                    <div class="debug-section">
+                  <div class={styles["debug-content"]}>
+                    <div class={styles["debug-section"]}>
                       <h4>Export State</h4>
                       <pre>
                         {JSON.stringify(
@@ -680,7 +698,7 @@ export default function Dashboard() {
                       </pre>
                     </div>
 
-                    <div class="debug-section">
+                    <div class={styles["debug-section"]}>
                       <h4>Progress Data</h4>
                       <pre>
                         {JSON.stringify(
@@ -704,7 +722,7 @@ export default function Dashboard() {
                       </pre>
                     </div>
 
-                    <div class="debug-section">
+                    <div class={styles["debug-section"]}>
                       <h4>Component State</h4>
                       <pre>
                         {JSON.stringify(
@@ -720,7 +738,7 @@ export default function Dashboard() {
                       </pre>
                     </div>
 
-                    <div class="debug-actions">
+                    <div class={styles["debug-actions"]}>
                       <button onClick={() => exportContext.resetExport()}>
                         Reset Export
                       </button>
@@ -738,7 +756,7 @@ export default function Dashboard() {
 
             {/* Error notification */}
             {error() && (
-              <div class="error-note">
+              <div class={styles["error-note"]}>
                 <p>{error()}</p>
                 <button onClick={() => setError(null)}>Dismiss</button>
               </div>
@@ -746,14 +764,14 @@ export default function Dashboard() {
 
             {/* Main content */}
             {loading() ? (
-              <div class="loading">
-                <div class="loading-spinner"></div>
+              <div class={styles.loading}>
+                <div class={styles["loading-spinner"]}></div>
                 <p>Gathering your peachy memories...</p>
               </div>
             ) : (
               <>
                 {polaroidPhotos.length === 0 ? (
-                  <div class="no-posts">
+                  <div class={styles["no-posts"]}>
                     <p>No posts found. Your peaches are still growing! 🌱</p>
                   </div>
                 ) : (
@@ -766,10 +784,10 @@ export default function Dashboard() {
                       onPhotoRotate={handlePhotoRotate}
                     />
 
-                    <div class="preserve-button-container">
+                    <div class={styles["preserve-button-container"]}>
                       <button
                         onClick={downloadPeachData}
-                        class="preserve-button"
+                        class={styles["preserve-button"]}
                         disabled={
                           // Only disable during active processes
                           exportContext.exportData.status === "preparing" ||
@@ -791,7 +809,7 @@ export default function Dashboard() {
                       {import.meta.env.DEV && (
                         <button
                           onClick={() => setShowDebugModal((prev) => !prev)}
-                          class="debug-button"
+                          class={styles["debug-button"]}
                         >
                           🐛 Debug
                         </button>
@@ -803,616 +821,13 @@ export default function Dashboard() {
             )}
           </>
         ) : (
-          // Static loading state during SSR and initial client render
-          <div class="loading">
-            <div class="loading-spinner"></div>
-            <p>Loading...</p>
-          </div>
-        )}
-      </main>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
-        .peach-preserve {
-          background-color: #f5f0e5; /* Cork board color */
-          min-height: 100vh;
-          font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .interactive-canvas {
-          width: 100%;
-          height: calc(100vh - 60px); /* Full height minus header */
-          position: relative;
-          overflow: hidden;
-        }
-
-        .header {
-          background-color: var(--peach-primary);
-          padding: 0.75rem 2rem;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-          position: sticky;
-          top: 0;
-          z-index: 1000;
-          height: 60px;
-        }
-
-        .logout-link {
-          color: white;
-          text-decoration: none;
-          font-size: 0.9rem;
-          padding: 0.5rem 1rem;
-          border-radius: 2rem;
-          transition: all 0.3s ease;
-          opacity: 0.8;
-        }
-
-        .logout-link:hover {
-          opacity: 1;
-          background-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .logo {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          font-weight: bold;
-          font-size: 1.25rem;
-          color: var(--peach-dark);
-          font-family: 'Nunito', sans-serif;
-        }
-
-        .logo-img {
-          height: 42px;
-          width: auto;
-          background-color: transparent;
-        }
-
-        /* Preserve button */
-        .preserve-button-container {
-          position: fixed;
-          bottom: 2rem;
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 999;
-        }
-
-        .preserve-button {
-          background-color: var(--peach-primary);
-          color: var(--peach-dark);
-          border: 2px solid var(--peach-dark);
-          padding: 1rem 2.5rem;
-          border-radius: 2rem;
-          font-size: 1.25rem;
-          font-weight: bold;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-          font-family: 'Nunito', sans-serif;
-        }
-
-        .preserve-button:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-          background-color: var(--peach-secondary);
-          color: white;
-        }
-
-        .preserve-button:disabled {
-          background-color: rgba(255, 221, 221, 0.6);
-          border-color: rgba(95, 56, 192, 0.4);
-          color: rgba(95, 56, 192, 0.6);
-          cursor: not-allowed;
-          transform: none;
-        }
-
-        /* Purple background with light purple spots */
-        .interactive-canvas {
-          background-color: var(--canvas-background);
-          background-image:
-            radial-gradient(var(--canvas-spots) 8%, transparent 8%),
-            radial-gradient(var(--canvas-spots) 8%, transparent 8%);
-          background-size: 30px 30px;
-          background-position: 0 0, 15px 15px;
-        }
-
-        /* Add subtle texture */
-        .interactive-canvas::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background-image: url('data:image/png;base64,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');
-          opacity: 0.03;
-          pointer-events: none;
-        }
-
-        /* Download complete modal */
-        .download-complete {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          z-index: 1000;
-          background: rgba(0, 0, 0, 0.7);
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          animation: fadeIn 0.3s ease-out;
-        }
-
-        .download-complete .polaroid {
-          width: 300px;
-          height: auto;
-          transform: rotate(-3deg) !important;
-          position: relative;
-          background: white;
-          padding: 15px;
-          padding-bottom: 40px;
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-          animation: dropIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          border-radius: 3px;
-        }
-
-        .download-complete .polaroid-content {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          height: 200px;
-          width: 100%;
-          background-color: #f0fff4; /* Light green success background */
-          border: 1px solid #e0e0e0;
-        }
-
-        .success-icon {
-          font-size: 5rem;
-          color: #2ecc71; /* Bright green checkmark */
-          animation: pulse 1s infinite alternate;
-        }
-
-        /* Download progress modal - Polaroid style */
-        .download-progress {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          z-index: 1000;
-          background: rgba(0, 0, 0, 0.7);
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          animation: fadeIn 0.3s ease-out;
-        }
-
-        .progress-polaroid {
-          width: 280px;
-          height: 350px;
-          transform: rotate(-2deg) !important;
-          animation: dropIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .progress-content {
-          display: flex !important;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          background-color: #f8f6f1 !important;
-          padding: 15px;
-          overflow: visible !important;
-          max-width: initial !important;
-          max-height: initial !important;
-        }
-
-        .progress-header {
-          margin-bottom: 1.2rem;
-          text-align: center;
-        }
-
-        .progress-header h3 {
-          color: var(--peach-secondary);
-          font-size: 1.2rem;
-          margin: 0;
-          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
-        }
-
-        .progress-details {
-          display: flex;
-          flex-direction: column;
-          gap: 0.8rem;
-          width: 100%;
-        }
-
-        .progress-activity {
-          text-align: center;
-          font-size: 0.85rem;
-          color: #666;
-          min-height: 1.4em;
-          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
-          margin-bottom: 5px;
-        }
-
-        .progress-bar-wrapper {
-          height: 10px;
-          background-color: #f0f0f0;
-          border-radius: 5px;
-          overflow: hidden;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1) inset;
-        }
-
-        .progress-bar {
-          height: 100%;
-          background-color: var(--peach-primary);
-          border-radius: 5px;
-          transition: width 0.3s ease;
-        }
-
-        .progress-stats {
-          display: flex;
-          justify-content: space-between;
-          font-size: 0.8rem;
-          color: #666;
-          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
-          font-size: 1rem;
-        }
-
-        .caption-content {
-          width: 100%;
-          text-align: center;
-        }
-
-        /* Error modal - Polaroid style */
-        .error-modal {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          z-index: 1000;
-          background: rgba(0, 0, 0, 0.7);
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          animation: fadeIn 0.3s ease-out;
-        }
-
-        .error-polaroid {
-          width: 280px;
-          height: 350px;
-          transform: rotate(3deg) !important;
-          animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both, dropIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .error-content {
-          display: flex !important;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          background-color: #fff8f8 !important; /* Subtle red tint */
-          padding: 15px;
-          overflow: visible !important;
-          max-width: initial !important;
-          max-height: initial !important;
-        }
-
-        .error-header {
-          margin-bottom: 1rem;
-          text-align: center;
-        }
-
-        .error-header h3 {
-          color: #e74c3c;
-          font-size: 1.2rem;
-          margin: 0;
-          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
-        }
-
-        .error-message {
-          text-align: center;
-          margin-bottom: 1.5rem;
-          color: #333;
-          font-size: 0.95rem;
-          line-height: 1.5;
-          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
-          font-size: 1.1rem;
-        }
-
-        .error-actions {
-          display: flex;
-          justify-content: center;
-          gap: 1rem;
-          width: 100%;
-        }
-
-        .retry-button, .cancel-button {
-          padding: 0.6rem 1.2rem;
-          border: none;
-          border-radius: 4px;
-          font-weight: bold;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
-          font-size: 1.1rem;
-        }
-
-        .retry-button {
-          background-color: var(--peach-secondary);
-          color: white;
-        }
-
-        .retry-button:hover {
-          background-color: #6745a0;
-        }
-
-        .cancel-button {
-          background-color: #f5f5f5;
-          color: #666;
-        }
-
-        .cancel-button:hover {
-          background-color: #e0e0e0;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @keyframes dropIn {
-          0% {
-            transform: rotate(-3deg) translateY(-50px);
-            opacity: 0;
-          }
-          100% {
-            transform: rotate(-3deg) translateY(0);
-            opacity: 1;
-          }
-        }
-
-        @keyframes slideIn {
-          0% {
-            transform: translateY(-30px);
-            opacity: 0;
-          }
-          100% {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-
-        @keyframes shake {
-          10%, 90% { transform: translate3d(-1px, 0, 0); }
-          20%, 80% { transform: translate3d(2px, 0, 0); }
-          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-          40%, 60% { transform: translate3d(4px, 0, 0); }
-        }
-
-        @keyframes pulse {
-          from { transform: scale(1); }
-          to { transform: scale(1.1); }
-        }
-
-        /* Error notification */
-        .error-note {
-          position: fixed;
-          bottom: 2rem;
-          left: 50%;
-          transform: translateX(-50%);
-          background-color: #ffebeb;
-          border-left: 4px solid var(--peach-secondary);
-          padding: 1rem 2rem;
-          border-radius: 0.5rem;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          z-index: 1000;
-          max-width: 90%;
-        }
-
-        .error-note button {
-          background: none;
-          border: none;
-          color: var(--peach-secondary);
-          font-weight: bold;
-          cursor: pointer;
-          padding: 0.5rem;
-        }
-
-        /* Loading indicator */
-        .loading {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 80vh;
-        }
-
-        .loading-spinner {
-          width: 50px;
-          height: 50px;
-          border: 5px solid var(--peach-accent);
-          border-top: 5px solid var(--peach-primary);
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin-bottom: 1rem;
-        }
-
-        /* No longer needed - removed load more button */
-
-        .no-posts {
-          background: white;
-          padding: 2rem;
-          border-radius: 1rem;
-          text-align: center;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          max-width: 500px;
-          margin: 4rem auto;
-        }
-
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        /* Debug modal and button styles */
-        .debug-button {
-          position: fixed;
-          bottom: 1rem;
-          right: 1rem;
-          background: rgba(0, 0, 0, 0.7);
-          color: #fff;
-          border: none;
-          padding: 0.5rem 1rem;
-          border-radius: 4px;
-          cursor: pointer;
-          font-family: monospace;
-          z-index: 9999;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-
-        .debug-button:hover {
-          background: rgba(0, 0, 0, 0.9);
-        }
-
-        .debug-modal {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.8);
-          z-index: 9999;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-          overflow-y: auto;
-        }
-
-        .debug-container {
-          background: #f5f5f5;
-          border-radius: 6px;
-          width: 90%;
-          max-width: 800px;
-          max-height: 90vh;
-          overflow-y: auto;
-          box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
-        }
-
-        .debug-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 15px 20px;
-          background: #333;
-          color: white;
-        }
-
-        .debug-header h3 {
-          margin: 0;
-          font-family: monospace;
-        }
-
-        .close-button {
-          background: none;
-          border: none;
-          color: white;
-          font-size: 24px;
-          cursor: pointer;
-        }
-
-        .debug-content {
-          padding: 20px;
-        }
-
-        .debug-section {
-          margin-bottom: 20px;
-          background: white;
-          border-radius: 4px;
-          padding: 15px;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .debug-section h4 {
-          margin-top: 0;
-          margin-bottom: 10px;
-          font-family: monospace;
-          color: #333;
-          border-bottom: 1px solid #eee;
-          padding-bottom: 5px;
-        }
-
-        .debug-section pre {
-          margin: 0;
-          padding: 10px;
-          background: #f8f8f8;
-          border-radius: 3px;
-          overflow-x: auto;
-          font-family: monospace;
-          font-size: 13px;
-          line-height: 1.4;
-        }
-
-        .debug-actions {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-          margin-top: 20px;
-        }
-
-        .debug-actions button {
-          background: #555;
-          color: white;
-          border: none;
-          padding: 8px 15px;
-          border-radius: 4px;
-          cursor: pointer;
-          font-family: monospace;
-        }
-
-        .debug-actions button:hover {
-          background: #333;
-        }
-
-        @media (max-width: 768px) {
-          .header {
-            padding: 0.5rem 1rem;
-          }
-
-          .logo-img {
-            height: 30px;
-          }
-
-          .download-button {
-            font-size: 0.8rem;
-            padding: 0.5rem 1rem;
-          }
-
-          .header-buttons {
-            gap: 0.5rem;
-          }
-
-          .debug-container {
-            width: 95%;
-            max-height: 95vh;
-          }
-
-          .debug-section pre {
-            font-size: 11px;
-          }
-        }
-      `}</style>
+        // Static loading state during SSR and initial client render
+        <div class={styles.loading}>
+          <div class={styles["loading-spinner"]}></div>
+          <p>Loading...</p>
+        </div>
+      )}
+    </main>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useNavigate } from "@solidjs/router";
+import styles from "./404.module.css";
 
 export default function NotFound() {
   const navigate = useNavigate();
@@ -8,192 +9,34 @@ export default function NotFound() {
   };
 
   return (
-    <div class="peach-preserve">
-      <header class="header">
-        <div class="logo">
-          <img src="/peachdotcool.png" alt="Peach" class="logo-img" />
+    <div class={styles["peach-preserve"]}>
+      <header class={styles.header}>
+        <div class={styles.logo}>
+          <img src="/peachdotcool.png" alt="Peach" class={styles["logo-img"]} />
           <span>Peach Preserves</span>
         </div>
       </header>
 
-      <div class="not-found">
-        <div class="polaroid" onClick={goHome}>
-          <div class="polaroid-image-area">
-            <div class="polaroid-photo polaroid-text-content">:(</div>
-            <div class="polaroid-grit-overlay" />
+      <div class={styles["not-found"]}>
+        <div class={styles.polaroid} onClick={goHome}>
+          <div class={styles["polaroid-image-area"]}>
+            <div
+              class={`${styles["polaroid-photo"]} ${styles["polaroid-text-content"]}`}
+            >
+              :(
+            </div>
+            <div class={styles["polaroid-grit-overlay"]} />
           </div>
-          <div class="polaroid-caption">
-            <div class="caption-content">
-              <span class="polaroid-handwritten">404 - Page not found</span>
-              <span class="return-link">Return Home</span>
+          <div class={styles["polaroid-caption"]}>
+            <div class={styles["caption-content"]}>
+              <span class={styles["polaroid-handwritten"]}>
+                404 - Page not found
+              </span>
+              <span class={styles["return-link"]}>Return Home</span>
             </div>
           </div>
         </div>
       </div>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
-
-        .peach-preserve {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-          background-color: #f5f0e5; /* Cork board color */
-          color: var(--text-dark);
-          font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-        }
-
-        .header {
-          background-color: var(--peach-primary, #FF9A8B);
-          padding: 0.75rem 2rem;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-          position: sticky;
-          top: 0;
-          z-index: 1000;
-          height: 60px;
-        }
-
-        .logo {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          font-weight: bold;
-          font-size: 1.25rem;
-          color: var(--peach-dark, #E86C5D);
-          font-family: 'Nunito', sans-serif;
-        }
-
-        .logo-img {
-          height: 42px;
-          width: auto;
-          background-color: transparent;
-        }
-
-        .not-found {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background-image: radial-gradient(
-              rgba(160, 120, 90, 0.1) 15%,
-              transparent 16%
-            ),
-            radial-gradient(rgba(160, 120, 90, 0.1) 15%, transparent 16%);
-          background-size: 10px 10px;
-          background-position:
-            0 0,
-            5px 5px;
-        }
-
-        .polaroid {
-          width: 220px;
-          height: 270px;
-          background: #fff;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-          border-radius: 8px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 12px 12px 32px 12px;
-          box-sizing: border-box;
-          transform: rotate(-3deg);
-          transition: all 0.3s ease;
-          cursor: pointer;
-        }
-
-        .polaroid:hover {
-          transform: rotate(0deg) translateY(-5px);
-          box-shadow: 0 12px 32px rgba(0,0,0,0.25);
-        }
-
-        .polaroid-image-area {
-          position: relative;
-          width: 196px;
-          height: 196px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .polaroid-photo {
-          width: 196px;
-          height: 196px;
-          object-fit: cover;
-          border-radius: 4px;
-          background: #eee;
-          box-shadow: 0 1.5px 4px rgba(0,0,0,0.06) inset;
-          margin-bottom: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .polaroid-text-content {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 4rem;
-          color: #333;
-          background: #f5f5f5;
-          text-align: center;
-        }
-
-        .polaroid-grit-overlay {
-          pointer-events: none;
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          width: 100%; height: 100%;
-          z-index: 2;
-          background: url('data:image/svg+xml;utf8,<svg width="196" height="196" xmlns="http://www.w3.org/2000/svg"><filter id="f1" x="0" y="0"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" result="turb"/><feColorMatrix type="saturate" values="0.2"/><feComponentTransfer><feFuncA type="table" tableValues="0 0 0.08 0.12 0.18 0.12 0.08 0 0"/></feComponentTransfer><feBlend in2="SourceGraphic" mode="multiply"/></filter><rect width="196" height="196" fill="none" filter="url(%23f1)"/></svg>');
-          opacity: 0.22;
-          border-radius: 4px;
-        }
-
-        .polaroid-caption {
-          margin-top: 10px;
-          width: 100%;
-          height: 50px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-        }
-
-        .caption-content {
-          position: relative;
-          top: -15px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 5px;
-          transform: rotate(-2deg);
-        }
-
-        .polaroid-handwritten {
-          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
-          font-size: 1.2rem;
-          color: #333;
-          line-height: 1.1;
-        }
-
-        .return-link {
-          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
-          font-size: 1.1rem;
-          color: var(--peach-primary, #FF9A8B);
-          border-bottom: 2px dashed var(--peach-primary, #FF9A8B);
-          padding: 2px 4px;
-          transition: all 0.2s ease;
-        }
-
-        .polaroid:hover .return-link {
-          color: var(--peach-dark, #E86C5D);
-          border-bottom-color: var(--peach-dark, #E86C5D);
-        }
-      `}</style>
     </div>
   );
 }

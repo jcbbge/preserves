@@ -4,6 +4,7 @@ import { Show, createSignal, onMount, For } from "solid-js";
 import { usePeach } from "~/context/peach";
 import { Title } from "@solidjs/meta";
 import { createStore, produce } from "solid-js/store";
+import styles from './index.module.css';
 
 // Function to generate consistent random values based on seed
 function seededRandom(seed: string, min: number, max: number) {
@@ -519,10 +520,10 @@ export default function Home() {
   });
 
   return (
-    <div class="peach-preserve">
+    <div class={styles["peach-preserve"]}>
       <Title>Peach Preserves</Title>
 
-      <div ref={setCorkboardRef} class="corkboard">
+      <div ref={setCorkboardRef} class={styles.corkboard}>
         {/* Background polaroids */}
         <For each={polaroidPhotos}>
           {(photo) => {
@@ -545,7 +546,7 @@ export default function Home() {
             return (
               <div
                 id={`photo-${photo.id}`}
-                class="polaroid background-polaroid"
+                class={`${styles.polaroid} ${styles["background-polaroid"]}`}
                 style={{
                   transform: `translate3d(${photo.position?.x || 0}px, ${photo.position?.y || 0}px, 0) rotate(${photo.rotation || 0}deg)`,
                   "z-index": photo.zIndex || 1,
@@ -567,17 +568,17 @@ export default function Home() {
                   }
                 }}
               >
-                <div class="polaroid-image-area">
+                <div class={styles["polaroid-image-area"]}>
                   <img
                     src={photo.src}
                     alt="Polaroid photo"
-                    class="polaroid-photo"
+                    class={styles["polaroid-photo"]}
                   />
-                  <div class="polaroid-grit-overlay"></div>
+                  <div class={styles["polaroid-grit-overlay"]}></div>
                 </div>
-                <div class="polaroid-caption">
+                <div class={styles["polaroid-caption"]}>
                   <span
-                    class="polaroid-handwritten"
+                    class={styles["polaroid-handwritten"]}
                     style={{
                       display: "inline-block",
                       transform: `rotate(${textAngle}deg) translate(${textX}px, ${textY}px)`,
@@ -586,7 +587,7 @@ export default function Home() {
                     {photo.caption}
                   </span>
                   <span
-                    class="polaroid-handwritten date"
+                    class={`${styles["polaroid-handwritten"]} ${styles.date}`}
                     style={{
                       display: "inline-block",
                       transform: `rotate(${dateAngle}deg) translate(${dateX}px, ${dateY}px)`,
@@ -601,21 +602,20 @@ export default function Home() {
         </For>
 
         {/* Login container (center of screen) */}
-        <div class="login-container">
+        <div class={styles["login-container"]}>
           {/* Login polaroid */}
-          <div class="polaroid login-polaroid">
-            <div class="polaroid-image-area login-image-area">
+          <div class={`${styles.polaroid} ${styles["login-polaroid"]}`}>
+            <div class={`${styles["polaroid-image-area"]} ${styles["login-image-area"]}`}>
               <img
                 src="/peachdotcool.png"
                 alt="Peach"
-                class="login-logo"
-                style="object-position: center;"
+                class={styles["login-logo"]}
               />
-              <div class="polaroid-grit-overlay"></div>
+              <div class={styles["polaroid-grit-overlay"]}></div>
             </div>
-            <div class="polaroid-caption">
-              <form onSubmit={handleSubmit} class="login-form">
-                <div class="input-wrapper">
+            <div class={styles["polaroid-caption"]}>
+              <form onSubmit={handleSubmit} class={styles["login-form"]}>
+                <div class={styles["input-wrapper"]}>
                   <input
                     type="text"
                     id="email"
@@ -623,7 +623,7 @@ export default function Home() {
                     placeholder="email / username"
                     required
                     disabled={loading()}
-                    class="handwritten-input"
+                    class={styles["handwritten-input"]}
                   />
                   <input
                     type="password"
@@ -632,11 +632,11 @@ export default function Home() {
                     placeholder="password"
                     required
                     disabled={loading()}
-                    class="handwritten-input"
+                    class={styles["handwritten-input"]}
                   />
                 </div>
                 {error() && (
-                  <div class="error-message polaroid-handwritten">
+                  <div class={`${styles["error-message"]} ${styles["polaroid-handwritten"]}`}>
                     {error()}
                   </div>
                 )}
@@ -647,7 +647,7 @@ export default function Home() {
           {/* Connect button polaroid */}
           <button
             type="submit"
-            class="polaroid connect-polaroid"
+            class={`${styles.polaroid} ${styles["connect-polaroid"]}`}
             onClick={() =>
               document
                 .querySelector("form")
@@ -655,19 +655,19 @@ export default function Home() {
             }
             disabled={loading()}
           >
-            <div class="polaroid-image-area connect-image-area">
-              <div class="connect-photo">
+            <div class={`${styles["polaroid-image-area"]} ${styles["connect-image-area"]}`}>
+              <div class={styles["connect-photo"]}>
                 {loading() ? "Connecting..." : "Connect"}
               </div>
-              <div class="arrow-down-container">
+              <div class={styles["arrow-down-container"]}>
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
                   <path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
                 </svg>
               </div>
-              <div class="polaroid-grit-overlay"></div>
+              <div class={styles["polaroid-grit-overlay"]}></div>
             </div>
-            <div class="polaroid-caption">
-              <span class="polaroid-handwritten connect-text">
+            <div class={styles["polaroid-caption"]}>
+              <span class={`${styles["polaroid-handwritten"]} ${styles["connect-text"]}`}>
                 Connect Peach Account
               </span>
             </div>
@@ -675,313 +675,7 @@ export default function Home() {
         </div>
       </div>
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap');
 
-        :root {
-          --peach-primary: #FF9A8B;
-          --peach-secondary: #FF6B6B;
-          --peach-accent: #FFCBC1;
-          --peach-background: #FFF4F2;
-          --peach-dark: #E86C5D;
-          --text-dark: #4A3F3A;
-          --text-light: #FFFFFF;
-          --error-color: #FF4D4D;
-          --transition-duration: 300ms;
-        }
-
-        * {
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-        }
-
-        .peach-preserve {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-          font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-          background-color: #f5f0e5; /* Cork board color */
-        }
-
-        .corkboard {
-          flex: 1;
-          background-color: #f5f0e5; /* Cork board color */
-          background-image: radial-gradient(
-              rgba(160, 120, 90, 0.1) 15%,
-              transparent 16%
-            ),
-            radial-gradient(rgba(160, 120, 90, 0.1) 15%, transparent 16%);
-          background-size: 10px 10px;
-          background-position:
-            0 0,
-            5px 5px;
-          position: relative;
-          width: 100%;
-          height: 100vh;
-          overflow: hidden;
-          user-select: none;
-          touch-action: none;
-        }
-
-        /* Login container - centered */
-        .login-container {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 260px;
-          height: 350px;
-          z-index: 1000;
-          perspective: 1000px;
-        }
-
-        /* Common polaroid styling */
-        .polaroid {
-          width: 260px;
-          height: 300px;
-          background: #fff;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-          border-radius: 2px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 12px 12px 35px 12px;
-          box-sizing: border-box;
-          transition: box-shadow 0.2s;
-          transform: translate3d(0, 0, 0);
-          touch-action: none;
-        }
-
-        /* Background polaroid specific */
-        .background-polaroid {
-          position: absolute;
-          top: 0;
-          left: 0;
-          cursor: grab;
-          transform-style: preserve-3d;
-          backface-visibility: hidden;
-          touch-action: none;
-          -webkit-tap-highlight-color: transparent;
-        }
-
-        .polaroid.dragging {
-          box-shadow: 0 12px 32px rgba(0,0,0,0.28);
-          cursor: grabbing !important;
-          z-index: 1000 !important;
-          transition: none !important;
-        }
-
-        /* Removed flip styles */
-
-        /* Removed front/back styles - now using direct elements */
-
-        .polaroid-image-area {
-          width: 100%;
-          height: 220px;
-          position: relative;
-          overflow: hidden;
-          border-radius: 1px;
-          margin-bottom: 6px;
-          background: #f7f7f7;
-        }
-
-        .polaroid-photo {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .polaroid-grit-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background-image: url('data:image/svg+xml;utf8,<svg width="250" height="250" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="250" height="250" filter="url(%23noise)" opacity="0.4"/></svg>');
-          opacity: 0.1;
-          mix-blend-mode: multiply;
-          pointer-events: none;
-        }
-
-        .polaroid-caption {
-          width: 100%;
-          text-align: center;
-          height: 35px; /* Fixed small height for caption */
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding-top: 0;
-        }
-        
-        /* Specific override for login polaroid caption */
-        .login-polaroid .polaroid-caption {
-          height: auto;
-          min-height: 45px;
-          padding: 4px 0;
-        }
-
-        .polaroid-handwritten {
-          font-family: 'Caveat', cursive;
-          color: #333;
-          line-height: 1.2;
-          font-size: 1.2rem;
-        }
-
-        .polaroid-handwritten.date {
-          font-size: 0.9rem;
-          color: #666;
-        }
-
-        /* Removed back content styles */
-
-        /* Login polaroid styling */
-        .login-polaroid {
-          position: absolute;
-          transform: rotate(-3deg);
-          z-index: 20;
-          box-shadow: 0 12px 36px rgba(0,0,0,0.25);
-          padding-bottom: 0; /* Remove bottom padding for login polaroid */
-        }
-
-        .login-image-area {
-          display: flex;
-          background: var(--peach-background);
-          overflow: hidden;
-          padding: 0;
-          margin-bottom: 6px;
-          height: 210px; /* Reduced height for more caption space */
-        }
-
-        .login-logo {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          padding: 0;
-        }
-
-        .login-form {
-          width: 100%;
-          display: flex;
-          justify-content: center;
-        }
-
-        .input-wrapper {
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-          width: 90%;
-          margin: 0 auto;
-        }
-
-        .handwritten-input {
-          width: 100%;
-          padding: 0;
-          height: 22px;
-          background-color: transparent;
-          border: none;
-          border-bottom: 1px dashed #999;
-          border-radius: 0; /* Remove any rounded edges */
-          font-family: 'Caveat', cursive;
-          font-size: 1.1rem;
-          color: #333;
-          transition: border-color 0.2s;
-          margin: 0;
-          box-sizing: border-box;
-        }
-
-        .handwritten-input::placeholder {
-          color: #999;
-        }
-
-        .handwritten-input:focus {
-          outline: none;
-          border-bottom-color: var(--peach-primary);
-        }
-
-        .handwritten-input:disabled {
-          opacity: 0.7;
-        }
-
-        .error-message {
-          position: absolute;
-          bottom: -20px;
-          left: 50%;
-          transform: translateX(-50%) rotate(-1deg);
-          color: var(--error-color);
-          font-size: 0.8rem;
-          background: rgba(255, 255, 255, 0.95);
-          padding: 2px 8px;
-          border-radius: 4px;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-          white-space: nowrap;
-          max-width: 250px;
-          z-index: 30;
-        }
-
-        /* Connect button polaroid */
-        .connect-polaroid {
-          position: absolute;
-          top: 10px;
-          left: 10px;
-          transform: translateY(100px) translateX(80px) rotate(5deg);
-          z-index: 10;
-          border: none;
-          cursor: pointer;
-          background: #fff;
-          transition: transform 0.2s, box-shadow 0.2s;
-          width: 230px;
-          height: 270px;
-        }
-
-        .connect-polaroid:hover:not(:disabled) {
-          transform: translateY(100px) translateX(80px) rotate(5deg) scale(1.03);
-          box-shadow: 0 15px 30px rgba(0,0,0,0.25);
-        }
-
-        .connect-polaroid:active:not(:disabled) {
-          transform: translateY(100px) translateX(80px) rotate(5deg) scale(0.98);
-        }
-
-        .connect-polaroid:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
-
-        .connect-image-area {
-          background: linear-gradient(45deg, var(--peach-secondary), var(--peach-primary));
-        }
-
-        .connect-photo {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: 'Caveat', cursive;
-          font-size: 2rem;
-          font-weight: bold;
-          color: white;
-        }
-
-        .arrow-down-container {
-          position: absolute;
-          right: 8px;
-          bottom: 8px;
-          width: 24px;
-          height: 24px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          background-color: rgba(255, 255, 255, 0.2);
-          border-radius: 50%;
-          padding: 2px;
-        }
-
-        .connect-text {
-          font-weight: 700;
-        }
-      `}</style>
     </div>
   );
 }

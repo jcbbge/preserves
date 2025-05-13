@@ -1,0 +1,251 @@
+.canvas-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #f5f0e5; /* Cork board color */
+  background-image: radial-gradient(
+      rgba(160, 120, 90, 0.1) 15%,
+      transparent 16%
+    ),
+    radial-gradient(rgba(160, 120, 90, 0.1) 15%, transparent 16%);
+  background-size: 10px 10px;
+  background-position:
+    0 0,
+    5px 5px;
+}
+
+.photo-canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  transition: transform 0.1s ease-out;
+  min-width: 1000px;
+  min-height: 800px;
+}
+
+.polaroid {
+  position: absolute;
+  width: 280px;
+  height: 340px;
+  background: white;
+  padding: 1rem;
+  padding-bottom: 2.5rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition:
+    transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28),
+    box-shadow 0.3s ease;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  cursor: grab;
+  transform-origin: center center;
+}
+
+.polaroid:hover {
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  z-index: 10 !important;
+}
+
+.polaroid.dragging {
+  cursor: grabbing;
+  opacity: 0.8;
+  transform: scale(1.05) !important;
+  z-index: 100 !important;
+}
+
+.polaroid.pinned::before {
+  content: "📌";
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  z-index: 5;
+}
+
+.polaroid::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.06);
+  transform: scaleX(0.97);
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.polaroid-front,
+.polaroid-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  backface-visibility: hidden;
+}
+
+.polaroid-back {
+  transform: rotateY(180deg);
+}
+
+.polaroid.flipped {
+  transform: rotateY(180deg) !important;
+}
+
+.polaroid-content {
+  width: 100%;
+  height: 260px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9f9f9;
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+
+.polaroid-content img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.text-content {
+  padding: 1rem;
+  font-size: 1rem;
+  color: var(--text-dark);
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  line-height: 1.5;
+}
+
+.polaroid-caption {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0;
+  right: 0;
+  padding: 0 1rem;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-dark);
+  font-family: "Courier New", monospace;
+}
+
+.polaroid-controls {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.polaroid:hover .polaroid-controls {
+  opacity: 1;
+}
+
+.pin-button,
+.rotate-button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.pin-button:hover,
+.rotate-button:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.pin-button.pinned {
+  transform: scale(1.1);
+  color: var(--peach-primary);
+}
+
+/* Sticky note back */
+.sticky-note {
+  background-color: #fffee0;
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  font-family: "Courier New", monospace;
+}
+
+.sticky-note-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sticky-note-title {
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 1rem;
+  transform: rotate(-1deg);
+  color: var(--peach-secondary);
+}
+
+.sticky-note-text {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+
+.sticky-note-date {
+  text-align: right;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.sticky-note-comments {
+  border-top: 1px dashed var(--peach-accent);
+  padding-top: 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Canvas controls */
+.canvas-controls {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 1000;
+}
+
+.canvas-controls button {
+  background-color: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.canvas-controls button:hover {
+  background-color: var(--peach-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
