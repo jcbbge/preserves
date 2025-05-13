@@ -15,6 +15,25 @@ export function generateTransformString(
   return `translate3d(${x}px, ${y}px, 0) rotate(${rotation}deg)`;
 }
 
+/**
+ * Determine if a z-index value is within the UI element range (50-100)
+ * @param zIndex Z-index value to check
+ * @returns true if in UI element range, false if in polaroid range (0-10)
+ */
+export function isUIElementZIndex(zIndex: number): boolean {
+  return zIndex >= 50 && zIndex <= 100;
+}
+
+/**
+ * Get the highest z-index in the polaroid range (0-10)
+ * @param zIndices Array of current z-indices 
+ * @returns The highest polaroid z-index (max 9)
+ */
+export function getHighestPolaroidZIndex(zIndices: number[]): number {
+  const polaroidZIndices = zIndices.filter(z => !isUIElementZIndex(z));
+  return polaroidZIndices.length ? Math.min(9, Math.max(...polaroidZIndices)) : 0;
+}
+
 // Interface for touch-to-mouse event conversion options
 export interface TouchToMouseOptions {
   clientX: number;
@@ -99,6 +118,20 @@ export function getPhotoRotationFromStorage(id: string, storageKeyPrefix = "peac
 }
 
 /**
+ * Get a photo's z-index from localStorage
+ * @param id Photo ID
+ * @param storageKeyPrefix Prefix for the localStorage key
+ * @returns The stored z-index or null if not found
+ */
+export function getPhotoZIndexFromStorage(id: string, storageKeyPrefix = "peach_preserves_login_") {
+  if (typeof window === "undefined") return null;
+  const stored = localStorage.getItem(
+    `${storageKeyPrefix}photo_${id}_zindex`,
+  );
+  return stored ? parseInt(stored, 10) : null;
+}
+
+/**
  * Save a photo's position to localStorage
  * @param id Photo ID
  * @param position Position object with x and y coordinates
@@ -139,6 +172,28 @@ export function savePhotoRotationToStorage(
     );
   } catch (err) {
     console.error("[UTILS] Error saving rotation:", err);
+  }
+}
+
+/**
+ * Save a photo's z-index to localStorage
+ * @param id Photo ID
+ * @param zIndex Z-index value
+ * @param storageKeyPrefix Prefix for the localStorage key
+ */
+export function savePhotoZIndexToStorage(
+  id: string,
+  zIndex: number,
+  storageKeyPrefix = "peach_preserves_login_"
+) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(
+      `${storageKeyPrefix}photo_${id}_zindex`,
+      zIndex.toString(),
+    );
+  } catch (err) {
+    console.error("[UTILS] Error saving z-index:", err);
   }
 }
 
@@ -198,6 +253,7 @@ export function preprocessPolaroidPhotos(
   imageData.forEach((image, index) => {
     const storedPosition = getPhotoPositionFromStorage(image.id, storageKeyPrefix);
     const storedRotation = getPhotoRotationFromStorage(image.id, storageKeyPrefix);
+    const storedZIndex = getPhotoZIndexFromStorage(image.id, storageKeyPrefix);
     
     // Use predefined positions or fallback to calculated position
     const predefinedPosition = predefinedPositions[image.id];
@@ -215,11 +271,16 @@ export function preprocessPolaroidPhotos(
     // Use small random rotation for natural look
     const rotation = storedRotation || seededRandom(image.id, -10, 10);
 
+    // Use stored z-index or default, keeping within the 0-10 range for photos
+    // We map the photo index to a value between 0-10, with higher indices getting lower z-index values
+    const defaultZIndex = Math.max(0, Math.min(9, 9 - Math.floor((index / imageData.length) * 10)));
+    const zIndex = storedZIndex || defaultZIndex;
+
     photos.push({
       ...image,
       position: { x, y },
       rotation,
-      zIndex: imageData.length - index,
+      zIndex,
       // No flip state
     });
   });

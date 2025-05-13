@@ -12,8 +12,11 @@ import {
   getPhotoPositionFromStorage,
   getPhotoRotationFromStorage,
   savePhotoPositionToStorage,
+  savePhotoRotationToStorage,
+  savePhotoZIndexToStorage,
   touchToMouseEvent,
-  generateTransformString
+  generateTransformString,
+  getHighestPolaroidZIndex
 } from "~/utils/photoUtils";
 import { PolaroidPhoto } from "~/types/polaroid";
 
@@ -335,8 +338,10 @@ export default function Home() {
     // Enable GPU acceleration
     element.style.willChange = "transform";
 
-    // Bring to front
-    const newZIndex = Math.max(...polaroidPhotos.map((p) => p.zIndex || 0)) + 1;
+    // Bring to front, but stay within polaroid range (0-9)
+    const currentZIndices = polaroidPhotos.map((p) => p.zIndex || 0);
+    const highestPolaroidZIndex = getHighestPolaroidZIndex(currentZIndices);
+    const newZIndex = Math.min(9, highestPolaroidZIndex + 1);
 
     // Update z-index in store
     setPolaroidPhotos(
@@ -345,6 +350,9 @@ export default function Home() {
         photo.zIndex = newZIndex;
       }),
     );
+    
+    // Save z-index to localStorage
+    savePhotoZIndexToStorage(id, newZIndex, storageKeyPrefix);
   };
 
   // Handle drag movement
@@ -412,8 +420,14 @@ export default function Home() {
       }),
     );
 
-    // Save to localStorage
+    // Save position and rotation to localStorage
     savePhotoPositionToStorage(id, { x, y }, storageKeyPrefix);
+    
+    // Get the current rotation value from the store
+    const photo = polaroidPhotos.find(p => p.id === id);
+    if (photo?.rotation) {
+      savePhotoRotationToStorage(id, photo.rotation, storageKeyPrefix);
+    }
   };
 
   // Add mouse and touch event listeners
@@ -515,9 +529,9 @@ export default function Home() {
         </For>
 
         {/* Login container (center of screen) */}
-        <div class={styles["login-container"]}>
+        <div class={styles["login-container"]} style={{ "z-index": 60 }}>
           {/* Login polaroid */}
-          <div class={`${styles.polaroid} ${styles["login-polaroid"]}`}>
+          <div class={`${styles.polaroid} ${styles["login-polaroid"]}`} style={{ "z-index": 70 }}>
             <div
               class={`${styles["polaroid-image-area"]} ${styles["login-image-area"]}`}
             >
@@ -565,6 +579,7 @@ export default function Home() {
           <button
             type="submit"
             class={`${styles.polaroid} ${styles["connect-polaroid"]}`}
+            style={{ "z-index": 55 }}
             onClick={() =>
               document
                 .querySelector("form")
