@@ -18,7 +18,7 @@ Peach Preserves is a SolidJS application built with SolidStart that allows users
 ### Framework & Libraries
 
 - **SolidJS**: Core reactive framework
-- **SolidStart**: Full-stack framework for SolidJS 
+- **SolidStart**: Full-stack framework for SolidJS
 - **Vinxi**: The underlying meta-framework
 - **SolidJS Router**: For route handling
 - **Solid DnD**: Drag and drop functionality for the photo canvas
@@ -58,7 +58,7 @@ Peach Preserves is a SolidJS application built with SolidStart that allows users
 
 - **Imports**: Group imports by external libraries, then internal modules using path alias `~/`
 - **Types**: Use TypeScript strictly - define interfaces for props, context values, and API responses
-- **Naming**: 
+- **Naming**:
   - SolidJS components: PascalCase (e.g., `PhotoCanvas.tsx`)
   - Functions/variables: camelCase
   - Files: PascalCase for components (.tsx), lowercase for other files
@@ -93,7 +93,7 @@ Peach Preserves is a SolidJS application built with SolidStart that allows users
    ```typescript
    // Create context
    const MyContext = createContext<MyContextValue>();
-   
+
    // Provider component
    export function MyProvider(props: { children: JSX.Element }) {
      // State and functions
@@ -104,7 +104,7 @@ Peach Preserves is a SolidJS application built with SolidStart that allows users
        </MyContext.Provider>
      );
    }
-   
+
    // Consumer hook
    export const useMyContext = () => {
      const context = useContext(MyContext);
@@ -120,7 +120,7 @@ Peach Preserves is a SolidJS application built with SolidStart that allows users
    // Store with user-specific key
    const storageKey = `peach_preserves_${username}_${dataType}`;
    localStorage.setItem(storageKey, JSON.stringify(data));
-   
+
    // Read with error handling
    try {
      const stored = localStorage.getItem(storageKey);
@@ -130,3 +130,60 @@ Peach Preserves is a SolidJS application built with SolidStart that allows users
      return defaultValue;
    }
    ```
+
+   # Claude Guidelines
+
+## Core Principles
+
+This document contains the primary instructions and guidelines for Claude when working on this project. These instructions are always applied and should be kept concise, conflict-free, and focused on the most important patterns.
+
+---
+
+## How to Work With This Codebase
+
+### Understanding Context
+- Always analyze the current file structure and existing patterns before suggesting changes
+- Read relevant documentation in the `/ai/patterns` directory for domain-specific guidance
+- Respect established naming conventions and architectural decisions
+
+### Code Generation
+- Prioritize readability over cleverness
+- Follow existing patterns in the codebase
+- Include helpful comments explaining complex logic
+- Generate code that aligns with our accessibility requirements
+
+### Problem Solving
+- First understand the problem completely before proposing solutions
+- Consider edge cases and error states
+- Suggest tests for any new functionality
+- Make trade-offs explicit when proposing a solution
+
+---
+
+## Project Specifics
+
+### Architecture
+
+* This is where you define the core architecture concepts of your project
+
+### Data Flow
+
+* Document the primary data flows here
+
+### Coding Patterns
+
+* Document key coding patterns here
+
+---
+
+## AI Assistance Meta-Instructions
+
+### Documentation Management
+- Keep this file focused and concise
+- Use links to reference detailed patterns rather than including everything here
+- Support `#tag-based` references for specific sections of patterns
+
+### Metadata
+- Last Updated: 2025-05-12
+- Version: 1.0
+- Last Revision Reason: Initial setup

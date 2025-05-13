@@ -550,78 +550,98 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Download progress modal */}
+            {/* Download progress modal - Polaroid style */}
             {(exportContext.exportData.status === "exporting" ||
               exportContext.exportData.status === "preparing") && (
               <div class="download-progress" role="region" aria-live="polite">
-                <div class="progress-container">
-                  <div class="progress-header">
-                    <h3>Downloading Your Peach Data</h3>
+                <div class="polaroid progress-polaroid">
+                  <div class="polaroid-image-area">
+                    <div class="polaroid-photo progress-content">
+                      <div class="progress-header">
+                        <h3>Downloading Your Peach Data</h3>
+                      </div>
+
+                      <div class="progress-details">
+                        <div class="progress-activity">
+                          {exportContext.exportData.progress.currentActivity}
+                        </div>
+
+                        <div class="progress-bar-wrapper">
+                          <div
+                            class="progress-bar"
+                            style={{
+                              width: `${exportContext.exportData.progress.percentage}%`,
+                            }}
+                            role="progressbar"
+                            aria-valuenow={
+                              exportContext.exportData.progress.percentage
+                            }
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                          ></div>
+                        </div>
+
+                        <div class="progress-stats">
+                          <span class="progress-percentage">
+                            {Math.round(
+                              exportContext.exportData.progress.percentage,
+                            )}
+                            %
+                          </span>
+                          {exportContext.exportData.progress.completedItems > 0 && (
+                            <span class="progress-count">
+                              {exportContext.exportData.progress.completedItems} /{" "}
+                              {exportContext.exportData.progress.totalItems}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="polaroid-grit-overlay" />
                   </div>
-
-                  <div class="progress-details">
-                    <div class="progress-activity">
-                      {exportContext.exportData.progress.currentActivity}
-                    </div>
-
-                    <div class="progress-bar-wrapper">
-                      <div
-                        class="progress-bar"
-                        style={{
-                          width: `${exportContext.exportData.progress.percentage}%`,
-                        }}
-                        role="progressbar"
-                        aria-valuenow={
-                          exportContext.exportData.progress.percentage
-                        }
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      ></div>
-                    </div>
-
-                    <div class="progress-stats">
-                      <span class="progress-percentage">
-                        {Math.round(
-                          exportContext.exportData.progress.percentage,
-                        )}
-                        %
-                      </span>
-                      {exportContext.exportData.progress.completedItems > 0 && (
-                        <span class="progress-count">
-                          {exportContext.exportData.progress.completedItems} /{" "}
-                          {exportContext.exportData.progress.totalItems}
-                        </span>
-                      )}
+                  <div class="polaroid-caption">
+                    <div class="caption-content">
+                      <span class="polaroid-handwritten">Preserving your peaches</span>
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Error modal - Shows when export status is error */}
+            {/* Error modal - Shows when export status is error - Polaroid style */}
             {exportContext.exportData.status === "error" &&
               exportContext.exportData.error && (
                 <div class="error-modal">
-                  <div class="error-container">
-                    <div class="error-header">
-                      <h3>Download Failed</h3>
+                  <div class="polaroid error-polaroid">
+                    <div class="polaroid-image-area">
+                      <div class="polaroid-photo error-content">
+                        <div class="error-header">
+                          <h3>Download Failed</h3>
+                        </div>
+                        <div class="error-message">
+                          {exportContext.exportData.error.message}
+                        </div>
+                        <div class="error-actions">
+                          <button
+                            onClick={() => exportContext.retryExport()}
+                            class="retry-button"
+                          >
+                            Try Again
+                          </button>
+                          <button
+                            onClick={() => exportContext.resetExport()}
+                            class="cancel-button"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                      <div class="polaroid-grit-overlay" />
                     </div>
-                    <div class="error-message">
-                      {exportContext.exportData.error.message}
-                    </div>
-                    <div class="error-actions">
-                      <button
-                        onClick={() => exportContext.retryExport()}
-                        class="retry-button"
-                      >
-                        Try Again
-                      </button>
-                      <button
-                        onClick={() => exportContext.resetExport()}
-                        class="cancel-button"
-                      >
-                        Cancel
-                      </button>
+                    <div class="polaroid-caption">
+                      <div class="caption-content">
+                        <span class="polaroid-handwritten">Oops! Something went wrong</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -958,7 +978,7 @@ export default function Dashboard() {
           animation: pulse 1s infinite alternate;
         }
 
-        /* Download progress modal */
+        /* Download progress modal - Polaroid style */
         .download-progress {
           position: fixed;
           top: 50%;
@@ -974,51 +994,65 @@ export default function Dashboard() {
           animation: fadeIn 0.3s ease-out;
         }
 
-        .progress-container {
-          width: 90%;
-          max-width: 450px;
-          background: white;
-          border-radius: 8px;
-          padding: 1.5rem;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-          animation: slideIn 0.4s ease-out;
+        .progress-polaroid {
+          width: 280px;
+          height: 350px;
+          transform: rotate(-2deg) !important;
+          animation: dropIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .progress-content {
+          display: flex !important;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background-color: #f8f6f1 !important;
+          padding: 15px;
+          overflow: visible !important;
+          max-width: initial !important;
+          max-height: initial !important;
         }
 
         .progress-header {
-          margin-bottom: 1.5rem;
+          margin-bottom: 1.2rem;
           text-align: center;
         }
 
         .progress-header h3 {
           color: var(--peach-secondary);
-          font-size: 1.5rem;
+          font-size: 1.2rem;
           margin: 0;
+          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
         }
 
         .progress-details {
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          gap: 0.8rem;
+          width: 100%;
         }
 
         .progress-activity {
           text-align: center;
-          font-size: 0.9rem;
+          font-size: 0.85rem;
           color: #666;
           min-height: 1.4em;
+          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
+          margin-bottom: 5px;
         }
 
         .progress-bar-wrapper {
-          height: 12px;
+          height: 10px;
           background-color: #f0f0f0;
-          border-radius: 6px;
+          border-radius: 5px;
           overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1) inset;
         }
 
         .progress-bar {
           height: 100%;
           background-color: var(--peach-primary);
-          border-radius: 6px;
+          border-radius: 5px;
           transition: width 0.3s ease;
         }
 
@@ -1027,9 +1061,16 @@ export default function Dashboard() {
           justify-content: space-between;
           font-size: 0.8rem;
           color: #666;
+          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
+          font-size: 1rem;
         }
 
-        /* Error modal */
+        .caption-content {
+          width: 100%;
+          text-align: center;
+        }
+
+        /* Error modal - Polaroid style */
         .error-modal {
           position: fixed;
           top: 50%;
@@ -1045,14 +1086,23 @@ export default function Dashboard() {
           animation: fadeIn 0.3s ease-out;
         }
 
-        .error-container {
-          width: 90%;
-          max-width: 450px;
-          background: white;
-          border-radius: 8px;
-          padding: 1.5rem;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-          animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        .error-polaroid {
+          width: 280px;
+          height: 350px;
+          transform: rotate(3deg) !important;
+          animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both, dropIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .error-content {
+          display: flex !important;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background-color: #fff8f8 !important; /* Subtle red tint */
+          padding: 15px;
+          overflow: visible !important;
+          max-width: initial !important;
+          max-height: initial !important;
         }
 
         .error-header {
@@ -1062,8 +1112,9 @@ export default function Dashboard() {
 
         .error-header h3 {
           color: #e74c3c;
-          font-size: 1.5rem;
+          font-size: 1.2rem;
           margin: 0;
+          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
         }
 
         .error-message {
@@ -1072,21 +1123,26 @@ export default function Dashboard() {
           color: #333;
           font-size: 0.95rem;
           line-height: 1.5;
+          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
+          font-size: 1.1rem;
         }
 
         .error-actions {
           display: flex;
           justify-content: center;
           gap: 1rem;
+          width: 100%;
         }
 
         .retry-button, .cancel-button {
-          padding: 0.75rem 1.5rem;
+          padding: 0.6rem 1.2rem;
           border: none;
           border-radius: 4px;
           font-weight: bold;
           cursor: pointer;
           transition: all 0.2s ease;
+          font-family: 'Caveat', 'Segoe UI', Arial, sans-serif;
+          font-size: 1.1rem;
         }
 
         .retry-button {

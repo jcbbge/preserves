@@ -61,228 +61,127 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
     }
   };
 
-  // Set up drag handling - basic implementation
+  // Drag state
   let draggedPhoto: string | null = null;
-  let dragOffsetX = 0;
-  let dragOffsetY = 0;
+  let initialMouseX = 0;
+  let initialMouseY = 0;
+  let initialElementX = 0;
+  let initialElementY = 0;
 
   const handleDragStart = (id: string, e: MouseEvent) => {
-    // First, check if we're already dragging a photo
-    if (draggedPhoto) {
-      console.log(`Already dragging photo ${draggedPhoto}, ignoring new drag attempt`);
-      return;
-    }
+    e.preventDefault();
+    e.stopPropagation();
 
-    // Add diagnostic logging
-    console.log(`Attempting to drag photo ${id}`);
+    // Ignore if already dragging
+    if (draggedPhoto) return;
 
+    // Find photo data
     const photo = props.photos.find(p => p.id === id);
-    if (!photo) {
-      console.log(`Photo with ID ${id} not found in props.photos`);
-      return;
-    }
+    if (!photo) return;
 
-    // Check if this photo is at the top of the stack
-    const isTopPhoto = isPhotoOnTop(id);
-    console.log(`Photo ${id} is ${isTopPhoto ? '' : 'not '}on top of stack`);
+    // Get element
+    const element = document.getElementById(`photo-${id}`);
+    if (!element) return;
 
-    if (isTopPhoto) {
-      // Mark as dragging immediately
-      draggedPhoto = id;
+    // Get actual element position (as rendered)
+    const rect = element.getBoundingClientRect();
 
-      // Get positioning information - make sure we use the exact photo element
-      const photoElement = document.getElementById(`photo-${id}`);
-      if (!photoElement) {
-        console.log(`DOM element for photo ${id} not found`);
-        draggedPhoto = null;
-        return;
-      }
+    // Remember initial mouse and element positions
+    initialMouseX = e.clientX;
+    initialMouseY = e.clientY;
+    initialElementX = rect.left;
+    initialElementY = rect.top;
 
-      const rect = photoElement.getBoundingClientRect();
+    // Start tracking this photo
+    draggedPhoto = id;
 
-      // Calculate offset within the element
-      dragOffsetX = e.clientX - rect.left;
-      dragOffsetY = e.clientY - rect.top;
+    // Visual feedback
+    element.classList.add("dragging");
 
-      console.log(`Drag started for photo ${id} at offset (${dragOffsetX}, ${dragOffsetY})`);
-
-      // Add dragging class for visual feedback
-      photoElement.classList.add('dragging');
-
-      // Calculate new z-index - ensure it's higher than all others
-      const maxZIndex = Math.max(...props.photos.map(p => p.zIndex || 0)) + 1;
-      console.log(`Setting z-index to ${maxZIndex} for photo ${id}`);
-      photoElement.style.zIndex = maxZIndex.toString();
-
-      // Add GPU hint for better performance during drag
-      photoElement.style.willChange = 'transform';
-
-      // Prevent default browser actions
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  };
-
-  // Helper function to check if a photo is on top of the stack
-  const isPhotoOnTop = (id: string): boolean => {
-    // Get the clicked photo
-    const photo = props.photos.find(p => p.id === id);
-    if (!photo) return false;
-
-    // Get photo element bounds
-    const photoElement = document.getElementById(`photo-${id}`);
-    if (!photoElement) return false;
-
-    // Get z-index of the current photo (use actual DOM z-index if available)
-    const photoZIndex = parseInt(photoElement.style.zIndex || '0') || (photo.zIndex || 0);
-
-    // For the point of click, check if any other photo covers it
-    const rect = photoElement.getBoundingClientRect();
-
-    // Use the event point for more accurate detection
-    // Define a grid of 9 points on the element to check coverage
-    const points = [
-      { x: rect.left + rect.width * 0.5, y: rect.top + rect.height * 0.5 },  // Center
-      { x: rect.left + rect.width * 0.25, y: rect.top + rect.height * 0.25 }, // Top left area
-      { x: rect.left + rect.width * 0.75, y: rect.top + rect.height * 0.25 }, // Top right area
-      { x: rect.left + rect.width * 0.25, y: rect.top + rect.height * 0.75 }, // Bottom left area
-      { x: rect.left + rect.width * 0.75, y: rect.top + rect.height * 0.75 }  // Bottom right area
-    ];
-
-    // Check coverage for all points - if ANY point is uncovered, the photo is draggable
-    let somePointUncovered = false;
-
-    // For each test point
-    pointLoop: for (const point of points) {
-      let pointCovered = false;
-
-      // Check all other photos to see if they cover this point
-      for (const otherPhoto of props.photos) {
-        // Skip self
-        if (otherPhoto.id === id) continue;
-
-        const otherElement = document.getElementById(`photo-${otherPhoto.id}`);
-        if (otherElement) {
-          // Get actual DOM z-index if available, otherwise fall back to photo data
-          const otherZIndex = parseInt(otherElement.style.zIndex || '0') || (otherPhoto.zIndex || 0);
-
-          // Only check if the other photo is above this one
-          if (otherZIndex > photoZIndex) {
-            const otherRect = otherElement.getBoundingClientRect();
-
-            // Check if point is inside the other photo
-            if (point.x >= otherRect.left && point.x <= otherRect.right &&
-                point.y >= otherRect.top && point.y <= otherRect.bottom) {
-              pointCovered = true;
-              break; // This point is covered, move to next point
-            }
-          }
-        }
-      }
-
-      // If this point isn't covered by any photo, the photo is draggable
-      if (!pointCovered) {
-        somePointUncovered = true;
-        break pointLoop;
-      }
-    }
-
-    return somePointUncovered;
+    // Bring to front
+    const maxZIndex = Math.max(...props.photos.map(p => p.zIndex || 0)) + 1;
+    element.style.zIndex = maxZIndex.toString();
+    
+    // Enable GPU acceleration
+    element.style.willChange = "transform";
   };
 
   const handleDragMove = (e: MouseEvent) => {
     if (!draggedPhoto) return;
 
-    // Check if the mouse button is still pressed (for safety)
+    // Safety check for mouse release
     if (e.buttons === 0) {
-      console.log('Mouse button released outside element, ending drag');
       handleDragEnd(e);
       return;
     }
 
+    // Calculate how much the mouse has moved
+    const deltaX = e.clientX - initialMouseX;
+    const deltaY = e.clientY - initialMouseY;
+
+    // Get element
+    const element = document.getElementById(`photo-${draggedPhoto}`);
+    if (!element) return;
+
+    // Get photo data for rotation
+    const photo = props.photos.find(p => p.id === draggedPhoto);
+    if (!photo) return;
+
+    // Calculate the current board position
+    const boardRect = corkboardRef()?.getBoundingClientRect() || { left: 0, top: 0 };
+    
+    // Calculate position relative to board
+    const boardX = initialElementX - boardRect.left + deltaX;
+    const boardY = initialElementY - boardRect.top + deltaY;
+
+    // Apply transform directly for smooth motion
+    element.style.transform = `translate(${boardX}px, ${boardY}px) rotate(${photo.rotation || 0}deg)`;
+  };
+
+  const handleDragEnd = (e: MouseEvent) => {
+    if (!draggedPhoto) return;
+
+    // Get photo data
     const photo = props.photos.find(p => p.id === draggedPhoto);
     if (!photo) {
-      console.log(`Photo with ID ${draggedPhoto} not found during drag move`);
       draggedPhoto = null;
       return;
     }
 
-    const board = corkboardRef();
-    if (!board) {
-      console.log('Board reference not found during drag move');
+    // Get element
+    const element = document.getElementById(`photo-${draggedPhoto}`);
+    if (!element) {
+      draggedPhoto = null;
       return;
     }
 
-    const boardRect = board.getBoundingClientRect();
-    const x = e.clientX - boardRect.left - dragOffsetX;
-    const y = e.clientY - boardRect.top - dragOffsetY;
+    // Calculate how much the mouse has moved
+    const deltaX = e.clientX - initialMouseX;
+    const deltaY = e.clientY - initialMouseY;
 
-    // Update position in real-time with hardware acceleration
-    const photoElement = document.getElementById(`photo-${draggedPhoto}`);
-    if (photoElement) {
-      // Apply the transform directly without any interpolation
-      photoElement.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${photo.rotation || 0}deg)`;
+    // Calculate board position
+    const boardRect = corkboardRef()?.getBoundingClientRect() || { left: 0, top: 0 };
+    const boardX = initialElementX - boardRect.left + deltaX;
+    const boardY = initialElementY - boardRect.top + deltaY;
 
-      // Make sure the dragging class is applied
-      if (!photoElement.classList.contains('dragging')) {
-        photoElement.classList.add('dragging');
-      }
-    } else {
-      console.log(`DOM element for photo ${draggedPhoto} not found during drag move`);
-    }
+    // Store id before resetting drag state
+    const draggedId = draggedPhoto;
+    draggedPhoto = null;
+
+    // Finish visual changes
+    element.classList.remove("dragging");
+    element.style.willChange = "auto";
+
+    // Notify parent of the move with final position
+    props.onPhotoMove(draggedId, { x: boardX, y: boardY });
   };
 
-  const handleDragEnd = (e: MouseEvent) => {
-    if (draggedPhoto) {
-      const photo = props.photos.find(p => p.id === draggedPhoto);
-      const board = corkboardRef();
-
-      if (photo && board) {
-        const boardRect = board.getBoundingClientRect();
-        const x = e.clientX - boardRect.left - dragOffsetX;
-        const y = e.clientY - boardRect.top - dragOffsetY;
-
-        // Get the element before we lose the reference
-        const photoElement = document.getElementById(`photo-${draggedPhoto}`);
-
-        // Keep the current transform to avoid flashing
-        if (photoElement) {
-          // Don't modify the element's transform yet - keep it exactly where it is
-          photoElement.classList.remove('dragging');
-        }
-
-        // Store the id for use in callbacks
-        const draggedId = draggedPhoto;
-        draggedPhoto = null;
-
-        // Use a microtask to update the state without visible flash
-        // This ensures the change happens in a single paint cycle
-        queueMicrotask(() => {
-          // Send final position to parent
-          props.onPhotoMove(draggedId, { x, y });
-
-          // Handle any cleanup that might affect visuals in the next frame
-          requestAnimationFrame(() => {
-            const element = document.getElementById(`photo-${draggedId}`);
-            if (element) {
-              // Now we can reset will-change
-              element.style.willChange = 'auto';
-            }
-          });
-        });
-      } else {
-        // If we don't have photo/board, just clean up
-        draggedPhoto = null;
-      }
-    }
-  };
-
-  // Handle touch events similarly to mouse events
+  // Handle touch events
   const handleTouchStart = (id: string, e: TouchEvent) => {
-    e.preventDefault(); // Prevent scrolling
-    
     if (e.touches.length === 1) {
-      // Convert touch to equivalent mouse event
+      e.preventDefault(); // Prevent scrolling
+      
+      // Convert touch to mouse event
       const touch = e.touches[0];
       const mouseEvent = new MouseEvent('mousedown', {
         clientX: touch.clientX,
@@ -292,16 +191,15 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
         view: window
       }) as any;
       
-      // Pass to existing mouse handler
       handleDragStart(id, mouseEvent);
     }
   };
   
   const handleTouchMove = (e: TouchEvent) => {
-    e.preventDefault(); // Prevent scrolling
-    
     if (e.touches.length === 1 && draggedPhoto) {
-      // Convert touch to equivalent mouse event
+      e.preventDefault(); // Prevent scrolling
+      
+      // Convert touch to mouse event
       const touch = e.touches[0];
       const mouseEvent = new MouseEvent('mousemove', {
         clientX: touch.clientX,
@@ -312,16 +210,15 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
         buttons: 1 // Simulate left button pressed
       }) as any;
       
-      // Pass to existing mouse handler
       handleDragMove(mouseEvent);
     }
   };
   
   const handleTouchEnd = (e: TouchEvent) => {
-    e.preventDefault(); // Prevent scrolling behavior
-    
     if (draggedPhoto) {
-      // Use the last touch position for the end event
+      e.preventDefault(); // Prevent scrolling behavior
+      
+      // Use the last touch position
       const lastTouch = e.changedTouches[0];
       const mouseEvent = new MouseEvent('mouseup', {
         clientX: lastTouch.clientX,
@@ -331,12 +228,11 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
         view: window
       }) as any;
       
-      // Pass to existing mouse handler
       handleDragEnd(mouseEvent);
     }
   };
 
-  // Set up event listeners for both mouse and touch
+  // Set up event listeners
   onMount(() => {
     const board = corkboardRef();
     if (board) {
@@ -351,50 +247,14 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
       board.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 
       return () => {
-        // Remove mouse events
+        // Clean up
         board.removeEventListener('mousemove', handleDragMove);
         board.removeEventListener('mouseup', handleDragEnd);
         board.removeEventListener('mouseleave', handleDragEnd);
-        
-        // Remove touch events
         board.removeEventListener('touchmove', handleTouchMove);
         board.removeEventListener('touchend', handleTouchEnd);
         board.removeEventListener('touchcancel', handleTouchEnd);
       };
-    }
-  });
-
-  // Scatter photos on first render
-  const scatterPhotos = () => {
-    props.photos.forEach((photo, index) => {
-      // Only scatter if position isn't already set
-      if (!photo.position || (photo.position.x === 0 && photo.position.y === 0)) {
-        const boardWidth = window.innerWidth * 0.9;
-        const boardHeight = window.innerHeight * 0.8;
-
-        const centerX = boardWidth / 2;
-        const centerY = boardHeight / 2;
-
-        // Random position in a circular pattern around center
-        const angle = Math.random() * Math.PI * 2;
-        const distance = Math.random() * 200 + 50;
-
-        const x = centerX + Math.cos(angle) * distance;
-        const y = centerY + Math.sin(angle) * distance;
-
-        props.onPhotoMove(photo.id, { x, y });
-      }
-    });
-  };
-
-  onMount(() => {
-    // If we have new photos without positions, scatter them
-    const needsPositioning = props.photos.some(p =>
-      !p.position || (p.position.x === 0 && p.position.y === 0)
-    );
-
-    if (needsPositioning) {
-      setTimeout(scatterPhotos, 500); // Slight delay to ensure DOM is ready
     }
   });
 
@@ -405,7 +265,7 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
     >
       <Show when={props.photos.length === 0}>
         <div class="no-photos">
-          <p>No memories found yet.</p>
+          <p>No photos found yet.</p>
         </div>
       </Show>
 
@@ -491,8 +351,13 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
                     transform: `rotate(${randomAngleDate}deg) translate(${randomXDate}px, ${randomYDate}px)`
                   }}
                 >
-                  {new Date(photo.createdTime * 1000).toLocaleDateString()}
+                  {new Date(photo.createdTime).toLocaleDateString()}
                 </span>
+              </div>
+              <div class="polaroid-actions">
+                <button class="polaroid-action flip-btn" onClick={(e) => handleFlip(photo.id, e)}>↺</button>
+                <button class="polaroid-action rotate-btn" onClick={(e) => handleRotate(photo.id, e)}>⟳</button>
+                <button class={`polaroid-action pin-btn ${photo.isPinned ? 'active' : ''}`} onClick={(e) => handlePin(photo.id, e)}>📌</button>
               </div>
             </div>
           );
@@ -531,6 +396,23 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
           transition: none !important;
           cursor: grabbing;
         }
+        .polaroid.pinned {
+          box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+        }
+        .polaroid.pinned:before {
+          content: '';
+          position: absolute;
+          top: 10px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 16px;
+          height: 16px;
+          background: #cc0000;
+          border-radius: 50%;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          z-index: 3;
+        }
+        
         .polaroid-image-area {
           position: relative;
           width: 196px;
@@ -613,6 +495,49 @@ export function SimplePhotoCanvas(props: SimplePhotoCanvasProps) {
           pointer-events: none;
           overflow: visible;
           max-width: 180px;
+        }
+        
+        .polaroid-actions {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          opacity: 0;
+          transition: opacity 0.2s;
+          z-index: 5;
+        }
+        
+        .polaroid:hover .polaroid-actions {
+          opacity: 1;
+        }
+        
+        .polaroid-action {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.8);
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+          transition: transform 0.1s, background-color 0.2s;
+        }
+        
+        .polaroid-action:hover {
+          background: rgba(255,255,255,0.95);
+          transform: scale(1.1);
+        }
+        
+        .polaroid-action:active {
+          transform: scale(0.95);
+        }
+        
+        .polaroid-action.active {
+          background: rgba(255, 220, 100, 0.9);
         }
 
         .no-photos {
