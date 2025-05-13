@@ -3,7 +3,7 @@ export const stockImages = [
   {
     id: "stock1",
     src: "/login_images/post_3f2f3114_img_00.jpg",
-    caption: "Summer vacation 2022",
+    caption: "What meow?",
     date: "07/15/2022",
   },
   {
@@ -15,7 +15,7 @@ export const stockImages = [
   {
     id: "stock3",
     src: "/login_images/post_5d89f6b9_img_02.jpg",
-    caption: "Weekend getaway",
+    caption: "Breakfast for Dinner",
     date: "06/10/2022",
   },
   {
@@ -27,7 +27,7 @@ export const stockImages = [
   {
     id: "stock5",
     src: "/login_images/post_6fc8c951_img_03.jpg",
-    caption: "Missing this view",
+    caption: "What it do?",
     date: "09/18/2022",
   },
   {
@@ -39,13 +39,13 @@ export const stockImages = [
   {
     id: "stock7",
     src: "/login_images/post_78512145_img_00.jpg",
-    caption: "My new plant baby",
+    caption: "Biscuits are in the basket.",
     date: "02/14/2022",
   },
   {
     id: "stock8",
     src: "/login_images/post_7e85815f_img_00.jpg",
-    caption: "The perfect coffee",
+    caption: "The purrfect coffee doesn't exist",
     date: "08/21/2022",
   },
   {
@@ -57,19 +57,19 @@ export const stockImages = [
   {
     id: "stock10",
     src: "/login_images/post_c096b3d9_img_06.jpg",
-    caption: "Exploring downtown",
+    caption: "Pupper power activate!",
     date: "10/12/2022",
   },
   {
     id: "stock11",
     src: "/login_images/post_ce1bf6e5_img_10.jpg",
-    caption: "Fresh baked cookies",
+    caption: "Fresh baked cookies?",
     date: "12/24/2022",
   },
   {
     id: "stock12",
     src: "/login_images/post_da12f6c5_img_00.jpg",
-    caption: "Sunset walks",
+    caption: "chorped",
     date: "07/07/2022",
   },
   {
