@@ -5,16 +5,19 @@ import { usePeach } from "~/context/peach";
 import { Title } from "@solidjs/meta";
 import { createStore, produce } from "solid-js/store";
 import styles from "./index.module.css";
+import { 
+  preprocessPolaroidPhotos, 
+  seededRandom, 
+  generatePolaroidStyles,
+  getPhotoPositionFromStorage,
+  getPhotoRotationFromStorage,
+  savePhotoPositionToStorage,
+  touchToMouseEvent,
+  generateTransformString
+} from "~/utils/photoUtils";
+import { PolaroidPhoto } from "~/types/polaroid";
 
-// Function to generate consistent random values based on seed
-function seededRandom(seed: string, min: number, max: number) {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) {
-    h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
-  }
-  const x = Math.abs(Math.sin(h) * 10000) % 1;
-  return min + x * (max - min);
-}
+
 
 // Server action for login - handles API call server-side to avoid CORS
 const connect = query(async (formData: FormData) => {
@@ -164,17 +167,7 @@ const stockImages = [
   },
 ];
 
-// Polaroid photo interface
-interface PolaroidPhoto {
-  id: string;
-  src: string;
-  caption: string;
-  date: string;
-  position?: { x: number; y: number };
-  rotation?: number;
-  zIndex?: number;
-  flipped?: boolean;
-}
+
 
 export default function Home() {
   const navigate = useNavigate();
@@ -212,14 +205,10 @@ export default function Home() {
   // Storage key for persistable state
   const storageKeyPrefix = "peach_preserves_login_";
 
-  // Helper functions for localStorage
+  // Use localStorage helper functions
   const getStoredPhotoPosition = (id: string) => {
-    if (typeof window === "undefined") return null;
     try {
-      const stored = localStorage.getItem(
-        `${storageKeyPrefix}photo_${id}_position`,
-      );
-      return stored ? JSON.parse(stored) : null;
+      return getPhotoPositionFromStorage(id, storageKeyPrefix);
     } catch (e) {
       console.error("[LOGIN] Error loading stored photo position:", e);
       return null;
@@ -227,54 +216,22 @@ export default function Home() {
   };
 
   const getStoredPhotoRotation = (id: string) => {
-    if (typeof window === "undefined") return null;
-    const stored = localStorage.getItem(
-      `${storageKeyPrefix}photo_${id}_rotation`,
-    );
-    return stored ? parseFloat(stored) : null;
+    try {
+      return getPhotoRotationFromStorage(id, storageKeyPrefix);
+    } catch (e) {
+      console.error("[LOGIN] Error loading stored photo rotation:", e);
+      return null;
+    }
   };
 
   // Initialize polaroid positions with a pleasing arrangement
   const initializePolaroidPositions = () => {
-    const photos: PolaroidPhoto[] = [];
-
-    // Get center of viewport
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
-
-    // Define max spread to keep things in view
-    // This value can be adjusted to control how wide the photos are spread
-    const spreadX = Math.min(window.innerWidth * 0.7, 650);
-    const spreadY = Math.min(window.innerHeight * 0.7, 550);
-
-    stockImages.forEach((image, index) => {
-      const storedPosition = getStoredPhotoPosition(image.id);
-      const storedRotation = getStoredPhotoRotation(image.id);
-      // No longer using flipped state
-
-      // Use predefined positions or fallback to calculated position
-      const predefinedPosition = predefinedPositions[image.id];
-
-      // Calculate position - prioritize user's stored positions over predefined ones
-      const x =
-        storedPosition?.x ||
-        predefinedPosition?.x ||
-        centerX + Math.cos(index * 2.4) * Math.sqrt(index) * 80 - 110;
-      const y =
-        storedPosition?.y ||
-        predefinedPosition?.y ||
-        centerY + Math.sin(index * 2.4) * Math.sqrt(index) * 80 - 135;
-
-      // Use small random rotation for natural look
-      const rotation = storedRotation || seededRandom(image.id, -10, 10);
-
-      photos.push({
-        ...image,
-        position: { x, y },
-        rotation,
-        zIndex: stockImages.length - index,
-        // No flip state
-      });
+    // Use the preprocessing function to prepare the polaroid photos
+    const photos = preprocessPolaroidPhotos(stockImages, {
+      predefinedPositions,
+      storageKeyPrefix,
+      centerX: window.innerWidth / 2,
+      centerY: window.innerHeight / 2,
     });
 
     setPolaroidPhotos(photos);
@@ -294,10 +251,7 @@ export default function Home() {
       try {
         // Only save if position doesn't already exist
         if (!localStorage.getItem(`${storageKeyPrefix}photo_${id}_position`)) {
-          localStorage.setItem(
-            `${storageKeyPrefix}photo_${id}_position`,
-            JSON.stringify(position),
-          );
+          savePhotoPositionToStorage(id, position, storageKeyPrefix);
         }
       } catch (err) {
         console.error("[LOGIN] Error saving initial position:", err);
@@ -423,7 +377,7 @@ export default function Home() {
     // Request animation frame for smoother updates
     requestAnimationFrame(() => {
       // Update transform directly (instant feedback)
-      element.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${rotation}deg)`;
+      element.style.transform = generateTransformString(x, y, rotation);
     });
   };
 
@@ -459,14 +413,7 @@ export default function Home() {
     );
 
     // Save to localStorage
-    try {
-      localStorage.setItem(
-        `${storageKeyPrefix}photo_${id}_position`,
-        JSON.stringify({ x, y }),
-      );
-    } catch (err) {
-      console.error("[LOGIN] Error saving position:", err);
-    }
+    savePhotoPositionToStorage(id, { x, y }, storageKeyPrefix);
   };
 
   // Add mouse and touch event listeners
@@ -479,15 +426,7 @@ export default function Home() {
     const handleTouchMove = (e: TouchEvent) => {
       if (draggedPhoto() && e.touches.length === 1) {
         e.preventDefault();
-        const touch = e.touches[0];
-        const mouseEvent = new MouseEvent("mousemove", {
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-          bubbles: true,
-          cancelable: true,
-          view: window,
-          buttons: 1,
-        }) as any;
+        const mouseEvent = touchToMouseEvent(e, 'mousemove');
         handleDragMove(mouseEvent);
       }
     };
@@ -495,14 +434,7 @@ export default function Home() {
     const handleTouchEnd = (e: TouchEvent) => {
       if (draggedPhoto()) {
         e.preventDefault();
-        const touch = e.changedTouches[0];
-        const mouseEvent = new MouseEvent("mouseup", {
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-          bubbles: true,
-          cancelable: true,
-          view: window,
-        }) as any;
+        const mouseEvent = touchToMouseEvent(e, 'mouseup');
         handleDragEnd(mouseEvent);
       }
     };
@@ -528,28 +460,15 @@ export default function Home() {
         {/* Background polaroids */}
         <For each={polaroidPhotos}>
           {(photo) => {
-            // Get deterministic random values based on photo ID for unique look
-            const seed = photo.id;
-            const textAngle = seededRandom(`${seed}_text_angle`, -2, 2);
-            const textX = seededRandom(`${seed}_text_x`, -3, 3);
-            const textY = seededRandom(`${seed}_text_y`, -2, 2);
-            const dateAngle = seededRandom(`${seed}_date_angle`, -2, 2);
-            const dateX = seededRandom(`${seed}_date_x`, -3, 3);
-            const dateY = seededRandom(`${seed}_date_y`, -2, 2);
-
-            // Subtle background color variations
-            const bgColors = ["#f8f6f1", "#f6f3e9", "#f7f5ed", "#f3f0e7"];
-            const bgIndex = Math.floor(
-              seededRandom(`${seed}_bg`, 0, bgColors.length),
-            );
-            const bgColor = bgColors[bgIndex];
+            // Get deterministic style values for this photo
+            const { textAngle, textX, textY, dateAngle, dateX, dateY, bgColor } = generatePolaroidStyles(photo.id);
 
             return (
               <div
                 id={`photo-${photo.id}`}
                 class={`${styles.polaroid} ${styles["background-polaroid"]}`}
                 style={{
-                  transform: `translate3d(${photo.position?.x || 0}px, ${photo.position?.y || 0}px, 0) rotate(${photo.rotation || 0}deg)`,
+                  transform: generateTransformString(photo.position?.x || 0, photo.position?.y || 0, photo.rotation || 0),
                   "z-index": photo.zIndex || 1,
                   background: bgColor,
                 }}
@@ -557,14 +476,7 @@ export default function Home() {
                 onTouchStart={(e) => {
                   if (e.touches.length === 1) {
                     e.preventDefault();
-                    const touch = e.touches[0];
-                    const mouseEvent = new MouseEvent("mousedown", {
-                      clientX: touch.clientX,
-                      clientY: touch.clientY,
-                      bubbles: true,
-                      cancelable: true,
-                      view: window,
-                    }) as any;
+                    const mouseEvent = touchToMouseEvent(e, 'mousedown');
                     handleDragStart(mouseEvent, photo.id);
                   }
                 }}
