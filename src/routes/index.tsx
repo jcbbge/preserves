@@ -4,6 +4,7 @@ import { Title } from "@solidjs/meta";
 import { usePeach } from "~/context/peach";
 import { redirectIfAuthenticated } from "~/utils/authUtils";
 import LoginForm from "~/components/LoginForm";
+import styles from "./index.module.css";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -16,22 +17,9 @@ export default function Home() {
 
 
   return (
-    <div style={{ 
-      minHeight: "100vh", 
-      display: "flex", 
-      flexDirection: "column",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
-      backgroundColor: "#f5f0e5"
-    }}>
+    <div class={styles["peach-preserve"]}>
       <Title>Peach Preserves</Title>
-      <div style={{ 
-        flex: 1, 
-        display: "flex", 
-        justifyContent: "center", 
-        alignItems: "center", 
-        width: "100%", 
-        height: "100vh" 
-      }}>
+      <div class={styles["login-page"]}>
         <LoginForm />
       </div>
     </div>
