@@ -2,9 +2,9 @@
   "name": "example-bare",
   "type": "module",
   "scripts": {
-    "dev": "vinxi dev --host",
+    "dev": "vinxi dev --host --port 3000",
     "build": "vinxi build",
-    "start": "vinxi start"
+    "start": "vinxi start --port 3000"
   },
   "dependencies": {
     "@solid-primitives/bounds": "^0.1.1",
