@@ -65,6 +65,14 @@ export default function Dashboard() {
   // Use onMount to ensure we don't redirect during SSR
   onMount(redirectIfNotAuth);
 
+  // Also check when auth state changes
+  createEffect(() => {
+    if (!isAuthenticated()) {
+      console.log("[DASHBOARD] Auth state changed, user not authenticated");
+      navigate("/");
+    }
+  });
+
   // Get current values for debugging - safely accessing with optional chaining
   const currentUsername = user.data?.username;
   const currentToken = token();
