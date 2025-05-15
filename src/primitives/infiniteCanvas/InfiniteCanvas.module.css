@@ -1,0 +1,155 @@
+.infinite-canvas-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  background: #f8f8f8;
+  cursor: default;
+}
+
+.infinite-canvas-container.grabbing {
+  cursor: grabbing;
+}
+
+.infinite-canvas-content {
+  position: absolute;
+  transform-origin: 0 0;
+  /* Setting minimal dimensions to ensure it can contain elements */
+  width: 1px;
+  height: 1px;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+/* Canvas item styles */
+.canvas-item {
+  position: absolute;
+  touch-action: none;
+}
+
+.canvas-item.selected {
+  box-shadow: 0 0 0 2px rgba(0, 120, 255, 0.5) !important;
+}
+
+.canvas-item.dragging {
+  z-index: 10000 !important; /* Ensure dragged items appear on top */
+  opacity: 0.9;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Controls that appear inside the canvas */
+.canvas-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.canvas-control-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  border: none;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.canvas-control-button:hover {
+  transform: scale(1.05);
+  background-color: #f5f5f5;
+}
+
+.canvas-control-button:active {
+  transform: scale(0.95);
+}
+
+/* Minimap styles */
+.canvas-minimap {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 150px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 9998;
+}
+
+.canvas-minimap-viewport {
+  position: absolute;
+  border: 1px solid rgba(0, 120, 255, 0.5);
+  background: rgba(0, 120, 255, 0.1);
+  pointer-events: none;
+}
+
+/* Tooltip styles */
+.canvas-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 10000;
+  white-space: nowrap;
+}
+
+/* Scale indicators */
+.canvas-scale-indicator {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.7);
+  padding: 2px 6px;
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 9997;
+}
+
+/* Helper classes */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.no-pointer-events {
+  pointer-events: none;
+}
+
+.no-touch-action {
+  touch-action: none;
+}
+
+/* Transition classes */
+.transition-transform {
+  transition: transform 0.3s ease;
+}
+
+.transition-opacity {
+  transition: opacity 0.3s ease;
+}
+
+/* Grid styles */
+.canvas-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}

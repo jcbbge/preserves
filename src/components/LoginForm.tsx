@@ -1,8 +1,8 @@
 import { createSignal } from "solid-js";
-import styles from "../routes/index.module.css";
-import { query } from "@solidjs/router";
-import { useNavigate } from "@solidjs/router";
+import { query, useNavigate } from "@solidjs/router";
 import { usePeach } from "~/context/peach";
+
+import styles from "./LoginForm.module.css";
 
 // Server action for login - handles API call server-side to avoid CORS
 const connect = query(async (formData: FormData) => {
@@ -119,8 +119,10 @@ export default function LoginForm() {
 
   return (
     <div class={styles["login-container"]} style={{ "z-index": 60 }}>
-      {/* Login polaroid */}
-      <div class={`${styles.polaroid} ${styles["login-polaroid"]}`} style={{ "z-index": 70 }}>
+      <div
+        class={`${styles.polaroid} ${styles["login-polaroid"]}`}
+        style={{ "z-index": 70 }}
+      >
         <div
           class={`${styles["polaroid-image-area"]} ${styles["login-image-area"]}`}
         >

@@ -1,16 +1,13 @@
-import { Show, createSignal, onMount, createEffect } from "solid-js";
 import { Title } from "@solidjs/meta";
 import { useNavigate } from "@solidjs/router";
+import { createStore, produce } from "solid-js/store";
+import { createSignal, onMount, createEffect } from "solid-js";
 import { usePeach } from "~/context/peach";
 import { useExport } from "~/context/export";
 import { fetchStream } from "./api/stream";
 import { downloadPeachData as fetchPeachData } from "~/lib/api/download";
-import {
-  SimplePhotoCanvas,
-  PolaroidPhoto,
-} from "~/components/SimplePhotoCanvas";
-import { createStore, produce } from "solid-js/store";
-import styles from './dashboard.module.css';
+
+import styles from "./dashboard.module.css";
 
 export default function Dashboard() {
   const { isAuthenticated, user, token } = usePeach();
@@ -523,12 +520,6 @@ export default function Dashboard() {
   return (
     <div class={styles["peach-preserve"]}>
       <Title>Peach Preserves</Title>
-      <header class={styles.header}>
-        <div class={styles.logo}>
-          <img src="/peachdotcool.png" alt="Peach" class={styles["logo-img"]} />
-          <span>Peach Preserves</span>
-        </div>
-      </header>
 
       <main class={styles["interactive-canvas"]}>
         {/* Only render dynamic content on client */}
@@ -662,8 +653,6 @@ export default function Dashboard() {
                 </div>
               )}
 
-
-
             {/* Error notification */}
             {error() && (
               <div class={styles["error-note"]}>
@@ -686,14 +675,6 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <>
-                    <SimplePhotoCanvas
-                      photos={polaroidPhotos}
-                      onPhotoFlip={handlePhotoFlip}
-                      onPhotoPin={handlePhotoPin}
-                      onPhotoMove={handlePhotoMove}
-                      onPhotoRotate={handlePhotoRotate}
-                    />
-
                     <div class={styles["preserve-button-container"]}>
                       <button
                         onClick={downloadPeachData}
@@ -714,8 +695,6 @@ export default function Dashboard() {
                           ? "Downloading..."
                           : "Download my Data"}
                       </button>
-
-
                     </div>
                   </>
                 )}
@@ -723,13 +702,13 @@ export default function Dashboard() {
             )}
           </>
         ) : (
-        // Static loading state during SSR and initial client render
-        <div class={styles.loading}>
-          <div class={styles["loading-spinner"]}></div>
-          <p>Loading...</p>
-        </div>
-      )}
-    </main>
+          // Static loading state during SSR and initial client render
+          <div class={styles.loading}>
+            <div class={styles["loading-spinner"]}></div>
+            <p>Loading...</p>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

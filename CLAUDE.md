@@ -187,3 +187,8 @@ This document contains the primary instructions and guidelines for Claude when w
 - Last Updated: 2025-05-12
 - Version: 1.0
 - Last Revision Reason: Initial setup
+
+### DO NOT ADD COMMENTS TO Code
+
+- avoid use of inline comments ex. `// [Comments here.]`
+- also avoid use of block comments ex. `/* [Comments here.] */`

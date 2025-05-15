@@ -1,10 +1,10 @@
 // Archive creation and packaging functionality
-import JSZip from 'jszip';
-import { PeachPost } from '~/context/peach';
-import { ArchivePost, ArchiveMetadata, PeachArchive, MediaMap } from './types';
-import { debugLog } from './utils';
+import JSZip from "jszip";
+import { PeachPost } from "~/context/peach";
+import { ArchivePost, ArchiveMetadata, PeachArchive, MediaMap } from "./types";
+import { debugLog } from "./utils";
 // Import from the fixed viewer module that includes modal functionality
-import { generateViewerCSS, generateViewerJS } from './viewer-fixed';
+import { generateViewerCSS, generateViewerJS } from "./viewer-fixed";
 
 /**
  * Create the archive data structure
@@ -12,22 +12,22 @@ import { generateViewerCSS, generateViewerJS } from './viewer-fixed';
 export function createArchiveData(
   username: string,
   posts: PeachPost[],
-  mediaUrlToPath: Record<string, string>
+  mediaUrlToPath: Record<string, string>,
 ): PeachArchive {
-  debugLog('archive', 'Creating archive data structure');
-  
+  debugLog("archive", "Creating archive data structure");
+
   if (!username) {
     console.warn('[API] No username provided for archive, using "unknown"');
-    username = 'unknown';
+    username = "unknown";
   }
-  
+
   if (!posts || !Array.isArray(posts) || posts.length === 0) {
-    console.warn('[API] No posts provided for archive');
+    console.warn("[API] No posts provided for archive");
   }
-  
-  const archivePosts: ArchivePost[] = posts.map(post => {
+
+  const archivePosts: ArchivePost[] = posts.map((post) => {
     const archivePost: ArchivePost = { ...post };
-    
+
     // Update media to include local paths
     archivePost.localMediaPaths = [];
 
@@ -43,15 +43,15 @@ export function createArchiveData(
           // If no mapping exists, generate a fallback path that includes the post ID
           if (media.url) {
             const url = media.url;
-            const ext = url.split('.').pop()?.toLowerCase() || 'jpg';
+            const ext = url.split(".").pop()?.toLowerCase() || "jpg";
 
             // Use the same naming scheme as in generateMediaFilename
             if (post.id) {
               const shortPostId = post.id.substring(0, 8);
-              return `post_${shortPostId}_img_${String(index).padStart(2, '0')}.${ext}`;
+              return `post_${shortPostId}_img_${String(index).padStart(2, "0")}.${ext}`;
             } else {
               // Legacy fallback
-              return `media_${String(index).padStart(3, '0')}.${ext}`;
+              return `media_${String(index).padStart(3, "0")}.${ext}`;
             }
           }
 
@@ -65,7 +65,7 @@ export function createArchiveData(
     // 2. Also collect media from message array for completeness
     if (Array.isArray(post.message)) {
       const mediaInMessage = post.message
-        .filter(item => item.type === 'image' && item.src)
+        .filter((item) => item.type === "image" && item.src)
         .map((media, index) => {
           // Check the mediaUrlToPath mapping first
           if (media.src && mediaUrlToPath[media.src]) {
@@ -75,14 +75,14 @@ export function createArchiveData(
           // Generate a path if not found in mapping
           if (media.src) {
             const url = media.src;
-            const ext = url.split('.').pop()?.toLowerCase() || 'jpg';
+            const ext = url.split(".").pop()?.toLowerCase() || "jpg";
             const offset = archivePost.localMediaPaths.length; // Start after existing media
 
             if (post.id) {
               const shortPostId = post.id.substring(0, 8);
-              return `post_${shortPostId}_img_${String(index + offset).padStart(2, '0')}.${ext}`;
+              return `post_${shortPostId}_img_${String(index + offset).padStart(2, "0")}.${ext}`;
             } else {
-              return `media_${String(index + offset).padStart(3, '0')}.${ext}`;
+              return `media_${String(index + offset).padStart(3, "0")}.${ext}`;
             }
           }
 
@@ -92,37 +92,47 @@ export function createArchiveData(
 
       // Add any new media paths from the message
       if (mediaInMessage.length > 0) {
-        archivePost.localMediaPaths = [...archivePost.localMediaPaths, ...mediaInMessage];
+        archivePost.localMediaPaths = [
+          ...archivePost.localMediaPaths,
+          ...mediaInMessage,
+        ];
       }
     }
 
-    debugLog('archive', `Post ${post.id}: Added ${archivePost.localMediaPaths.length} local media paths`);
+    debugLog(
+      "archive",
+      `Post ${post.id}: Added ${archivePost.localMediaPaths.length} local media paths`,
+    );
 
     // IMPORTANT: Add debug log to see exact media path mapping
     if (archivePost.localMediaPaths.length > 0) {
-      debugLog('archive', `Media paths for post ${post.id}:`, archivePost.localMediaPaths);
+      debugLog(
+        "archive",
+        `Media paths for post ${post.id}:`,
+        archivePost.localMediaPaths,
+      );
     }
-    
+
     return archivePost;
   });
-  
+
   const result = {
     metadata: {
       username,
       exportDate: new Date().toISOString(),
       postCount: posts.length,
       mediaCount: Object.keys(mediaUrlToPath).length,
-      totalSize: 0 // This will be updated later if needed
+      totalSize: 0, // This will be updated later if needed
     },
-    posts: archivePosts
+    posts: archivePosts,
   };
-  
-  debugLog('archive', 'Archive data created', { 
-    username, 
-    postCount: posts.length, 
-    mediaCount: Object.keys(mediaUrlToPath).length 
+
+  debugLog("archive", "Archive data created", {
+    username,
+    postCount: posts.length,
+    mediaCount: Object.keys(mediaUrlToPath).length,
   });
-  
+
   return result;
 }
 
@@ -131,16 +141,17 @@ export function createArchiveData(
  */
 export async function createArchive(
   archiveData: PeachArchive,
-  mediaFiles: MediaMap
+  mediaFiles: MediaMap,
 ): Promise<Blob> {
-  debugLog('zip', 'Creating ZIP archive');
+  debugLog("zip", "Creating ZIP archive");
 
   try {
     const zip = new JSZip();
 
     // Add README file
-    debugLog('zip', 'Adding README.txt to archive');
-    zip.file("README.txt",
+    debugLog("zip", "Adding README.txt to archive");
+    zip.file(
+      "README.txt",
       `Peach Preserves Archive
       Username: ${archiveData.metadata.username}
       Export Date: ${new Date(archiveData.metadata.exportDate).toLocaleString()}
@@ -165,7 +176,8 @@ export async function createArchive(
       Each media file is associated with a specific post through this naming pattern.
       The viewer.html file loads data from data.js and displays the media files
       alongside their corresponding posts.
-      `);
+      `,
+    );
 
     // Create data.js with the archive data
     const dataJsContent = `const ARCHIVE_DATA_JSON = ${JSON.stringify(archiveData)};`;
@@ -178,7 +190,7 @@ export async function createArchive(
     // Generate modified JavaScript that loads from data.js
     const modifiedJSContent = jsContent.replace(
       "document.addEventListener('DOMContentLoaded', function() {",
-      "function initializeArchiveViewer() {"
+      "function initializeArchiveViewer() {",
     );
 
     // Create HTML content that loads from data.js
@@ -301,60 +313,69 @@ export async function createArchive(
 </html>`;
 
     // Add a debug summary file to help troubleshoot the archive content
-    if (true) { // DEBUG mode
+    if (true) {
+      // DEBUG mode
       // Create a more detailed debug summary to help with troubleshooting
       // Don't rely on external variables that might be out of scope
       const mediaMappingSamples = archiveData.posts
-        .filter(p => p.localMediaPaths && p.localMediaPaths.length > 0)
-        .flatMap(p => p.localMediaPaths || [])
+        .filter((p) => p.localMediaPaths && p.localMediaPaths.length > 0)
+        .flatMap((p) => p.localMediaPaths || [])
         .slice(0, 10)
-        .map(path => ({ localFilename: path }));
+        .map((path) => ({ localFilename: path }));
 
       const debugSummary = {
         metadata: archiveData.metadata,
         totalPosts: archiveData.posts.length,
-        postsWithMedia: archiveData.posts.filter(p => p.media && p.media.length > 0).length,
-        postsWithLocalPaths: archiveData.posts.filter(p => p.localMediaPaths && p.localMediaPaths.length > 0).length,
+        postsWithMedia: archiveData.posts.filter(
+          (p) => p.media && p.media.length > 0,
+        ).length,
+        postsWithLocalPaths: archiveData.posts.filter(
+          (p) => p.localMediaPaths && p.localMediaPaths.length > 0,
+        ).length,
         totalMediaFiles: Object.keys(mediaFiles).length,
         mediaSampleMappings: mediaMappingSamples,
         // Include posts with media but no local paths (this would indicate a problem)
         problemPosts: archiveData.posts
-          .filter(p =>
-            (p.media && p.media.length > 0) &&
-            (!p.localMediaPaths || p.localMediaPaths.length === 0)
+          .filter(
+            (p) =>
+              p.media &&
+              p.media.length > 0 &&
+              (!p.localMediaPaths || p.localMediaPaths.length === 0),
           )
-          .map(p => ({
+          .map((p) => ({
             id: p.id,
             mediaCount: p.media?.length || 0,
-            mediaUrls: p.media?.map(m => m.url).filter(Boolean) || []
+            mediaUrls: p.media?.map((m) => m.url).filter(Boolean) || [],
           })),
         // Regular post summary
-        postsSummary: archiveData.posts.map(p => ({
+        postsSummary: archiveData.posts.map((p) => ({
           id: p.id,
           createdTime: p.createdTime,
           mediaCount: p.media?.length || 0,
           localMediaPathsCount: p.localMediaPaths?.length || 0,
           localMediaPaths: p.localMediaPaths || [],
-          hasMessageText: Array.isArray(p.message) && p.message.some(m => m.type === 'text')
-        }))
+          hasMessageText:
+            Array.isArray(p.message) &&
+            p.message.some((m) => m.type === "text"),
+        })),
       };
       zip.file("debug-info.json", JSON.stringify(debugSummary, null, 2));
     }
 
     // Add the HTML viewer
     zip.file("viewer.html", htmlContent);
-    
+
     // Add the Peach logo
     let peachLogoBlob;
     try {
       // Add the logo as a file in the zip
-      peachLogoBlob = await fetch('/peachdotcool.png').then(r => r.blob());
+      peachLogoBlob = await fetch("/peachdotcool.png").then((r) => r.blob());
       if (peachLogoBlob && peachLogoBlob.size > 0) {
         zip.file("peachdotcool.png", peachLogoBlob);
-        debugLog('zip', 'Added Peach logo to archive');
+        debugLog("zip", "Added Peach logo to archive");
       }
     } catch (logoError) {
-      console.error('[API] Error loading logo:', logoError);
+      console.error("[API] Error loading logo:", logoError);
     }
 
     // Add media files
@@ -366,22 +387,30 @@ export async function createArchive(
     }
 
     // Generate the zip file with progress callback
-    debugLog('zip', 'Generating ZIP blob');
-    const blob = await zip.generateAsync({
-      type: "blob",
-      compression: "DEFLATE",
-      compressionOptions: { level: 6 }
-    }, (metadata) => {
-      if (metadata.percent) {
-        debugLog('zip', `ZIP generation progress: ${Math.round(metadata.percent)}%`);
-      }
-    });
+    debugLog("zip", "Generating ZIP blob");
+    const blob = await zip.generateAsync(
+      {
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 },
+      },
+      (metadata) => {
+        if (metadata.percent) {
+          debugLog(
+            "zip",
+            `ZIP generation progress: ${Math.round(metadata.percent)}%`,
+          );
+        }
+      },
+    );
 
-    debugLog('zip', 'ZIP blob generated successfully', { size: blob.size });
+    debugLog("zip", "ZIP blob generated successfully", { size: blob.size });
     return blob;
   } catch (error) {
-    console.error('[API] Error creating ZIP archive:', error);
-    throw new Error(`Failed to create ZIP archive: ${error instanceof Error ? error.message : String(error)}`);
+    console.error("[API] Error creating ZIP archive:", error);
+    throw new Error(
+      `Failed to create ZIP archive: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
@@ -389,36 +418,40 @@ export async function createArchive(
  * Trigger a download of a blob
  */
 export function downloadBlob(blob: Blob, filename: string): void {
-  debugLog('download', 'Starting browser download', { filename, size: blob.size });
-  
+  debugLog("download", "Starting browser download", {
+    filename,
+    size: blob.size,
+  });
+
   if (!blob || blob.size === 0) {
-    throw new Error('Cannot download empty blob');
+    throw new Error("Cannot download empty blob");
   }
-  
+
   try {
     const url = URL.createObjectURL(blob);
-    debugLog('download', `Created object URL: ${url}`);
-    
+    debugLog("download", `Created object URL: ${url}`);
+
     const a = document.createElement("a");
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
-    
-    debugLog('download', 'Clicking download link');
+
+    debugLog("download", "Clicking download link");
     a.click();
-    
-    // Clean up
+
     setTimeout(() => {
       try {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        debugLog('download', 'Download link cleanup completed');
+        debugLog("download", "Download link cleanup completed");
       } catch (e) {
-        console.warn('[API] Error during download cleanup:', e);
+        console.warn("[API] Error during download cleanup:", e);
       }
     }, 100);
   } catch (error) {
-    console.error('[API] Error triggering download:', error);
-    throw new Error(`Failed to trigger browser download: ${error instanceof Error ? error.message : String(error)}`);
+    console.error("[API] Error triggering download:", error);
+    throw new Error(
+      `Failed to trigger browser download: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }

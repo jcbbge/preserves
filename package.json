@@ -2,7 +2,7 @@
   "name": "example-bare",
   "type": "module",
   "scripts": {
-    "dev": "npx kill-port 3000 3001 && vinxi dev --host --port 3000 --strictPort",
+    "dev": "npx vinxi dev --host --port 3000 --strictPort",
     "build": "vinxi build",
     "start": "npx kill-port 3000 3001 && vinxi start --port 3000 --strictPort"
   },

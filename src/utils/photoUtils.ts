@@ -86,18 +86,72 @@ export function generatePolaroidStyles(id: string) {
 // Helper functions for localStorage operations
 
 /**
+ * Get a photo's data from localStorage
+ * @param id Photo ID
+ * @param storageKeyPrefix Prefix for the localStorage key
+ * @returns The stored photo data or null if not found
+ */
+export function getPhotoDataFromStorage(id: string, storageKeyPrefix = "peach_preserves_photo_") {
+  if (typeof window === "undefined") return null;
+  try {
+    // Try the new consolidated format first
+    const stored = localStorage.getItem(`${storageKeyPrefix}${id}`);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+    
+    // Fallback to legacy format if new format not found
+    const legacyPrefix = "peach_preserves_login_";
+    const positionStored = localStorage.getItem(`${legacyPrefix}photo_${id}_position`);
+    const rotationStored = localStorage.getItem(`${legacyPrefix}photo_${id}_rotation`);
+    const zIndexStored = localStorage.getItem(`${legacyPrefix}photo_${id}_zindex`);
+    const flippedStored = localStorage.getItem(`${legacyPrefix}photo_${id}_flipped`);
+    const pinnedStored = localStorage.getItem(`${legacyPrefix}photo_${id}_pinned`);
+    
+    // Also check peach_pos_stockN format
+    let posData = null;
+    try {
+      const posStored = localStorage.getItem(`peach_pos_${id}`);
+      if (posStored) {
+        posData = JSON.parse(posStored);
+      }
+    } catch (e) {
+      console.error(`[UTILS] Error parsing peach_pos_${id}:`, e);
+    }
+    
+    // If we have any stored data in any format, return it in consolidated format
+    if (positionStored || rotationStored || zIndexStored || flippedStored || pinnedStored || posData) {
+      return {
+        position: positionStored ? JSON.parse(positionStored) : 
+                 (posData && posData.x !== undefined && posData.y !== undefined) ? 
+                 { x: posData.x, y: posData.y } : null,
+        rotation: rotationStored ? parseFloat(rotationStored) : 
+                 (posData && posData.rotation !== undefined) ? posData.rotation : null,
+        zIndex: zIndexStored ? parseInt(zIndexStored, 10) : 
+               (posData && posData.zIndex !== undefined) ? posData.zIndex : null,
+        isFlipped: flippedStored === 'true',
+        isPinned: pinnedStored === 'true'
+      };
+    }
+    
+    return null;
+  } catch (e) {
+    console.error("[UTILS] Error loading stored photo data:", e);
+    return null;
+  }
+}
+
+/**
  * Get a photo's position from localStorage
  * @param id Photo ID
  * @param storageKeyPrefix Prefix for the localStorage key
  * @returns The stored position or null if not found
  */
-export function getPhotoPositionFromStorage(id: string, storageKeyPrefix = "peach_preserves_login_") {
+export function getPhotoPositionFromStorage(id: string, storageKeyPrefix = "peach_preserves_photo_") {
   if (typeof window === "undefined") return null;
   try {
-    const stored = localStorage.getItem(
-      `${storageKeyPrefix}photo_${id}_position`,
-    );
-    return stored ? JSON.parse(stored) : null;
+    const data = getPhotoDataFromStorage(id, storageKeyPrefix);
+    return data?.position || null;
   } catch (e) {
     console.error("[UTILS] Error loading stored photo position:", e);
     return null;
@@ -110,12 +164,10 @@ export function getPhotoPositionFromStorage(id: string, storageKeyPrefix = "peac
  * @param storageKeyPrefix Prefix for the localStorage key
  * @returns The stored rotation or null if not found
  */
-export function getPhotoRotationFromStorage(id: string, storageKeyPrefix = "peach_preserves_login_") {
+export function getPhotoRotationFromStorage(id: string, storageKeyPrefix = "peach_preserves_photo_") {
   if (typeof window === "undefined") return null;
-  const stored = localStorage.getItem(
-    `${storageKeyPrefix}photo_${id}_rotation`,
-  );
-  return stored ? parseFloat(stored) : null;
+  const data = getPhotoDataFromStorage(id, storageKeyPrefix);
+  return data?.rotation !== undefined ? data.rotation : null;
 }
 
 /**
@@ -124,12 +176,45 @@ export function getPhotoRotationFromStorage(id: string, storageKeyPrefix = "peac
  * @param storageKeyPrefix Prefix for the localStorage key
  * @returns The stored z-index or null if not found
  */
-export function getPhotoZIndexFromStorage(id: string, storageKeyPrefix = "peach_preserves_login_") {
+export function getPhotoZIndexFromStorage(id: string, storageKeyPrefix = "peach_preserves_photo_") {
   if (typeof window === "undefined") return null;
-  const stored = localStorage.getItem(
-    `${storageKeyPrefix}photo_${id}_zindex`,
-  );
-  return stored ? parseInt(stored, 10) : null;
+  const data = getPhotoDataFromStorage(id, storageKeyPrefix);
+  return data?.zIndex !== undefined ? data.zIndex : null;
+}
+
+/**
+ * Save a photo's data to localStorage in the consolidated format
+ * @param id Photo ID
+ * @param data Photo data to save
+ * @param storageKeyPrefix Prefix for the localStorage key
+ */
+export function savePhotoDataToStorage(
+  id: string,
+  data: {
+    position?: { x: number; y: number };
+    rotation?: number;
+    zIndex?: number;
+    isFlipped?: boolean;
+    isPinned?: boolean;
+  },
+  storageKeyPrefix = "peach_preserves_photo_"
+) {
+  if (typeof window === "undefined") return;
+  try {
+    // Get existing data, if any
+    const existingData = getPhotoDataFromStorage(id, storageKeyPrefix) || {};
+    
+    // Merge with new data
+    const mergedData = { ...existingData, ...data };
+    
+    // Save consolidated data
+    localStorage.setItem(
+      `${storageKeyPrefix}${id}`,
+      JSON.stringify(mergedData)
+    );
+  } catch (err) {
+    console.error("[UTILS] Error saving photo data:", err);
+  }
 }
 
 /**
@@ -141,14 +226,11 @@ export function getPhotoZIndexFromStorage(id: string, storageKeyPrefix = "peach_
 export function savePhotoPositionToStorage(
   id: string, 
   position: { x: number; y: number },
-  storageKeyPrefix = "peach_preserves_login_"
+  storageKeyPrefix = "peach_preserves_photo_"
 ) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(
-      `${storageKeyPrefix}photo_${id}_position`,
-      JSON.stringify(position),
-    );
+    savePhotoDataToStorage(id, { position }, storageKeyPrefix);
   } catch (err) {
     console.error("[UTILS] Error saving position:", err);
   }
@@ -163,14 +245,11 @@ export function savePhotoPositionToStorage(
 export function savePhotoRotationToStorage(
   id: string,
   rotation: number,
-  storageKeyPrefix = "peach_preserves_login_"
+  storageKeyPrefix = "peach_preserves_photo_"
 ) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(
-      `${storageKeyPrefix}photo_${id}_rotation`,
-      rotation.toString(),
-    );
+    savePhotoDataToStorage(id, { rotation }, storageKeyPrefix);
   } catch (err) {
     console.error("[UTILS] Error saving rotation:", err);
   }
@@ -185,14 +264,11 @@ export function savePhotoRotationToStorage(
 export function savePhotoZIndexToStorage(
   id: string,
   zIndex: number,
-  storageKeyPrefix = "peach_preserves_login_"
+  storageKeyPrefix = "peach_preserves_photo_"
 ) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(
-      `${storageKeyPrefix}photo_${id}_zindex`,
-      zIndex.toString(),
-    );
+    savePhotoDataToStorage(id, { zIndex }, storageKeyPrefix);
   } catch (err) {
     console.error("[UTILS] Error saving z-index:", err);
   }
