@@ -1,22 +1,21 @@
 import { useNavigate } from "@solidjs/router";
-import styles from "./404.module.css";
+import { usePeach } from "~/context/peach";
+import styles from "./[...404].module.css";
 
 export default function NotFound() {
   const navigate = useNavigate();
+  const { isAuthenticated } = usePeach();
 
   const goHome = () => {
-    navigate("/dashboard");
+    if (isAuthenticated()) {
+      navigate("/dashboard");
+    } else {
+      navigate("/");
+    }
   };
 
   return (
     <div class={styles["peach-preserve"]}>
-      <header class={styles.header}>
-        <div class={styles.logo}>
-          <img src="/peachdotcool.png" alt="Peach" class={styles["logo-img"]} />
-          <span>Peach Preserves</span>
-        </div>
-      </header>
-
       <div class={styles["not-found"]}>
         <div class={styles.polaroid} onClick={goHome}>
           <div class={styles["polaroid-image-area"]}>
