@@ -1,4 +1,11 @@
-import { createContext, useContext, JSX, createSignal, createMemo, onMount } from "solid-js";
+import {
+  createContext,
+  useContext,
+  JSX,
+  createSignal,
+  createMemo,
+  onMount,
+} from "solid-js";
 import { createStore, Store } from "solid-js/store";
 
 export interface PeachPost {
@@ -6,7 +13,7 @@ export interface PeachPost {
   createdTime: number;
   message?: string;
   media?: {
-    type: 'image' | 'gif' | 'video';
+    type: "image" | "gif" | "video";
     url: string;
     width?: number;
     height?: number;
@@ -39,34 +46,28 @@ interface PeachContextValue {
 
 const PeachContext = createContext<PeachContextValue>();
 
-
 export function PeachProvider(props: { children: JSX.Element }) {
-
-  
   // Initialize from localStorage if available - with robust checking
   let savedToken = null;
   let parsedUserData = null;
-  
-  if (typeof window !== 'undefined') {
+
+  if (typeof window !== "undefined") {
     try {
-      savedToken = localStorage.getItem('peach_token');
+      savedToken = localStorage.getItem("peach_token");
 
-      
-      const savedUserData = localStorage.getItem('peach_user');
+      const savedUserData = localStorage.getItem("peach_user");
 
-      
       if (savedUserData) {
         parsedUserData = JSON.parse(savedUserData);
-
       }
     } catch (e) {
-      console.error('[CONTEXT] Error restoring from localStorage:', e);
+      console.error("[CONTEXT] Error restoring from localStorage:", e);
     }
   }
-  
+
   const [token, setToken] = createSignal<string | null>(savedToken);
-  const [user, setUser] = createStore<{ data: PeachUser | null }>({ 
-    data: parsedUserData 
+  const [user, setUser] = createStore<{ data: PeachUser | null }>({
+    data: parsedUserData,
   });
 
   const isAuthenticated = createMemo(() => {
@@ -78,108 +79,103 @@ export function PeachProvider(props: { children: JSX.Element }) {
 
   const parseJWT = (token: string) => {
     try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
       return JSON.parse(window.atob(base64));
     } catch (e) {
-      console.error('Failed to parse JWT:', e);
+      console.error("Failed to parse JWT:", e);
       return null;
     }
   };
 
-  const login = (newToken: string, userData: any) => {
-
-
+  const login = async (newToken: string, userData: any) => {
     try {
       if (!newToken) {
-        throw new Error('No token provided');
+        throw new Error("No token provided");
       }
-      
+
       const tokenData = parseJWT(newToken);
-      console.log('[CONTEXT] Token data:', tokenData);
-      console.log('[CONTEXT] Full userData:', userData);
+      console.log("[CONTEXT] Token data:", tokenData);
+      console.log("[CONTEXT] Full userData:", userData);
 
       // CRITICAL FIX: Always use the stream token which is what the API needs
       const streamToken = userData?.streams?.[0]?.token;
-      console.log('[CONTEXT] Auth token vs Stream token:', { 
-        authToken: newToken?.substring(0, 20) + '...',
-        streamToken: streamToken?.substring(0, 20) + '...',
-        match: newToken === streamToken
+      console.log("[CONTEXT] Auth token vs Stream token:", {
+        authToken: newToken?.substring(0, 20) + "...",
+        streamToken: streamToken?.substring(0, 20) + "...",
+        match: newToken === streamToken,
       });
-      
+
       // Use the stream token as the primary token if available
       const tokenToUse = streamToken || newToken;
 
-      
       // Prepare user data object with consistent structure
       const userDataObj = {
-        id: tokenData?.userID || 'unknown',
-        username: userData?.email || 'unknown',
-        sessionId: tokenData?.sessionID || 'unknown',
-        streams: userData?.streams || []
+        id: tokenData?.userID || "unknown",
+        username: userData?.email || "unknown",
+        sessionId: tokenData?.sessionID || "unknown",
+        streams: userData?.streams || [],
       };
 
-
-      
       // Update state - CRITICAL FIX: Use the stream token
       setToken(tokenToUse);
-      setUser('data', userDataObj);
+      setUser("data", userDataObj);
 
       // Save to localStorage - using try/catch for robustness
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         try {
-          localStorage.setItem('peach_token', tokenToUse);
-          localStorage.setItem('peach_user', JSON.stringify(userDataObj));
+          localStorage.setItem("peach_token", tokenToUse);
+          localStorage.setItem("peach_user", JSON.stringify(userDataObj));
 
-          
-          // Verify it was saved correctly
-          const verifyToken = localStorage.getItem('peach_token');
-          const verifyUser = localStorage.getItem('peach_user');
+          // Set cookie directly for server middleware authentication
+          // Max age: 30 days in seconds
+          document.cookie = `peach_token=${tokenToUse}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
 
+          // Verify localStorage was updated correctly
+          const verifyToken = localStorage.getItem("peach_token");
+          const verifyUser = localStorage.getItem("peach_user");
         } catch (e) {
-          console.error('[CONTEXT] Error saving to localStorage:', e);
+          console.error("[CONTEXT] Error saving to localStorage:", e);
         }
       }
-      
-
     } catch (error) {
-      console.error('[CONTEXT] Error in login:', error);
-      
+      console.error("[CONTEXT] Error in login:", error);
+
       // Clear any partial data on error
       setToken(null);
-      setUser('data', null);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('peach_token');
-        localStorage.removeItem('peach_user');
+      setUser("data", null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("peach_token");
+        localStorage.removeItem("peach_user");
       }
     }
   };
 
   const logout = () => {
-
-    
     // Clear state
     setToken(null);
-    setUser('data', null);
-    
-    // Clear localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('peach_token');
-      localStorage.removeItem('peach_user');
+    setUser("data", null);
 
+    // Clear localStorage and cookie
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("peach_token");
+      localStorage.removeItem("peach_user");
+
+      // Clear the cookie by setting its expiration in the past
+      document.cookie = "peach_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+      
+      console.log("[CONTEXT] Cleared auth state, localStorage, and cookie");
     }
   };
 
-  onMount(() => {
-
-  });
+  onMount(() => {});
 
   const value: PeachContextValue = {
     token,
     user,
     isAuthenticated,
     login,
-    logout
+    logout,
   };
 
   return (
