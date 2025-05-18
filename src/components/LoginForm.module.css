@@ -12,25 +12,26 @@
     --transition-duration: 300ms;
 }
 
-/* Login container - centered */
+/* Login container - for canvas item */
 .login-container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    position: relative;
     width: 260px;
     height: 350px;
-    z-index: 60;
     perspective: 1000px;
+    background: rgba(255, 0, 0, 0.1); /* Debug */
+    border: 1px solid red; /* Debug */
+    pointer-events: all;
 }
 
 /* Login polaroid styling */
 .login-polaroid {
-    position: absolute;
+    position: relative;
     transform: rotate(-3deg);
-    z-index: 70;
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
     padding-bottom: 0;
+    background: white;
+    pointer-events: all;
+    cursor: grab;
 }
 
 .login-polaroid .polaroid-caption {
@@ -117,11 +118,10 @@
 
 /* Connect button polaroid */
 .connect-polaroid {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    transform: translateY(100px) translateX(80px) rotate(5deg);
-    z-index: 55;
+    position: relative;
+    margin-top: -50px;
+    margin-left: 15px;
+    transform: rotate(5deg);
     border: none;
     cursor: pointer;
     background: #fff;
@@ -130,15 +130,17 @@
         box-shadow 0.2s;
     width: 230px;
     height: 270px;
+    pointer-events: all;
+    border: 1px solid blue; /* Debug */
 }
 
 .connect-polaroid:hover:not(:disabled) {
-    transform: translateY(100px) translateX(80px) rotate(5deg) scale(1.03);
+    transform: rotate(5deg) scale(1.03);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
 }
 
 .connect-polaroid:active:not(:disabled) {
-    transform: translateY(100px) translateX(80px) rotate(5deg) scale(0.98);
+    transform: rotate(5deg) scale(0.98);
 }
 
 .connect-polaroid:disabled {

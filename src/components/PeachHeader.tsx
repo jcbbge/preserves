@@ -4,7 +4,7 @@ type PeachHeaderProps = {
   onLogout: () => void;
 };
 
-export function PeachHeader({ onLogout }: PeachHeaderProps) {
+export function PeachHeader(props: PeachHeaderProps) {
   return (
     <header class={styles.header}>
       <div class={styles.logo}>
@@ -14,7 +14,7 @@ export function PeachHeader({ onLogout }: PeachHeaderProps) {
       
       <button
         class={styles["logout-button"]}
-        onClick={onLogout}
+        onClick={props.onLogout}
         aria-label="Logout"
       >
         Logout

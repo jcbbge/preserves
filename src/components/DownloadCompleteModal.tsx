@@ -5,9 +5,9 @@ type DownloadCompleteModalProps = {
   visible: boolean;
 };
 
-export function DownloadCompleteModal({ visible }: DownloadCompleteModalProps) {
+export function DownloadCompleteModal(props: DownloadCompleteModalProps) {
   return (
-    <Show when={visible}>
+    <Show when={props.visible}>
       <div class={styles["download-complete"]}>
         <div class={styles.polaroid}>
           <div

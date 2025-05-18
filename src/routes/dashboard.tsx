@@ -65,7 +65,6 @@ export default function Dashboard() {
   // Redirect if not authenticated
   const redirectIfNotAuth = () => {
     if (!isAuthenticated()) {
-      console.log("[DASHBOARD] User not authenticated, redirecting to login");
       setTimeout(() => navigate("/"), 0);
       return true;
     }
@@ -78,7 +77,6 @@ export default function Dashboard() {
   // Also check when auth state changes
   createEffect(() => {
     if (!isAuthenticated()) {
-      console.log("[DASHBOARD] Auth state changed, user not authenticated");
       navigate("/");
     }
   });
@@ -114,9 +112,6 @@ export default function Dashboard() {
   // Load user posts - only called after authentication is confirmed
   const loadPosts = async () => {
     if (!user.data || !isAuthenticated()) {
-      console.log(
-        "[DASHBOARD] Aborting loadPosts - no user data or not authenticated",
-      );
       return;
     }
 
@@ -139,13 +134,6 @@ export default function Dashboard() {
 
       // From example: var posts = stream.data.data.posts;
       if (data && data.data && data.data.posts) {
-        console.log("[DASHBOARD] Posts metrics:", {
-          newPostsCount: data.data.posts.length,
-          existingPostsCount: posts().length,
-          totalAfterMerge: posts().length + data.data.posts.length,
-          cursor: data.data.cursor || "none",
-        });
-
         const postsWithMedia = data.data.posts.filter(
           (p) => p.media && p.media.length > 0,
         );
@@ -163,10 +151,8 @@ export default function Dashboard() {
         if (user.data?.username) {
           storePosts(data.data.posts, { username: user.data.username });
           storeCursor(data.data.cursor, { username: user.data.username });
-          console.log("[DASHBOARD] Saved posts and cursor to localStorage");
         }
       } else {
-        console.log("[DASHBOARD] No posts found in response");
         setPosts([]);
 
         // Clear localStorage items
@@ -176,7 +162,6 @@ export default function Dashboard() {
         }
       }
     } catch (err) {
-      console.error("[DASHBOARD] Error loading posts:", err);
       setError("Failed to load your posts. Please try again.");
     } finally {
       setLoading(false);
@@ -201,36 +186,13 @@ export default function Dashboard() {
       formData.append("cursor", currentCursor);
 
       // Use server action to avoid CORS
-      console.log(
-        "[DASHBOARD] Calling server action with cursor:",
-        currentCursor,
-      );
       const response = await fetchStream(formData);
-      console.log(
-        "[DASHBOARD] Server action response for more posts:",
-        response,
-      );
 
       // Extract data from server response
       const data = response.success ? response.data : null;
 
       // Same data structure as initial load
       if (data && data.data && data.data.posts) {
-        console.log("[DASHBOARD] Additional posts metrics:", {
-          newPostsCount: data.data.posts.length,
-          existingPostsCount: posts().length,
-          totalAfterMerge: posts().length + data.data.posts.length,
-          oldestNewPost: data.data.posts.length
-            ? new Date(
-                data.data.posts[data.data.posts.length - 1].createdTime,
-              ).toISOString()
-            : "none",
-          newestNewPost: data.data.posts.length
-            ? new Date(data.data.posts[0].createdTime).toISOString()
-            : "none",
-          cursor: data.data.cursor || "none",
-        });
-
         // Update posts with new ones appended
         const updatedPosts = [...posts(), ...data.data.posts];
         setPosts(updatedPosts);
@@ -250,11 +212,10 @@ export default function Dashboard() {
           } else {
             localStorage.removeItem(`${storageKeyPrefix()}cursor`);
           }
-          console.log("[DASHBOARD] Updated posts and cursor in localStorage");
         }
       }
     } catch (err) {
-      console.error("[DASHBOARD] Error loading more posts:", err);
+      // Silent fail - user can try again
     } finally {
       setLoadingMore(false);
     }
@@ -290,8 +251,6 @@ export default function Dashboard() {
         exportContext.resetExport();
       }, 5000);
     } catch (err) {
-      console.error("[DASHBOARD] Download error:", err);
-
       // Show more detailed error to help with debugging
       const errorMessage =
         err instanceof Error
@@ -318,13 +277,8 @@ export default function Dashboard() {
         if (!seenIds.has(post.id)) {
           seenIds.add(post.id);
           uniquePosts.push(post);
-        } else {
-          console.log(`Skipping duplicate post with id ${post.id}`);
         }
       }
-      console.log(
-        `Filtered ${currentPosts.length - uniquePosts.length} duplicate posts`,
-      );
       
       // Transform posts to polaroids using the storage utility
       setPolaroidPhotos(transformPostsToPolaroids(uniquePosts, {
@@ -338,13 +292,11 @@ export default function Dashboard() {
   onMount(() => {
     // Check authentication first
     if (!isAuthenticated()) {
-      console.log("[DASHBOARD] Not authenticated, skipping post loading");
       return;
     }
 
     // Only load posts if we don't have any stored
     if (posts().length === 0) {
-      console.log("[DASHBOARD] No stored posts found, loading from API");
       // Small delay to ensure auth is fully processed
       setTimeout(() => loadPosts(), 100);
     } else {
