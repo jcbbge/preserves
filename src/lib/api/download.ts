@@ -4,7 +4,6 @@ import { useExport } from '~/context/export';
 
 // Import modular components
 import { DownloadOptions, UpdateExportProgressFn, MediaMap } from './download/types';
-import { debugLog, DEV_MODE } from './download/utils';
 import { extractMediaUrls, downloadMedia, generateMediaFilename } from './download/media';
 import { createArchiveData, createArchive, downloadBlob } from './download/archive';
 import { fetchPostsWithPagination, PaginationOptions } from './download/pagination';
@@ -91,22 +90,17 @@ export async function downloadPeachData(
       posts = userData.streams[0].posts;
 
       
-      // In dev mode, limit the number of posts
-      const isDevMode = options.devMode !== undefined ? options.devMode : DEV_MODE;
-      if (isDevMode) {
+      // Limit the number of posts in development mode
+      if (options.devMode) {
         const maxPosts = 10; // Get 10 posts for testing
         if (posts.length > maxPosts) {
-
           posts = posts.slice(0, maxPosts);
         }
       }
     } else {
-      debugLog('posts', 'No posts in user data, fetching from API with pagination');
-      
       // Set up pagination options based on dev mode
-      const isDevMode = options.devMode !== undefined ? options.devMode : DEV_MODE;
       const paginationOptions: PaginationOptions = {
-        maxPages: isDevMode ? 1 : undefined // Only fetch first page in dev mode
+        maxPages: options.devMode ? 1 : undefined // Only fetch first page in dev mode
       };
       
       try {

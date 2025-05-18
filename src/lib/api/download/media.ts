@@ -13,7 +13,6 @@ export function extractMediaUrls(posts: PeachPost[]): string[] {
   const uniqueUrls = new Set<string>(); // To prevent duplicates
 
   if (!posts || !Array.isArray(posts)) {
-    console.warn("[API] Invalid posts data provided to extractMediaUrls");
     return [];
   }
 
@@ -32,13 +31,7 @@ export function extractMediaUrls(posts: PeachPost[]): string[] {
     /(https?:\/\/[^\s]+\.(peach\.cool|mxxn\.io|acorn\.mn)[^\s]*)/gi;
 
   posts.forEach((post, index) => {
-    if (index < 5) {
-      console.log(`[DEBUG-MEDIA] Post ${index} media:`, post.media);
-      console.log(
-        `[DEBUG-MEDIA] Post ${index} message structure:`,
-        post.message,
-      );
-    }
+    // Process post
 
     let hasMedia = false;
 
@@ -61,11 +54,6 @@ export function extractMediaUrls(posts: PeachPost[]): string[] {
               `Found media URL in post.media: ${media.url.substring(0, 50)}...`,
             );
           }
-        } else {
-          console.log(
-            "[DEBUG-MEDIA] Media object without URL or invalid URL:",
-            media,
-          );
         }
       });
     }
@@ -152,16 +140,10 @@ export function extractMediaUrls(posts: PeachPost[]): string[] {
       }
     }
 
-    if (!hasMedia && index < 10) {
-      console.log(
-        `[DEBUG-MEDIA] Post ${index} has no detected media:`,
-        post.id,
-      );
-    }
+    // Check if post has media
   });
 
-  console.log("[DEBUG-MEDIA] Media statistics:", mediaCounts);
-  console.log("[DEBUG-MEDIA] Media URLs found:", mediaUrls);
+  // Process complete
   debugLog("media", `Extracted ${mediaUrls.length} unique media URLs`);
   return mediaUrls;
 }
@@ -212,7 +194,6 @@ export function generateMediaFilename(
     return result;
   } catch (error) {
     // If anything goes wrong, create a safe fallback filename
-    console.error("[API] Error generating media filename:", error);
     const safeIndex = typeof index === "number" ? index : 0;
     const fallbackName = `media_${safeIndex.toString().padStart(3, "0")}.jpg`;
     debugLog(
@@ -233,7 +214,6 @@ export async function downloadMedia(url: string): Promise<Blob | null> {
 
     // Validate URL before attempting fetch
     if (!url || typeof url !== "string" || !url.startsWith("http")) {
-      console.warn("[API] Invalid media URL:", url);
       return null;
     }
 
@@ -241,15 +221,12 @@ export async function downloadMedia(url: string): Promise<Blob | null> {
     try {
       // Create the proxy URL with the media URL as a query parameter
       const proxyUrl = new URL(
-        "/api/media-proxy-direct",
+        "/api/media-proxy",
         window.location.origin,
       );
       proxyUrl.searchParams.append("url", url);
 
-      console.log(
-        "[DEBUG-CRITICAL] Downloading media via direct proxy:",
-        proxyUrl.toString(),
-      );
+      // Download media via direct proxy
 
       // Use XMLHttpRequest for reliable binary data handling
       const blob = await new Promise<Blob>((resolve, reject) => {
@@ -263,10 +240,6 @@ export async function downloadMedia(url: string): Promise<Blob | null> {
               contentType.includes("text/html") ||
               contentType.includes("xhtml")
             ) {
-              console.error(
-                "[DEBUG-CRITICAL] Received HTML instead of media:",
-                contentType,
-              );
               reject(
                 new Error(`Received HTML instead of media: ${contentType}`),
               );
@@ -287,14 +260,10 @@ export async function downloadMedia(url: string): Promise<Blob | null> {
         };
 
         xhr.onerror = function () {
-          console.error(
-            "[DEBUG-CRITICAL] Network error when downloading media",
-          );
           reject(new Error("Network error when downloading media"));
         };
 
         xhr.ontimeout = function () {
-          console.error("[DEBUG-CRITICAL] Timeout when downloading media");
           reject(new Error("Timeout when downloading media"));
         };
 
@@ -317,11 +286,9 @@ export async function downloadMedia(url: string): Promise<Blob | null> {
 
       return blob;
     } catch (error) {
-      console.error("[DEBUG-CRITICAL] Media download error:", error);
       return null;
     }
   } catch (error) {
-    console.error("[API] Media download error:", error);
     return null;
   }
 }

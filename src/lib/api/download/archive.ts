@@ -2,9 +2,8 @@
 import JSZip from "jszip";
 import { PeachPost } from "~/context/peach";
 import { ArchivePost, ArchiveMetadata, PeachArchive, MediaMap } from "./types";
-import { debugLog } from "./utils";
-// Import from the fixed viewer module that includes modal functionality
-import { generateViewerCSS, generateViewerJS } from "./viewer-fixed";
+// Import from the viewer module that includes modal functionality
+import { generateViewerCSS, generateViewerJS } from "./viewer";
 
 /**
  * Create the archive data structure
@@ -14,7 +13,6 @@ export function createArchiveData(
   posts: PeachPost[],
   mediaUrlToPath: Record<string, string>,
 ): PeachArchive {
-  debugLog("archive", "Creating archive data structure");
 
   if (!username) {
     console.warn('[API] No username provided for archive, using "unknown"');

@@ -1,53 +1,66 @@
+import { Show, createSignal, onMount, createEffect } from "solid-js";
 import { Title } from "@solidjs/meta";
 import { useNavigate } from "@solidjs/router";
-import { createStore, produce } from "solid-js/store";
-import { createSignal, onMount, createEffect } from "solid-js";
 import { usePeach } from "~/context/peach";
 import { useExport } from "~/context/export";
 import { fetchStream } from "./api/stream";
 import { downloadPeachData as fetchPeachData } from "~/lib/api/download";
+import styles from './dashboard.module.css';
+import { PolaroidPhoto } from "~/types/polaroid";
+import {
+  retrievePosts,
+  retrieveCursor,
+  storePosts,
+  storeCursor,
+  transformPostsToPolaroids
+} from "~/utils/storage";
 
-import styles from "./dashboard.module.css";
+// Extracted components
+import { PeachHeader } from "~/components/PeachHeader";
+import { DownloadCompleteModal } from "~/components/DownloadCompleteModal";
+import { ExportProgressModal } from "~/components/ExportProgressModal";
+import { ExportErrorModal } from "~/components/ExportErrorModal";
+import { ErrorNotification } from "~/components/ErrorNotification";
+import { LoadingState } from "~/components/LoadingState";
+import { EmptyStateMessage } from "~/components/EmptyStateMessage";
+import { PeachPhotoCanvas } from "~/components/PeachPhotoCanvas";
+import { DownloadButton } from "~/components/DownloadButton";
 
 export default function Dashboard() {
-  const { isAuthenticated, user, token } = usePeach();
+  const { isAuthenticated, user, token, logout } = usePeach();
   const exportContext = useExport();
   const navigate = useNavigate();
+
+  // Handle logout action
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   // Get stored username from user context to use as key for user-specific storage
   const getUserName = () => user.data?.username || "unknown";
   const storageKeyPrefix = () => `peach_preserves_${getUserName()}_`;
 
-  // Get stored posts and cursor from localStorage if available
-  const getStoredPosts = () => {
-    // During initial client render or SSR, return empty array
-    if (typeof window === "undefined" || !user.data?.username) return [];
-
-    try {
-      const stored = localStorage.getItem(`${storageKeyPrefix()}posts`);
-      return stored ? JSON.parse(stored) : [];
-    } catch (e) {
-      console.error("[DASHBOARD] Error loading stored posts:", e);
-      return [];
-    }
-  };
-
-  const getStoredCursor = () => {
-    // During initial client render or SSR, return null
-    if (typeof window === "undefined" || !user.data?.username) return null;
-
-    return localStorage.getItem(`${storageKeyPrefix()}cursor`);
-  };
-
-  // Initialize signals with stored values when available
+  // Initialize signals with stored values when available - using storage utility
   const [downloading, setDownloading] = createSignal(false);
   const [downloadComplete, setDownloadComplete] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
-  const [posts, setPosts] = createSignal<any[]>(getStoredPosts());
+  const [posts, setPosts] = createSignal<any[]>(() => {
+    if (!user.data?.username) return [];
+    return retrievePosts({ username: user.data.username });
+  });
   const [loading, setLoading] = createSignal(posts().length === 0);
-  const [cursor, setCursor] = createSignal<string | null>(getStoredCursor());
+  const [cursor, setCursor] = createSignal<string | null>(() => {
+    if (!user.data?.username) return null;
+    return retrieveCursor({ username: user.data.username });
+  });
   const [loadingMore, setLoadingMore] = createSignal(false);
-  const [polaroidPhotos, setPolaroidPhotos] = createStore<PolaroidPhoto[]>([]);
+  const [polaroidPhotos, setPolaroidPhotos] = createSignal<PolaroidPhoto[]>([]);
+  const [canvasWidth, setCanvasWidth] = createSignal(0);
+  const [canvasHeight, setCanvasHeight] = createSignal(0);
+
+  // Route identifier
+  const route = "dashboard";
 
   // Redirect if not authenticated
   const redirectIfNotAuth = () => {
@@ -80,6 +93,22 @@ export default function Dashboard() {
       setError("Missing username or token");
       setLoading(false);
     }
+    
+    // Set canvas dimensions
+    setCanvasWidth(window.innerWidth);
+    setCanvasHeight(window.innerHeight - 60); // Subtract header height
+    
+    // Add window resize handler
+    const handleResize = () => {
+      setCanvasWidth(window.innerWidth);
+      setCanvasHeight(window.innerHeight - 60); // Subtract header height
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   });
 
   // Load user posts - only called after authentication is confirmed
@@ -130,18 +159,10 @@ export default function Dashboard() {
         setPosts(data.data.posts);
         setCursor(data.data.cursor);
 
-        // Store in localStorage
-        if (typeof window !== "undefined") {
-          localStorage.setItem(
-            `${storageKeyPrefix()}posts`,
-            JSON.stringify(data.data.posts),
-          );
-          if (data.data.cursor) {
-            localStorage.setItem(
-              `${storageKeyPrefix()}cursor`,
-              data.data.cursor,
-            );
-          }
+        // Store in localStorage using utility
+        if (user.data?.username) {
+          storePosts(data.data.posts, { username: user.data.username });
+          storeCursor(data.data.cursor, { username: user.data.username });
           console.log("[DASHBOARD] Saved posts and cursor to localStorage");
         }
       } else {
@@ -286,184 +307,6 @@ export default function Dashboard() {
     }
   };
 
-  // Format a post message - EXACT match from example structure
-  const formatMessage = (message: any) => {
-    if (!message) return "Empty post";
-
-    // EXACT MATCH from example code:
-    // post.message[i].type == 'text' && post.message[i].text
-    if (Array.isArray(message)) {
-      const textParts = [];
-
-      for (let i = 0; i < message.length; i++) {
-        if (message[i].type === "text") {
-          textParts.push(message[i].text);
-        }
-      }
-
-      if (textParts.length > 0) {
-        return textParts.join("\n\n");
-      }
-    }
-
-    // Fallback for simple string message
-    if (typeof message === "string") {
-      return message;
-    }
-
-    return "Post with content";
-  };
-
-  // Get media from a post if available - following example structure
-  const getMediaUrl = (post: any) => {
-    if (!post || !post.message) return null;
-
-    // EXACT MATCH from example code:
-    // if ( posts[i].message[j].type == 'image')
-    if (Array.isArray(post.message)) {
-      for (let j = 0; j < post.message.length; j++) {
-        if (post.message[j].type === "image") {
-          return post.message[j].src;
-        }
-      }
-    }
-
-    return null;
-  };
-
-  // Convert API posts to our Polaroid format
-  const mapPostsToPolaroids = (posts: any[]): PolaroidPhoto[] => {
-    return posts.map((post, index) => {
-      // Get stored position if available
-      const storedPosition = getStoredPhotoPosition(post.id);
-      const storedRotation = getStoredPhotoRotation(post.id);
-      const storedFlipped = getStoredPhotoFlipped(post.id);
-      const storedPinned = getStoredPhotoPinned(post.id);
-
-      // Random initial position if not stored
-      const randomX = storedPosition?.x || Math.random() * 500 - 250;
-      const randomY =
-        storedPosition?.y || Math.random() * 300 - 100 + index * 30;
-      const randomRotation = storedRotation || Math.random() * 20 - 10;
-
-      return {
-        id: post.id,
-        messageText: formatMessage(post.message),
-        mediaUrl: getMediaUrl(post),
-        createdTime: post.createdTime,
-        likeCount: post.likeCount || 0,
-        commentCount: post.commentCount || 0,
-        position: { x: randomX, y: randomY },
-        rotation: randomRotation,
-        zIndex: posts.length - index,
-        isFlipped: storedFlipped || false,
-        isPinned: storedPinned || false,
-      };
-    });
-  };
-
-  // Storage helper functions for individual photo properties
-  const getStoredPhotoPosition = (id: string) => {
-    if (typeof window === "undefined") return null;
-    try {
-      const stored = localStorage.getItem(
-        `${storageKeyPrefix()}photo_${id}_position`,
-      );
-      return stored ? JSON.parse(stored) : null;
-    } catch (e) {
-      console.error("[DASHBOARD] Error loading stored photo position:", e);
-      return null;
-    }
-  };
-
-  const getStoredPhotoRotation = (id: string) => {
-    if (typeof window === "undefined") return null;
-    const stored = localStorage.getItem(
-      `${storageKeyPrefix()}photo_${id}_rotation`,
-    );
-    return stored ? parseFloat(stored) : null;
-  };
-
-  const getStoredPhotoFlipped = (id: string) => {
-    if (typeof window === "undefined") return false;
-    return (
-      localStorage.getItem(`${storageKeyPrefix()}photo_${id}_flipped`) ===
-      "true"
-    );
-  };
-
-  const getStoredPhotoPinned = (id: string) => {
-    if (typeof window === "undefined") return false;
-    return (
-      localStorage.getItem(`${storageKeyPrefix()}photo_${id}_pinned`) === "true"
-    );
-  };
-
-  // Handle photo interaction events
-  const handlePhotoFlip = (id: string) => {
-    setPolaroidPhotos(
-      (p) => p.id === id,
-      produce((photo) => {
-        photo.isFlipped = !photo.isFlipped;
-        if (typeof window !== "undefined") {
-          localStorage.setItem(
-            `${storageKeyPrefix()}photo_${id}_flipped`,
-            photo.isFlipped ? "true" : "false",
-          );
-        }
-      }),
-    );
-  };
-
-  const handlePhotoPin = (id: string) => {
-    setPolaroidPhotos(
-      (p) => p.id === id,
-      produce((photo) => {
-        photo.isPinned = !photo.isPinned;
-        if (typeof window !== "undefined") {
-          localStorage.setItem(
-            `${storageKeyPrefix()}photo_${id}_pinned`,
-            photo.isPinned ? "true" : "false",
-          );
-        }
-      }),
-    );
-  };
-
-  const handlePhotoMove = (id: string, position: { x: number; y: number }) => {
-    setPolaroidPhotos(
-      (p) => p.id === id,
-      produce((photo) => {
-        // Bring moved photo to front
-        const newZIndex =
-          Math.max(...polaroidPhotos.map((p) => p.zIndex || 0)) + 1;
-        photo.position = position;
-        photo.zIndex = newZIndex;
-        if (typeof window !== "undefined") {
-          localStorage.setItem(
-            `${storageKeyPrefix()}photo_${id}_position`,
-            JSON.stringify(position),
-          );
-        }
-      }),
-    );
-  };
-
-  const handlePhotoRotate = (id: string, rotation: number) => {
-    setPolaroidPhotos(
-      (p) => p.id === id,
-      produce((photo) => {
-        photo.rotation = rotation;
-        if (typeof window !== "undefined") {
-          localStorage.setItem(
-            `${storageKeyPrefix()}photo_${id}_rotation`,
-            rotation.toString(),
-          );
-        }
-      }),
-    );
-  };
-
   // Update polaroids when posts change - ensure unique posts only
   createEffect(() => {
     const currentPosts = posts();
@@ -482,7 +325,12 @@ export default function Dashboard() {
       console.log(
         `Filtered ${currentPosts.length - uniquePosts.length} duplicate posts`,
       );
-      setPolaroidPhotos(mapPostsToPolaroids(uniquePosts));
+      
+      // Transform posts to polaroids using the storage utility
+      setPolaroidPhotos(transformPostsToPolaroids(uniquePosts, {
+        route,
+        username: getUserName()
+      }));
     }
   });
 
@@ -501,8 +349,13 @@ export default function Dashboard() {
       setTimeout(() => loadPosts(), 100);
     } else {
       const storedPosts = posts();
-
-      setPolaroidPhotos(mapPostsToPolaroids(storedPosts));
+      
+      // Transform posts to polaroids using the storage utility
+      setPolaroidPhotos(transformPostsToPolaroids(storedPosts, {
+        route,
+        username: getUserName()
+      }));
+      
       setLoading(false);
     }
   });
@@ -520,182 +373,38 @@ export default function Dashboard() {
   return (
     <div class={styles["peach-preserve"]}>
       <Title>Peach Preserves</Title>
+      <PeachHeader onLogout={handleLogout} />
 
       <main class={styles["interactive-canvas"]}>
         {/* Only render dynamic content on client */}
         {clientOnly() ? (
           <>
-            {/* Download complete modal */}
-            {downloadComplete() && (
-              <div class={styles["download-complete"]}>
-                <div class={styles.polaroid}>
-                  <div
-                    class={`${styles["polaroid-content"]} ${styles["success-content"]}`}
-                  >
-                    <div class={styles["success-icon"]}>✓</div>
-                  </div>
-                  <div class={styles["polaroid-caption"]}>
-                    Downloaded! Your memories have been safely archived.
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Download progress modal - Polaroid style */}
-            {(exportContext.exportData.status === "exporting" ||
-              exportContext.exportData.status === "preparing") && (
-              <div
-                class={styles["download-progress"]}
-                role="region"
-                aria-live="polite"
-              >
-                <div
-                  class={`${styles.polaroid} ${styles["progress-polaroid"]}`}
-                >
-                  <div class={styles["polaroid-image-area"]}>
-                    <div
-                      class={`${styles["polaroid-photo"]} ${styles["progress-content"]}`}
-                    >
-                      <div class={styles["progress-header"]}>
-                        <h3>Downloading Your Peach Data</h3>
-                      </div>
-
-                      <div class={styles["progress-details"]}>
-                        <div class={styles["progress-activity"]}>
-                          {exportContext.exportData.progress.currentActivity}
-                        </div>
-
-                        <div class={styles["progress-bar-wrapper"]}>
-                          <div
-                            class={styles["progress-bar"]}
-                            style={{
-                              width: `${exportContext.exportData.progress.percentage}%`,
-                            }}
-                            role="progressbar"
-                            aria-valuenow={
-                              exportContext.exportData.progress.percentage
-                            }
-                            aria-valuemin="0"
-                            aria-valuemax="100"
-                          ></div>
-                        </div>
-
-                        <div class={styles["progress-stats"]}>
-                          <span class={styles["progress-percentage"]}>
-                            {Math.round(
-                              exportContext.exportData.progress.percentage,
-                            )}
-                            %
-                          </span>
-                          {exportContext.exportData.progress.completedItems >
-                            0 && (
-                            <span class={styles["progress-count"]}>
-                              {exportContext.exportData.progress.completedItems}{" "}
-                              / {exportContext.exportData.progress.totalItems}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div class={styles["polaroid-grit-overlay"]} />
-                  </div>
-                  <div class={styles["polaroid-caption"]}>
-                    <div class={styles["caption-content"]}>
-                      <span class={styles["polaroid-handwritten"]}>
-                        Preserving your peaches
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Error modal - Shows when export status is error - Polaroid style */}
-            {exportContext.exportData.status === "error" &&
-              exportContext.exportData.error && (
-                <div class={styles["error-modal"]}>
-                  <div class={`${styles.polaroid} ${styles["error-polaroid"]}`}>
-                    <div class={styles["polaroid-image-area"]}>
-                      <div
-                        class={`${styles["polaroid-photo"]} ${styles["error-content"]}`}
-                      >
-                        <div class={styles["error-header"]}>
-                          <h3>Download Failed</h3>
-                        </div>
-                        <div class={styles["error-message"]}>
-                          {exportContext.exportData.error.message}
-                        </div>
-                        <div class={styles["error-actions"]}>
-                          <button
-                            onClick={() => exportContext.retryExport()}
-                            class={styles["retry-button"]}
-                          >
-                            Try Again
-                          </button>
-                          <button
-                            onClick={() => exportContext.resetExport()}
-                            class={styles["cancel-button"]}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                      <div class={styles["polaroid-grit-overlay"]} />
-                    </div>
-                    <div class={styles["polaroid-caption"]}>
-                      <div class={styles["caption-content"]}>
-                        <span class={styles["polaroid-handwritten"]}>
-                          Oops! Something went wrong
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            {/* Error notification */}
-            {error() && (
-              <div class={styles["error-note"]}>
-                <p>{error()}</p>
-                <button onClick={() => setError(null)}>Dismiss</button>
-              </div>
-            )}
+            <DownloadCompleteModal visible={downloadComplete()} />
+            <ExportProgressModal />
+            <ExportErrorModal />
+            <ErrorNotification message={error()} onDismiss={() => setError(null)} />
 
             {/* Main content */}
             {loading() ? (
-              <div class={styles.loading}>
-                <div class={styles["loading-spinner"]}></div>
-                <p>Gathering your peachy memories...</p>
-              </div>
+              <LoadingState message="Gathering your peachy memories..." />
             ) : (
               <>
-                {polaroidPhotos.length === 0 ? (
-                  <div class={styles["no-posts"]}>
-                    <p>No posts found. Your peaches are still growing! 🌱</p>
-                  </div>
+                {polaroidPhotos().length === 0 ? (
+                  <EmptyStateMessage />
                 ) : (
                   <>
-                    <div class={styles["preserve-button-container"]}>
-                      <button
-                        onClick={downloadPeachData}
-                        class={styles["preserve-button"]}
-                        disabled={
-                          // Only disable during active processes
-                          exportContext.exportData.status === "preparing" ||
-                          exportContext.exportData.status === "exporting" ||
-                          downloading()
-                        }
-                        aria-busy={
-                          exportContext.exportData.status === "exporting" ||
-                          downloading()
-                        }
-                      >
-                        {exportContext.exportData.status === "preparing" ||
-                        exportContext.exportData.status === "exporting"
-                          ? "Downloading..."
-                          : "Download my Data"}
-                      </button>
-                    </div>
+                    <PeachPhotoCanvas
+                      photos={polaroidPhotos()}
+                      username={getUserName()}
+                      route={route}
+                      canvasWidth={canvasWidth()}
+                      canvasHeight={canvasHeight()}
+                    />
+
+                    <DownloadButton
+                      onClick={downloadPeachData}
+                      downloading={downloading()}
+                    />
                   </>
                 )}
               </>
@@ -703,10 +412,7 @@ export default function Dashboard() {
           </>
         ) : (
           // Static loading state during SSR and initial client render
-          <div class={styles.loading}>
-            <div class={styles["loading-spinner"]}></div>
-            <p>Loading...</p>
-          </div>
+          <LoadingState message="Loading..." />
         )}
       </main>
     </div>

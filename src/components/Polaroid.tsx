@@ -3,7 +3,7 @@ import styles from "./Polaroid.module.css";
 import { PolaroidPhoto } from "~/types/polaroid";
 import { generateTransformString, generatePolaroidStyles } from "~/utils/polaroidUtils";
 
-export interface UnifiedPolaroidProps {
+export interface PolaroidProps {
   id: string;
   
   // Image/content
@@ -45,7 +45,7 @@ export interface UnifiedPolaroidProps {
   onRotate?: (id: string) => void;
 }
 
-export function UnifiedPolaroid(props: UnifiedPolaroidProps): JSX.Element {
+export function Polaroid(props: PolaroidProps): JSX.Element {
   // Default touch handler that delegates to mouse handler
   const handleTouchStart = (e: TouchEvent) => {
     if (e.touches.length === 1) {

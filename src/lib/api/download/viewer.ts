@@ -1,13 +1,13 @@
 /**
- * Viewer generation functions for Peach Archive
- * These functions generate the CSS and JS for the viewer.html file
+ * Modified version of viewer.ts to fix media loading issues
+ * and add comment modal functionality
  */
 
 /**
  * Generate CSS for the viewer
  */
 export function generateViewerCSS(): string {
-  // Peach Archive Viewer Styles
+  // Peach Archive Viewer Styles - Add modal styles
   return `/* Peach Archive Viewer Styles */
 :root {
   --peach-primary: #ff98a8;
@@ -254,6 +254,7 @@ h1 {
   padding: 1.5rem;
   box-shadow: var(--shadow);
   transition: transform 0.2s;
+  cursor: pointer;
 }
 
 .post:hover {
@@ -360,6 +361,173 @@ footer {
   border-top: 1px solid #eee;
 }
 
+/* Modal Styles - For both comments and images */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-container {
+  background-color: white;
+  border-radius: var(--radius);
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.modal-header {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--peach-secondary);
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #888;
+  transition: color 0.2s;
+  padding: 0;
+  line-height: 1;
+}
+
+.close-button:hover {
+  color: var(--peach-secondary);
+}
+
+.modal-content {
+  padding: 1rem;
+}
+
+/* Comment Styles */
+.comment-list {
+  margin-top: 0.5rem;
+}
+
+.comment {
+  padding: 0.8rem;
+  border-bottom: 1px solid #eee;
+}
+
+.comment:last-child {
+  border-bottom: none;
+}
+
+.comment-author {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.author-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  text-transform: uppercase;
+}
+
+.comment-body {
+  color: var(--peach-dark);
+}
+
+/* Image Modal Styles */
+.image-modal-container {
+  background-color: transparent;
+  max-width: 95%;
+  max-height: 95vh;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fullscreen-image {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.image-close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1010;
+}
+
+/* Multi-media post layout */
+.full-width-media .post-media {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.full-width-media .media-item {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.full-width-media .media-item img,
+.full-width-media .media-item video {
+  width: 100%;
+  height: auto;
+  cursor: pointer;
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 600px) {
   body {
@@ -414,19 +582,23 @@ footer {
   .post-media {
     grid-template-columns: 1fr;
   }
+  
+  .modal-container {
+    width: 95%;
+    max-height: 90vh;
+  }
 }`;
 }
 
 /**
  * Generate JavaScript for the viewer
- * Includes month and year organization and stats display
+ * Includes month and year organization, stats display, and comment modal
  */
 export function generateViewerJS(): string {
   return `// Peach Archive Viewer Script
-document.addEventListener('DOMContentLoaded', function() {
+function initializeArchiveViewer() {
   const timeline = document.getElementById('timeline');
   const searchInput = document.getElementById('search-input');
-  const dateFilter = document.getElementById('date-filter');
   const searchBtn = document.getElementById('search-btn');
   const resetBtn = document.getElementById('reset-btn');
   const visiblePostsCounter = document.getElementById('visible-posts');
@@ -437,6 +609,121 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Store sorted posts for filtering
   let sortedPosts = [];
+  
+  // Create modal elements
+  const modalOverlay = document.createElement('div');
+  modalOverlay.className = 'modal-overlay';
+
+  const modalContainer = document.createElement('div');
+  modalContainer.className = 'modal-container';
+
+  modalOverlay.appendChild(modalContainer);
+  document.body.appendChild(modalOverlay);
+
+  // Create modal close functionality
+  modalOverlay.addEventListener('click', function(e) {
+    if (e.target === modalOverlay) {
+      closeModal();
+    }
+  });
+
+  function closeModal() {
+    modalOverlay.classList.remove('active');
+  }
+
+  // Generate a color based on string (for avatar placeholders)
+  function stringToColor(str) {
+    if (!str) return '#FF98A8'; // Default peach color
+
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    let color = '#';
+    for (let i = 0; i < 3; i++) {
+      const value = (hash >> (i * 8)) & 0xFF;
+      color += ('00' + value.toString(16)).substr(-2);
+    }
+
+    return color;
+  }
+
+  // Show comments modal
+  function showCommentsModal(post) {
+    // Set up modal content
+    modalContainer.innerHTML = \`
+      <div class="modal-header">
+        <h3 class="modal-title">Comments (\${post.comments ? post.comments.length : 0})</h3>
+        <button class="close-button" onclick="document.querySelector('.modal-overlay').classList.remove('active')">&times;</button>
+      </div>
+      <div class="modal-content">
+        <div class="comment-list">
+          \${post.comments && post.comments.length > 0 ?
+            post.comments.map(comment => \`
+              <div class="comment">
+                <div class="comment-author">
+                  \${comment.author.avatarSrc
+                    ? \`<img src="media/\${getAuthorAvatarFilename(comment.author.avatarSrc)}" alt="\${comment.author.displayName || comment.author.name}" class="author-avatar">\`
+                    : \`<div class="avatar-placeholder" style="background-color: \${stringToColor(comment.author.name)}">\${(comment.author.displayName || comment.author.name || '?').charAt(0)}</div>\`
+                  }
+                  \${comment.author.displayName || comment.author.name}
+                </div>
+                <div class="comment-body">\${comment.body}</div>
+              </div>
+            \`).join('') :
+            '<div class="comment">No comments on this post.</div>'}
+        </div>
+      </div>
+    \`;
+
+    // Show the modal
+    modalOverlay.classList.add('active');
+  }
+
+  // Show full-screen image modal
+  function showImageModal(imageSrc) {
+    modalContainer.className = 'image-modal-container';
+
+    // Set up modal content
+    modalContainer.innerHTML = \`
+      <button class="image-close-button" onclick="document.querySelector('.modal-overlay').classList.remove('active')">&times;</button>
+      <img src="\${imageSrc}" alt="Full-screen image" class="fullscreen-image">
+    \`;
+
+    // Show the modal
+    modalOverlay.classList.add('active');
+  }
+
+  // Return container to original state when closing
+  modalOverlay.addEventListener('click', function() {
+    modalContainer.className = 'modal-container';
+  });
+
+  // Helper function to get avatar filename
+  function getAuthorAvatarFilename(avatarSrc) {
+    if (!avatarSrc) return '';
+    const parts = avatarSrc.split('/');
+    return parts[parts.length - 1];
+  }
+  
+  // Format date for display
+  function formatDate(timestamp) {
+    if (!timestamp) return 'Unknown date';
+    
+    // Check if timestamp is in seconds or milliseconds
+    const dateObj = timestamp > 9999999999 
+      ? new Date(timestamp) // Already in milliseconds
+      : new Date(timestamp * 1000); // Convert from seconds to milliseconds
+      
+    return dateObj.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
   
   // Display the posts
   initializeViewer();
@@ -505,20 +792,6 @@ document.addEventListener('DOMContentLoaded', function() {
   function calculateFunStats(posts) {
     // Log some debug information to the console for easier troubleshooting
     console.log('Calculating stats for', posts.length, 'posts');
-    
-    // Find posts with media for debugging
-    const postsWithMedia = posts.filter(post => 
-      (post.localMediaPaths && post.localMediaPaths.length > 0) || 
-      (post.media && post.media.length > 0)
-    );
-    
-    // Log media posts info to console - this is safer than trying to modify the DOM
-    console.log('Found', postsWithMedia.length, 'posts with media');
-    postsWithMedia.forEach(post => {
-      console.log('Post ID:', post.id);
-      console.log('Local media paths:', post.localMediaPaths || []);
-      console.log('Media count:', post.media ? post.media.length : 0);
-    });
     
     if (!posts || posts.length === 0) return;
     
@@ -639,132 +912,67 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // Setup the date filter with appropriate min/max dates
-  function setupDateFilter() {
-    try {
-      // Find earliest and latest post dates
-      let earliestTimestamp = Infinity;
-      let latestTimestamp = 0;
-      
-      sortedPosts.forEach(post => {
-        if (post.createdTime) {
-          const timestamp = post.createdTime;
-          
-          if (timestamp < earliestTimestamp) {
-            earliestTimestamp = timestamp;
-          }
-          
-          if (timestamp > latestTimestamp) {
-            latestTimestamp = timestamp;
-          }
-        }
-      });
-      
-      // Convert to Date objects
-      const earliestDate = new Date(earliestTimestamp * 1000);
-      const latestDate = new Date(latestTimestamp * 1000);
-      
-      // Format as YYYY-MM-DD for input[type="date"]
-      const formatDateForInput = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return \`\${year}-\${month}-\${day}\`;
-      };
-      
-      // Set min and max dates for the input
-      dateFilter.min = formatDateForInput(earliestDate);
-      dateFilter.max = formatDateForInput(latestDate);
-      
-      // Set placeholder
-      dateFilter.setAttribute('placeholder', 'Select a date to filter posts');
-    } catch (error) {
-      console.error('Error setting up date filter:', error);
-    }
-  }
-  
-  // Search and filter posts by content and date
-  function filterByDate() {
+  // Filter posts based on selected criteria
+  function filterPosts() {
     const searchTerm = searchInput.value.trim().toLowerCase();
-    const selectedDate = dateFilter.value;
+    const selectedYear = document.getElementById('year-select').value;
+    const selectedMonth = document.getElementById('month-select').value;
     
-    if (!searchTerm && !selectedDate) {
-      alert('Please enter a search term or select a date');
-      return;
+    // Start with all posts
+    let filteredPosts = [...sortedPosts];
+    
+    // Apply year filter
+    if (selectedYear) {
+      filteredPosts = filteredPosts.filter(post => {
+        if (!post.createdTime) return false;
+        const postDate = new Date(post.createdTime * 1000);
+        return postDate.getFullYear().toString() === selectedYear;
+      });
     }
     
-    try {
-      // Prepare date filter if selected
-      let selectedTimestamp = null;
-      if (selectedDate) {
-        const selectedDateObj = new Date(selectedDate);
-        selectedDateObj.setHours(0, 0, 0, 0);
-        selectedTimestamp = selectedDateObj.getTime() / 1000;
-      }
-      
-      // Filter posts based on search term and/or date
-      const filteredPosts = sortedPosts.filter(post => {
-        // Check date filter
-        let matchesDate = true;
-        if (selectedTimestamp) {
-          if (!post.createdTime) return false;
-          
-          // Convert post timestamp to date object
-          const postDate = new Date(post.createdTime * 1000);
-          postDate.setHours(0, 0, 0, 0);
-          const postTimestamp = postDate.getTime() / 1000;
-          
-          // Check if post date matches selected date
-          matchesDate = postTimestamp === selectedTimestamp;
-        }
+    // Apply month filter
+    if (selectedMonth) {
+      filteredPosts = filteredPosts.filter(post => {
+        if (!post.createdTime) return false;
+        const postDate = new Date(post.createdTime * 1000);
+        return postDate.getMonth().toString() === selectedMonth;
+      });
+    }
+    
+    // Apply search term filter
+    if (searchTerm) {
+      filteredPosts = filteredPosts.filter(post => {
+        // Extract message content for searching
+        let messageContent = '';
         
-        // Check content filter
-        let matchesContent = true;
-        if (searchTerm) {
-          matchesContent = false;
-          
-          // Search in message content
-          if (post.message) {
-            if (Array.isArray(post.message)) {
-              for (const msg of post.message) {
-                if (msg.type === 'text' && msg.text && msg.text.toLowerCase().includes(searchTerm)) {
-                  matchesContent = true;
-                  break;
-                }
+        if (post.message) {
+          if (typeof post.message === 'string') {
+            messageContent = post.message.toLowerCase();
+          } else if (Array.isArray(post.message)) {
+            post.message.forEach(part => {
+              if (part && part.type === 'text' && part.text) {
+                messageContent += part.text.toLowerCase() + ' ';
               }
-            } else if (typeof post.message === 'string' && post.message.toLowerCase().includes(searchTerm)) {
-              matchesContent = true;
-            }
+            });
           }
         }
         
-        return matchesDate && matchesContent;
+        return messageContent.includes(searchTerm);
       });
-      
-      // Display filtered posts
-      displayPosts(filteredPosts);
-      updateVisiblePostsCount(filteredPosts.length);
-      
-      // Scroll to top
-      window.scrollTo(0, 0);
-    } catch (error) {
-      console.error('Error filtering posts:', error);
-      alert('Error filtering posts. Please try again.');
     }
+    
+    // Display filtered posts
+    displayPosts(filteredPosts);
+    calculateFunStats(filteredPosts);
   }
   
   // Reset all filters
   function resetFilter() {
-    // Clear all inputs
     searchInput.value = '';
-    dateFilter.value = '';
-    
-    // Display all posts
+    document.getElementById('year-select').selectedIndex = 0;
+    document.getElementById('month-select').selectedIndex = 0;
     displayPosts(sortedPosts);
-    updateVisiblePostsCount(sortedPosts.length);
-    
-    // Scroll to top
-    window.scrollTo(0, 0);
+    calculateFunStats(sortedPosts);
   }
   
   // Update the visible posts counter
@@ -845,69 +1053,6 @@ document.addEventListener('DOMContentLoaded', function() {
     updateVisiblePostsCount(posts.length);
   }
   
-  // Filter posts based on selected criteria
-  function filterPosts() {
-    const searchTerm = searchInput.value.trim().toLowerCase();
-    const selectedYear = document.getElementById('year-select').value;
-    const selectedMonth = document.getElementById('month-select').value;
-    
-    // Start with all posts
-    let filteredPosts = [...sortedPosts];
-    
-    // Apply year filter
-    if (selectedYear) {
-      filteredPosts = filteredPosts.filter(post => {
-        if (!post.createdTime) return false;
-        const postDate = new Date(post.createdTime * 1000);
-        return postDate.getFullYear().toString() === selectedYear;
-      });
-    }
-    
-    // Apply month filter
-    if (selectedMonth) {
-      filteredPosts = filteredPosts.filter(post => {
-        if (!post.createdTime) return false;
-        const postDate = new Date(post.createdTime * 1000);
-        return postDate.getMonth().toString() === selectedMonth;
-      });
-    }
-    
-    // Apply search term filter
-    if (searchTerm) {
-      filteredPosts = filteredPosts.filter(post => {
-        // Extract message content for searching
-        let messageContent = '';
-        
-        if (post.message) {
-          if (typeof post.message === 'string') {
-            messageContent = post.message.toLowerCase();
-          } else if (Array.isArray(post.message)) {
-            post.message.forEach(part => {
-              if (part && part.type === 'text' && part.text) {
-                messageContent += part.text.toLowerCase() + ' ';
-              }
-            });
-          }
-        }
-        
-        return messageContent.includes(searchTerm);
-      });
-    }
-    
-    // Display filtered posts
-    displayPosts(filteredPosts);
-    calculateFunStats(filteredPosts);
-  }
-  
-  // Reset all filters
-  function resetFilter() {
-    searchInput.value = '';
-    document.getElementById('year-select').selectedIndex = 0;
-    document.getElementById('month-select').selectedIndex = 0;
-    displayPosts(sortedPosts);
-    calculateFunStats(sortedPosts);
-  }
-  
   // Create an HTML element for a post
   function createPostElement(post) {
     const postElement = document.createElement('article');
@@ -939,13 +1084,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const year = dateObj.getFullYear();
         const month = String(dateObj.getMonth() + 1).padStart(2, '0');
         const day = String(dateObj.getDate()).padStart(2, '0');
-        dateForAttribute = \`\${year}-\${month}-\${day}\`;
+        dateForAttribute = year + '-' + month + '-' + day;
       } else {
         postDate = 'Unknown date';
       }
       
       // Store date as data attribute for filtering
       postElement.setAttribute('data-date', dateForAttribute);
+      
+      // Extract media from message and identify all possible image sources
+      let mediaFromMessage = [];
+      if (Array.isArray(post.message)) {
+        mediaFromMessage = post.message.filter(item => item.type === 'image' && item.src);
+      }
       
       // Create post HTML structure
       postElement.innerHTML = \`
@@ -954,18 +1105,24 @@ document.addEventListener('DOMContentLoaded', function() {
           <span class="post-id">#\${post.id}</span>
         </div>
         <div class="post-content">\${formatMessage(post.message)}</div>
-        \${post.localMediaPaths && post.localMediaPaths.length > 0 
-          ? \`<div class="post-media">\${createMediaElements(post.localMediaPaths)}</div>\`
-          : (post.media && post.media.length > 0)
-            ? \`<div class="post-media">\${createMediaElementsFromMedia(post.media, post.id)}</div>\`
-            : ''}
+        \${createPostMediaHtml(post, mediaFromMessage)}
         <div class="post-footer">
           <div class="post-stats">
             \${post.likeCount ? \`<span class="likes">❤️ \${post.likeCount}</span>\` : ''}
-            \${post.commentCount ? \`<span class="comments">💬 \${post.commentCount}</span>\` : ''}
+            \${post.commentCount ? \`<span class="comments comments-link">💬 \${post.commentCount}</span>\` : ''}
           </div>
         </div>
       \`;
+
+      // Only show comments modal when clicking on the comments link
+      const commentsLink = postElement.querySelector('.comments-link');
+      if (commentsLink) {
+        commentsLink.addEventListener('click', function(e) {
+          e.stopPropagation(); // Prevent post click event
+          showCommentsModal(post);
+        });
+      }
+      
     } catch (error) {
       console.error('Error creating post element:', error, post);
       postElement.innerHTML = \`
@@ -976,6 +1133,41 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     return postElement;
+  }
+  
+  // Create the media HTML for a post
+  function createPostMediaHtml(post, mediaFromMessage) {
+    // Check all possible sources of media in order of priority
+    let mediaContent = '';
+    let mediaCount = 0;
+
+    // Count total media items
+    if (post.localMediaPaths && post.localMediaPaths.length > 0) {
+      mediaCount = post.localMediaPaths.length;
+    } else if (post.media && post.media.length > 0) {
+      mediaCount = post.media.length;
+    } else if (mediaFromMessage && mediaFromMessage.length > 0) {
+      mediaCount = mediaFromMessage.length;
+    }
+
+    // Apply full-width class for posts with multiple media items
+    const layoutClass = mediaCount > 1 ? 'full-width-media' : '';
+
+    // 1. First check local media paths from the archive
+    if (post.localMediaPaths && post.localMediaPaths.length > 0) {
+      mediaContent = createMediaElements(post.localMediaPaths);
+    }
+    // 2. Then check the post.media array
+    else if (post.media && post.media.length > 0) {
+      mediaContent = createMediaElementsFromMedia(post.media, post.id);
+    }
+    // 3. Finally check for media elements inside the message array
+    else if (mediaFromMessage && mediaFromMessage.length > 0) {
+      mediaContent = createMediaElementsFromMessageMedia(mediaFromMessage, post.id);
+    }
+
+    // Return the media HTML with appropriate class
+    return mediaContent ? '<div class="post-media ' + layoutClass + '">' + mediaContent + '</div>' : '';
   }
   
   // Format the message content for display with error handling
@@ -1013,18 +1205,19 @@ document.addEventListener('DOMContentLoaded', function() {
   // Create HTML elements for media files using paths
   function createMediaElements(mediaPaths) {
     if (!mediaPaths || !Array.isArray(mediaPaths)) return '';
-    
+
     try {
       return mediaPaths.map(path => {
         if (!path) return '';
-        
+
         const isVideo = path.endsWith('.mp4') || path.endsWith('.webm');
-        
+        const mediaPath = 'media/' + path;
+
         if (isVideo) {
           return \`
             <div class="media-item">
               <video controls>
-                <source src="media/\${path}" type="video/\${path.endsWith('.mp4') ? 'mp4' : 'webm'}">
+                <source src="\${mediaPath}" type="video/\${path.endsWith('.mp4') ? 'mp4' : 'webm'}">
                 Your browser does not support the video tag.
               </video>
             </div>
@@ -1032,7 +1225,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
           return \`
             <div class="media-item">
-              <img src="media/\${path}" alt="Post media" loading="lazy">
+              <img src="\${mediaPath}" alt="Post media" loading="lazy" onclick="showImageModal('\${mediaPath}')">
             </div>
           \`;
         }
@@ -1042,50 +1235,103 @@ document.addEventListener('DOMContentLoaded', function() {
       return '<div class="media-error">Error displaying media</div>';
     }
   }
-  
+
   // Create HTML elements directly from media objects
   function createMediaElementsFromMedia(mediaItems, postId) {
     if (!mediaItems || !Array.isArray(mediaItems)) return '';
-    
+
     try {
       return mediaItems.map((media, index) => {
         if (!media || !media.url) return '';
-        
+
         // Get file extension from URL
         const url = media.url;
         const ext = url.split('.').pop()?.toLowerCase() || '';
         const isVideo = ext === 'mp4' || ext === 'webm';
-        
+
         // If we have a post ID, use the new naming scheme
         let filename = '';
         if (postId) {
           // Replicate the same naming logic used in generateMediaFilename
           const shortPostId = postId.substring(0, 8);
           const paddedIndex = String(index).padStart(2, '0');
-          // Using string concatenation instead of template literals to avoid syntax issues
-          filename = "post_" + shortPostId + "_img_" + paddedIndex + "." + (ext || 'jpg');
+          filename = 'post_' + shortPostId + '_img_' + paddedIndex + '.' + (ext || 'jpg');
         } else {
           // Fallback to old naming scheme
-          filename = "media_" + String(index).padStart(3, '0') + "." + (ext || 'jpg');
+          filename = 'media_' + String(index).padStart(3, '0') + '.' + (ext || 'jpg');
         }
-        
+
+        const mediaPath = 'media/' + filename;
+
         if (isVideo) {
-          // Use string concatenation instead of template literals
-          return '<div class="media-item">' +
-                 '<video controls>' +
-                 '<source src="media/' + filename + '" type="video/' + ext + '">' +
-                 'Your browser does not support the video tag.' +
-                 '</video>' +
-                 '</div>';
+          return \`
+            <div class="media-item">
+              <video controls>
+                <source src="\${mediaPath}" type="video/\${ext}">
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          \`;
         } else {
-          // Use string concatenation instead of template literals
-          return '<div class="media-item">' +
-                 '<img src="media/' + filename + '" alt="Post media" loading="lazy">' +
-                 '</div>';
+          return \`
+            <div class="media-item">
+              <img src="\${mediaPath}" alt="Post media" loading="lazy" onclick="showImageModal('\${mediaPath}')">
+            </div>
+          \`;
         }
       }).join('');
     } catch (error) {
       console.error('Error creating media elements from media objects:', error);
+      return '<div class="media-error">Error displaying media</div>';
+    }
+  }
+
+  // Create HTML elements from media items in the message array
+  function createMediaElementsFromMessageMedia(mediaItems, postId) {
+    if (!mediaItems || !Array.isArray(mediaItems)) return '';
+
+    try {
+      return mediaItems.map((media, index) => {
+        if (!media || !media.src) return '';
+
+        // Get file extension from URL
+        const url = media.src;
+        const ext = url.split('.').pop()?.toLowerCase() || '';
+        const isVideo = ext === 'mp4' || ext === 'webm';
+
+        // If we have a post ID, use the new naming scheme
+        let filename = '';
+        if (postId) {
+          // Replicate the same naming logic used in generateMediaFilename
+          const shortPostId = postId.substring(0, 8);
+          const paddedIndex = String(index).padStart(2, '0');
+          filename = 'post_' + shortPostId + '_img_' + paddedIndex + '.' + (ext || 'jpg');
+        } else {
+          // Fallback to old naming scheme
+          filename = 'media_' + String(index).padStart(3, '0') + '.' + (ext || 'jpg');
+        }
+
+        const mediaPath = 'media/' + filename;
+
+        if (isVideo) {
+          return \`
+            <div class="media-item">
+              <video controls>
+                <source src="\${mediaPath}" type="video/\${ext}">
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          \`;
+        } else {
+          return \`
+            <div class="media-item">
+              <img src="\${mediaPath}" alt="Post media" loading="lazy" onclick="showImageModal('\${mediaPath}')">
+            </div>
+          \`;
+        }
+      }).join('');
+    } catch (error) {
+      console.error('Error creating media elements from message media:', error);
       return '<div class="media-error">Error displaying media</div>';
     }
   }

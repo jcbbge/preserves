@@ -24,20 +24,9 @@ export function formatFileSize(bytes: number): string {
   return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
 }
 
-// Constants for development and debugging
-export const DEV_MODE = true;
-export const DEBUG = true;
-
-// Debug logging utility
+// Debug logging utility - disabled in production
 export function debugLog(section: string, message: string, data?: any) {
-  if (!DEBUG) return;
-
-  console.group(`🐛 DEBUG [${section}]`);
-  console.log(message);
-  if (data !== undefined) {
-    console.log("DATA:", data);
-  }
-  console.groupEnd();
+  // Debug logging disabled
 }
 
 // Media type validation utilities
@@ -181,30 +170,10 @@ export async function validateMediaFormat(
   };
 }
 
-// File system utilities for DEV_MODE
+// Debug file writing - disabled in production
 export async function writeDebugFile(
   data: ArrayBuffer | Blob,
   filename: string,
 ): Promise<void> {
-  if (!DEV_MODE) return;
-
-  try {
-    const fs = require("fs");
-    const path = require("path");
-    const debugPath = path.join("downloads", filename);
-
-    // Ensure we have ArrayBuffer
-    const buffer =
-      data instanceof Blob
-        ? Buffer.from(await data.arrayBuffer())
-        : Buffer.from(data);
-
-    fs.writeFileSync(debugPath, buffer);
-    debugLog(
-      "debug",
-      `Wrote debug file: ${debugPath} (${buffer.length} bytes)`,
-    );
-  } catch (error) {
-    debugLog("debug", `Failed to write debug file: ${error}`);
-  }
+  // Debug file writing disabled
 }

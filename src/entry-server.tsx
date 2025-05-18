@@ -1,6 +1,6 @@
 // @refresh reload
 import { createHandler, StartServer } from "@solidjs/start/server";
-import authMiddleware from "./middleware/index";
+import authMiddleware from "./middleware/authMiddleware";
 
 export default createHandler(() => (
   <StartServer
