@@ -12,7 +12,7 @@ import {
 import { createStore, produce } from "solid-js/store";
 import { TransformProvider, Point, CanvasViewport } from "./TransformContext";
 import { createInteractionManager } from "./InteractionManager";
-import { InfiniteCanvasProps, InfiniteCanvasAPI } from "./types";
+import { InfiniteCanvasProps, InfiniteCanvasAPI } from "~/types/infiniteCanvasTypes";
 import styles from "./InfiniteCanvas.module.css";
 
 // Create a context for the canvas API

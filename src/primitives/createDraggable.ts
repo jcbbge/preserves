@@ -1,7 +1,7 @@
 import { createSignal, onMount, onCleanup, createEffect } from "solid-js";
 import { Store, SetStoreFunction } from "solid-js/store";
 import { Point, Vector, TransformContextValue } from "./infiniteCanvas/TransformContext";
-import { InfiniteCanvasAPI } from "./infiniteCanvas/types";
+import { InfiniteCanvasAPI } from "~/types/infiniteCanvasTypes";
 import { findParentCanvasItem } from "./infiniteCanvas/CanvasItem";
 
 /**

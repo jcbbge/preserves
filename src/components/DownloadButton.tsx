@@ -1,4 +1,4 @@
-import styles from '~/routes/dashboard.module.css';
+import styles from './DownloadButton.module.css';
 import { useExport } from '~/context/export';
 
 type DownloadButtonProps = {

@@ -1,4 +1,4 @@
-import styles from '~/routes/dashboard.module.css';
+import styles from './EmptyStateMessage.module.css';
 
 export function EmptyStateMessage() {
   return (

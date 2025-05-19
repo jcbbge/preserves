@@ -1,0 +1,32 @@
+/* ErrorNotification.module.css */
+:root {
+    --peach-primary: #ff9a8b;
+    --peach-secondary: #ff6b6b;
+    --error-color: #ff4d4d;
+}
+
+.error-note {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ffebeb;
+    border-left: 4px solid var(--peach-secondary);
+    padding: 1rem 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 1000;
+    max-width: 90%;
+}
+
+.error-note button {
+    background: none;
+    border: none;
+    color: var(--peach-secondary);
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0.5rem;
+}

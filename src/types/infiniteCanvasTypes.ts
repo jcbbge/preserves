@@ -1,5 +1,5 @@
 import { JSX } from "solid-js";
-import { Point, Vector, CanvasViewport } from "./TransformContext";
+import { Point, Vector, CanvasViewport } from "~/primitives/infiniteCanvas/TransformContext";
 
 // Define interaction types and interfaces
 export type InteractionType = 'pan' | 'drag' | 'zoom' | 'none';

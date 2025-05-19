@@ -1,6 +1,6 @@
 import { JSX, createEffect, createSignal, onMount, onCleanup, Show } from "solid-js";
 import { useTransform, Point, Vector, Rect } from "./TransformContext";
-import { CanvasItemProps, CanvasItemAPI } from "./types";
+import { CanvasItemProps, CanvasItemAPI } from "~/types/infiniteCanvasTypes";
 import { useInfiniteCanvas } from "./InfiniteCanvas";
 import styles from "./InfiniteCanvas.module.css";
 

@@ -1,0 +1,58 @@
+/* DownloadButton.module.css */
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap");
+
+:root {
+    --peach-primary: #ff9a8b;
+    --peach-secondary: #ff6b6b;
+    --peach-accent: #ffcbc1;
+    --peach-background: #fff4f2;
+    --peach-dark: #e86c5d;
+    --text-dark: #4a3f3a;
+    --text-light: #ffffff;
+    --error-color: #ff4d4d;
+    --transition-duration: 300ms;
+}
+
+.preserve-button-container {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+}
+
+.preserve-button {
+    background-color: var(--peach-primary);
+    color: var(--peach-dark);
+    border: 2px solid var(--peach-dark);
+    padding: 1rem 2.5rem;
+    border-radius: 2rem;
+    font-size: 1.25rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    font-family: "Nunito", sans-serif;
+}
+
+.preserve-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+    background-color: var(--peach-secondary);
+    color: white;
+}
+
+.preserve-button:disabled {
+    background-color: rgba(255, 221, 221, 0.6);
+    border-color: rgba(95, 56, 192, 0.4);
+    color: rgba(95, 56, 192, 0.6);
+    cursor: not-allowed;
+    transform: none;
+}
+
+@media (max-width: 768px) {
+    .preserve-button {
+        font-size: 0.8rem;
+        padding: 0.5rem 1rem;
+    }
+}

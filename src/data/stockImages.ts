@@ -80,19 +80,21 @@ export const stockImages = [
   },
 ];
 
-// Predefined positions for stock images
+// Predefined positions for stock images in a circular pattern
 export const predefinedPositions = {
-  stock1: { x: 796, y: 632.5 },
-  stock2: { x: 812.2606284458755, y: 181.04631805511508 },
-  stock3: { x: 422.3742249073924, y: -109.37895001717351 },
-  stock4: { x: 680.3695385621181, y: 730.967306452139 },
-  stock5: { x: -17.937571158825392, y: 641.6346437554041 },
-  stock6: { x: 707.6914814808155, y: 46.51864804656071 },
-  stock7: { x: 92.35800509573659, y: 810.0368818696267 },
-  stock8: { x: 46.11590233770039, y: -17.328164275597544 },
-  stock9: { x: 693.651630471095, y: 883.6041257004499 },
-  stock10: { x: -48.34153247423609, y: 107.87514749648301 },
-  stock11: { x: 757.1371798814184, y: -149.86902237054204 },
-  stock12: { x: 387.1332206033734, y: 843.0005601461124 },
-  stock13: { x: 336.35871498447614, y: -106.32491281242051 },
+  // Calculate positions in a circle around the center (0,0)
+  // Using a radius of 600 and distributing evenly
+  stock1: { x: 600, y: 0 },                                  // 0 degrees
+  stock2: { x: 553.5, y: 235.5 },                            // 23 degrees
+  stock3: { x: 424, y: 424 },                                // 45 degrees
+  stock4: { x: 235.5, y: 553.5 },                            // 68 degrees
+  stock5: { x: 0, y: 600 },                                  // 90 degrees
+  stock6: { x: -235.5, y: 553.5 },                           // 113 degrees
+  stock7: { x: -424, y: 424 },                               // 135 degrees
+  stock8: { x: -553.5, y: 235.5 },                           // 158 degrees
+  stock9: { x: -600, y: 0 },                                 // 180 degrees
+  stock10: { x: -553.5, y: -235.5 },                         // 203 degrees
+  stock11: { x: -424, y: -424 },                             // 225 degrees
+  stock12: { x: -235.5, y: -553.5 },                         // 248 degrees
+  stock13: { x: 0, y: -600 },                                // 270 degrees
 };

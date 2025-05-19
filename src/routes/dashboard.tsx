@@ -1,22 +1,23 @@
-import { Show, createSignal, onMount, createEffect } from "solid-js";
+import { createSignal, onMount, createEffect } from "solid-js";
 import { Title } from "@solidjs/meta";
 import { useNavigate } from "@solidjs/router";
+
 import { usePeach } from "~/context/peach";
 import { useExport } from "~/context/export";
+
 import { fetchStream } from "./api/stream";
 import { downloadPeachData as fetchPeachData } from "~/lib/api/download";
-import styles from './dashboard.module.css';
+import styles from "./dashboard.module.css";
 import { PolaroidPhoto } from "~/types/polaroid";
 import {
   retrievePosts,
   retrieveCursor,
   storePosts,
   storeCursor,
-  transformPostsToPolaroids
+  transformPostsToPolaroids,
 } from "~/utils/storage";
 
-// Extracted components
-import { PeachHeader } from "~/components/PeachHeader";
+// Component imports
 import { DownloadCompleteModal } from "~/components/DownloadCompleteModal";
 import { ExportProgressModal } from "~/components/ExportProgressModal";
 import { ExportErrorModal } from "~/components/ExportErrorModal";
@@ -31,17 +32,14 @@ export default function Dashboard() {
   const exportContext = useExport();
   const navigate = useNavigate();
 
-  // Handle logout action
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
+  // Route identifier
+  const route = "dashboard";
 
   // Get stored username from user context to use as key for user-specific storage
   const getUserName = () => user.data?.username || "unknown";
   const storageKeyPrefix = () => `peach_preserves_${getUserName()}_`;
 
-  // Initialize signals with stored values when available - using storage utility
+  // Initialize signals with stored values when available
   const [downloading, setDownloading] = createSignal(false);
   const [downloadComplete, setDownloadComplete] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
@@ -58,56 +56,13 @@ export default function Dashboard() {
   const [polaroidPhotos, setPolaroidPhotos] = createSignal<PolaroidPhoto[]>([]);
   const [canvasWidth, setCanvasWidth] = createSignal(0);
   const [canvasHeight, setCanvasHeight] = createSignal(0);
-
-  // Route identifier
-  const route = "dashboard";
-
-  // Redirect if not authenticated
-  const redirectIfNotAuth = () => {
-    if (!isAuthenticated()) {
-      setTimeout(() => navigate("/"), 0);
-      return true;
-    }
-    return false;
+  const [clientOnly, setClientOnly] = createSignal(false);
+  
+  // Handle logout action
+  const handleLogout = () => {
+    logout();
+    navigate("/");
   };
-
-  // Use onMount to ensure we don't redirect during SSR
-  onMount(redirectIfNotAuth);
-
-  // Also check when auth state changes
-  createEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/");
-    }
-  });
-
-  // Get current values for debugging - safely accessing with optional chaining
-  const currentUsername = user.data?.username;
-  const currentToken = token();
-
-  // Check credentials after we're sure we're not redirecting
-  onMount(() => {
-    if (isAuthenticated() && (!currentUsername || !currentToken)) {
-      setError("Missing username or token");
-      setLoading(false);
-    }
-    
-    // Set canvas dimensions
-    setCanvasWidth(window.innerWidth);
-    setCanvasHeight(window.innerHeight - 60); // Subtract header height
-    
-    // Add window resize handler
-    const handleResize = () => {
-      setCanvasWidth(window.innerWidth);
-      setCanvasHeight(window.innerHeight - 60); // Subtract header height
-    };
-    
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  });
 
   // Load user posts - only called after authentication is confirmed
   const loadPosts = async () => {
@@ -132,17 +87,7 @@ export default function Dashboard() {
       // Extract data from server response
       const data = response.success ? response.data : null;
 
-      // From example: var posts = stream.data.data.posts;
       if (data && data.data && data.data.posts) {
-        const postsWithMedia = data.data.posts.filter(
-          (p) => p.media && p.media.length > 0,
-        );
-
-        // Check for posts with no media to track message structure
-        const postsWithoutMedia = data.data.posts.filter(
-          (p) => !p.media || p.media.length === 0,
-        );
-
         // Update state
         setPosts(data.data.posts);
         setCursor(data.data.cursor);
@@ -266,7 +211,66 @@ export default function Dashboard() {
     }
   };
 
-  // Update polaroids when posts change - ensure unique posts only
+
+
+
+
+  // Authentication and initialization
+  onMount(() => {
+    // Redirect if not authenticated
+    if (!isAuthenticated()) {
+      setTimeout(() => navigate("/"), 0);
+      return;
+    }
+
+    // Check credentials
+    if (isAuthenticated() && (!user.data?.username || !token())) {
+      setError("Missing username or token");
+      setLoading(false);
+    }
+
+    // Set canvas dimensions
+    setCanvasWidth(window.innerWidth);
+    setCanvasHeight(window.innerHeight - 60); // Subtract header height
+
+    // Add window resize handler
+    const handleResize = () => {
+      setCanvasWidth(window.innerWidth);
+      setCanvasHeight(window.innerHeight - 60);
+    };
+    window.addEventListener("resize", handleResize);
+
+    // Load posts if needed
+    if (posts().length === 0) {
+      // Small delay to ensure auth is fully processed
+      setTimeout(() => loadPosts(), 100);
+    } else {
+      const storedPosts = posts();
+      setPolaroidPhotos(
+        transformPostsToPolaroids(storedPosts, {
+          route,
+          username: getUserName(),
+        })
+      );
+      setLoading(false);
+    }
+
+    // Set client-only flag for hydration safety
+    setTimeout(() => setClientOnly(true), 100);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  });
+
+  // Auth state effect
+  createEffect(() => {
+    if (!isAuthenticated()) {
+      navigate("/");
+    }
+  });
+
+  // Update polaroids when posts change
   createEffect(() => {
     const currentPosts = posts();
     if (currentPosts.length > 0) {
@@ -279,86 +283,64 @@ export default function Dashboard() {
           uniquePosts.push(post);
         }
       }
-      
+
       // Transform posts to polaroids using the storage utility
-      setPolaroidPhotos(transformPostsToPolaroids(uniquePosts, {
-        route,
-        username: getUserName()
-      }));
+      setPolaroidPhotos(
+        transformPostsToPolaroids(uniquePosts, {
+          route,
+          username: getUserName(),
+        }),
+      );
     }
-  });
-
-  // Load posts on mount if needed
-  onMount(() => {
-    // Check authentication first
-    if (!isAuthenticated()) {
-      return;
-    }
-
-    // Only load posts if we don't have any stored
-    if (posts().length === 0) {
-      // Small delay to ensure auth is fully processed
-      setTimeout(() => loadPosts(), 100);
-    } else {
-      const storedPosts = posts();
-      
-      // Transform posts to polaroids using the storage utility
-      setPolaroidPhotos(transformPostsToPolaroids(storedPosts, {
-        route,
-        username: getUserName()
-      }));
-      
-      setLoading(false);
-    }
-  });
-
-  // Simplified render function for client-side only content
-  // This approach completely avoids hydration mismatches by using clientOnly signal
-  const [clientOnly, setClientOnly] = createSignal(false);
-
-  // Only set clientOnly to true after mount on client
-  onMount(() => {
-    // Small delay to ensure client-side render is complete
-    setTimeout(() => setClientOnly(true), 100);
   });
 
   return (
     <div class={styles["peach-preserve"]}>
       <Title>Peach Preserves</Title>
-      <PeachHeader onLogout={handleLogout} />
+      <header class={styles["header"]}>
+        <div class={styles["logo"]}>
+          <img src="/logo.png" alt="Peach Preserves Logo" class={styles["logo-img"]} />
+          <span>Peach Preserves</span>
+        </div>
+        <div class={styles["header-buttons"]}>
+          <button class={styles["header-button"]} onClick={handleLogout}>
+            Log Out
+          </button>
+        </div>
+      </header>
 
       <main class={styles["interactive-canvas"]}>
         {/* Only render dynamic content on client */}
         {clientOnly() ? (
           <>
+            {/* Modals and notifications */}
             <DownloadCompleteModal visible={downloadComplete()} />
             <ExportProgressModal />
             <ExportErrorModal />
-            <ErrorNotification message={error()} onDismiss={() => setError(null)} />
+            <ErrorNotification
+              message={error()}
+              onDismiss={() => setError(null)}
+            />
 
             {/* Main content */}
             {loading() ? (
               <LoadingState message="Gathering your peachy memories..." />
+            ) : polaroidPhotos().length === 0 ? (
+              <EmptyStateMessage />
             ) : (
               <>
-                {polaroidPhotos().length === 0 ? (
-                  <EmptyStateMessage />
-                ) : (
-                  <>
-                    <PeachPhotoCanvas
-                      photos={polaroidPhotos()}
-                      username={getUserName()}
-                      route={route}
-                      canvasWidth={canvasWidth()}
-                      canvasHeight={canvasHeight()}
-                    />
+                <PeachPhotoCanvas
+                  photos={polaroidPhotos()}
+                  username={getUserName()}
+                  route={route}
+                  canvasWidth={canvasWidth()}
+                  canvasHeight={canvasHeight()}
+                />
 
-                    <DownloadButton
-                      onClick={downloadPeachData}
-                      downloading={downloading()}
-                    />
-                  </>
-                )}
+                <DownloadButton
+                  onClick={downloadPeachData}
+                  downloading={downloading()}
+                />
               </>
             )}
           </>

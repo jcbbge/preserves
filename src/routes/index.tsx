@@ -8,10 +8,10 @@ import { PolaroidPhoto } from "~/types/polaroid";
 import { Polaroid } from "~/components/Polaroid";
 import { stockImages, predefinedPositions } from "~/data/stockImages";
 import LoginForm from "~/components/LoginForm";
-import { 
-  InfiniteCanvas, 
-  CanvasItem, 
-  useInfiniteCanvas
+import {
+  InfiniteCanvas,
+  CanvasItem,
+  useInfiniteCanvas,
 } from "~/primitives/infiniteCanvas/InfiniteCanvas";
 import { createDraggable, DraggableItem } from "~/primitives/createDraggable";
 import { Vector } from "~/primitives/infiniteCanvas/TransformContext";
@@ -43,12 +43,12 @@ export default function Home() {
   const storageKeyPrefix = () => `peach_preserves_${getUserName()}_`;
 
   // Create draggable primitive for handling polaroid interactions
-  const { 
-    draggedId, 
-    handleDragStart, 
-    handleDragMove, 
+  const {
+    draggedId,
+    handleDragStart,
+    handleDragMove,
     handleDragEnd,
-    isDragging
+    isDragging,
   } = createDraggable(polaroidPhotos, setPolaroidPhotos, {
     route,
     username: getUserName(),
@@ -68,7 +68,7 @@ export default function Home() {
 
   // Function to get an item position - used by InfiniteCanvas for focal points
   const getItemPosition = (id: string) => {
-    return polaroidPhotos.find(p => p.id === id)?.position;
+    return polaroidPhotos.find((p) => p.id === id)?.position;
   };
 
   // Use onMount to ensure we don't redirect during SSR
@@ -101,7 +101,7 @@ export default function Home() {
       caption: "",
       date: new Date().toISOString(),
     };
-    
+
     // Set photos in store
     setPolaroidPhotos([menuItem, ...photos]);
 

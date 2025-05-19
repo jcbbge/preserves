@@ -1,6 +1,6 @@
 import { For, createEffect, createContext, useContext } from 'solid-js';
 import { createStore } from 'solid-js/store';
-import styles from '~/routes/dashboard.module.css';
+import styles from './PeachPhotoCanvas.module.css';
 import { PolaroidPhoto } from '~/types/polaroid';
 import { InfiniteCanvas, useInfiniteCanvas } from '~/primitives/infiniteCanvas/InfiniteCanvas';
 import { CanvasItem } from '~/primitives/infiniteCanvas/CanvasItem';

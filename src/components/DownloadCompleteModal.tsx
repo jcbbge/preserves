@@ -1,5 +1,5 @@
 import { Show } from 'solid-js';
-import styles from '~/routes/dashboard.module.css';
+import styles from './DownloadCompleteModal.module.css';
 
 type DownloadCompleteModalProps = {
   visible: boolean;

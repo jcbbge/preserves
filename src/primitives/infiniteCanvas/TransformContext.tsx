@@ -1,4 +1,10 @@
-import { createContext, useContext, JSX, createSignal, createEffect } from 'solid-js';
+import {
+  createContext,
+  useContext,
+  JSX,
+  createSignal,
+  createEffect,
+} from "solid-js";
 
 // Type definitions for points, vectors, and sizes
 export interface Point {
@@ -33,21 +39,21 @@ export interface CanvasViewport {
 export interface TransformContextValue {
   // Current viewport state
   viewport: CanvasViewport;
-  
+
   // Coordinate transformation methods
   worldToScreen: (point: Point) => Point;
   worldToScreenVector: (vector: Vector) => Vector;
   screenToWorld: (point: Point) => Point;
   screenToWorldVector: (vector: Vector) => Vector;
-  
+
   // Scale utilities
   scaleWorldDistance: (distance: number) => number;
   scaleScreenDistance: (distance: number) => number;
-  
+
   // Rect transformation
   worldRectToScreen: (rect: Rect) => Rect;
   screenRectToWorld: (rect: Rect) => Rect;
-  
+
   // Check if a world point is visible in the current viewport
   isWorldPointVisible: (point: Point, padding?: number) => boolean;
 }
@@ -63,7 +69,7 @@ const TransformContext = createContext<TransformContextValue>({
   scaleScreenDistance: (distance) => distance,
   worldRectToScreen: (rect) => ({ ...rect }),
   screenRectToWorld: (rect) => ({ ...rect }),
-  isWorldPointVisible: () => true
+  isWorldPointVisible: () => true,
 });
 
 // Provider component for the transform context
@@ -78,28 +84,28 @@ export function TransformProvider(props: TransformProviderProps) {
   const worldToScreen = (point: Point): Point => {
     return {
       x: point.x * props.viewport.scale + props.viewport.position.x,
-      y: point.y * props.viewport.scale + props.viewport.position.y
+      y: point.y * props.viewport.scale + props.viewport.position.y,
     };
   };
 
   const worldToScreenVector = (vector: Vector): Vector => {
     return {
       dx: vector.dx * props.viewport.scale,
-      dy: vector.dy * props.viewport.scale
+      dy: vector.dy * props.viewport.scale,
     };
   };
 
   const screenToWorld = (point: Point): Point => {
     return {
       x: (point.x - props.viewport.position.x) / props.viewport.scale,
-      y: (point.y - props.viewport.position.y) / props.viewport.scale
+      y: (point.y - props.viewport.position.y) / props.viewport.scale,
     };
   };
 
   const screenToWorldVector = (vector: Vector): Vector => {
     return {
       dx: vector.dx / props.viewport.scale,
-      dy: vector.dy / props.viewport.scale
+      dy: vector.dy / props.viewport.scale,
     };
   };
 
@@ -117,13 +123,13 @@ export function TransformProvider(props: TransformProviderProps) {
     const topLeft = worldToScreen({ x: rect.x, y: rect.y });
     const size = {
       width: rect.width * props.viewport.scale,
-      height: rect.height * props.viewport.scale
+      height: rect.height * props.viewport.scale,
     };
     return {
       x: topLeft.x,
       y: topLeft.y,
       width: size.width,
-      height: size.height
+      height: size.height,
     };
   };
 
@@ -131,20 +137,20 @@ export function TransformProvider(props: TransformProviderProps) {
     const topLeft = screenToWorld({ x: rect.x, y: rect.y });
     const size = {
       width: rect.width / props.viewport.scale,
-      height: rect.height / props.viewport.scale
+      height: rect.height / props.viewport.scale,
     };
     return {
       x: topLeft.x,
       y: topLeft.y,
       width: size.width,
-      height: size.height
+      height: size.height,
     };
   };
 
   // Visibility check
   const isWorldPointVisible = (point: Point, padding = 0): boolean => {
     if (!props.containerRect) return true;
-    
+
     const screenPoint = worldToScreen(point);
     return (
       screenPoint.x + padding >= 0 &&
@@ -165,7 +171,7 @@ export function TransformProvider(props: TransformProviderProps) {
     scaleScreenDistance,
     worldRectToScreen,
     screenRectToWorld,
-    isWorldPointVisible
+    isWorldPointVisible,
   };
 
   return (
@@ -175,7 +181,7 @@ export function TransformProvider(props: TransformProviderProps) {
   );
 }
 
-// Hook to access the transform context
+//access the transform context
 export function useTransform() {
   const context = useContext(TransformContext);
   if (!context) {
@@ -187,22 +193,22 @@ export function useTransform() {
 // Standalone helper functions (for use outside of components)
 export function screenToWorldHelper(
   screenX: number,
-  screenY: number, 
-  viewport: CanvasViewport
+  screenY: number,
+  viewport: CanvasViewport,
 ): Point {
   return {
     x: (screenX - viewport.position.x) / viewport.scale,
-    y: (screenY - viewport.position.y) / viewport.scale
+    y: (screenY - viewport.position.y) / viewport.scale,
   };
 }
 
 export function worldToScreenHelper(
   worldX: number,
   worldY: number,
-  viewport: CanvasViewport
+  viewport: CanvasViewport,
 ): Point {
   return {
     x: worldX * viewport.scale + viewport.position.x,
-    y: worldY * viewport.scale + viewport.position.y
+    y: worldY * viewport.scale + viewport.position.y,
   };
 }

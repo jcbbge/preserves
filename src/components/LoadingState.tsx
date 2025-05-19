@@ -1,4 +1,4 @@
-import styles from '~/routes/dashboard.module.css';
+import styles from './LoadingState.module.css';
 
 type LoadingStateProps = {
   message?: string;

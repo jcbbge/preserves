@@ -1,18 +1,10 @@
 import { createStore } from "solid-js/store";
 import { Point, Vector } from "./TransformContext";
+import { InteractionType, InteractionState, InteractionPriority } from "~/types/infiniteCanvasTypes";
 
-export type InteractionType = "pan" | "drag" | "selection" | "pinch" | "none";
+// Local type extensions to the core InteractionType
 
-export interface InteractionState {
-  type: InteractionType;
-  target: string | null;
-  active: boolean;
-  startPoint: Point | null;
-  currentPoint: Point | null;
-  startViewport: { position: Point; scale: number } | null;
-}
-
-export type InteractionPriority = "high" | "normal" | "low";
+// Local extended InteractionState with viewport property type adjusted
 
 export interface InteractionOptions {
   panPriority?: InteractionPriority;
