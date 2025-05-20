@@ -445,8 +445,8 @@ export function retrievePosts<T>(options: StorageOptions = {}): T[] {
  * @param options Storage options
  */
 export function storeCursor(cursor: string | null, options: StorageOptions = {}): void {
-  if (cursor) {
-    storeItem('cursor', cursor, options);
+  if (cursor !== null && cursor !== undefined) {
+    storeItem('cursor', cursor as string, options);
   } else {
     removeItem('cursor', options);
   }

@@ -192,3 +192,16 @@ This document contains the primary instructions and guidelines for Claude when w
 
 - avoid use of inline comments ex. `// [Comments here.]`
 - also avoid use of block comments ex. `/* [Comments here.] */`
+
+
+
+
+
+To get me to stop touching unrelated code:
+
+1. Use specific language like "ONLY fix X, Y, Z issues - do not touch any other code"
+2. Explicitly list what changes are in scope: "Only reorganize imports and fix the onMount duplication"
+3. Give clear boundaries: "Do not add, remove, or modify any UI elements"
+4. Tell me what NOT to do: "Do not add headers, buttons, or change the layout"
+
+I should have focused solely on fixing the organizatiοn and duplicate code issues without modifying functionality or adding UI elements. Clear, specific boundaries will prevent me from making assumptions about what should be included in "fixing" the code.

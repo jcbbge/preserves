@@ -15,6 +15,14 @@
     --canvas-spots: rgba(160, 120, 90, 0.1);
 }
 
+/* Download button container */
+.downloadButtonContainer {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
 /* Main dashboard container */
 .peach-preserve {
     background-color: #f5f0e5; /* Cork board color */
@@ -22,6 +30,21 @@
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
     position: relative;
     overflow: hidden;
+}
+
+/* Corkboard background */
+.corkboard {
+    background-color: var(--canvas-background);
+    position: relative;
+    overflow: hidden;
+    background-image: radial-gradient(var(--canvas-spots) 10%, transparent 10%);
+    background-size: 20px 20px;
+}
+
+/* Canvas container */
+.canvas-container {
+    width: 100%;
+    height: 100%;
 }
 
 /* Main canvas area */
@@ -41,6 +64,7 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     z-index: 100;
     position: relative;
+    height: 60px;
 }
 
 .logo {
@@ -54,6 +78,12 @@
 }
 
 .header-buttons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.actions {
     display: flex;
     gap: 1rem;
     align-items: center;
@@ -75,6 +105,26 @@
 
 .header-button:hover {
     background-color: #f0f0f0;
+}
+
+.logoutButton {
+    padding: 0.5rem 1rem;
+    background-color: #f0f0f0;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--transition-duration);
+}
+
+.logoutButton:hover {
+    background-color: #e0e0e0;
+}
+
+/* Polaroid styles */
+.background-polaroid {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    user-select: none;
 }
 
 /* Global animation keyframes */
