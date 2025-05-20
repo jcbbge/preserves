@@ -1,6 +1,6 @@
 import { JSX, createEffect, createSignal, onMount, onCleanup, Show } from "solid-js";
 import { useTransform, Point, Vector, Rect } from "./TransformContext";
-import { CanvasItemProps, CanvasItemAPI } from "~/types/infiniteCanvasTypes";
+import { CanvasItemProps, CanvasItemAPI, Z_INDEX_RANGES } from "~/types/infiniteCanvasTypes";
 import { useInfiniteCanvas } from "./InfiniteCanvas";
 import styles from "./InfiniteCanvas.module.css";
 
@@ -313,9 +313,6 @@ export function CanvasItem(props: CanvasItemProps) {
   
   // Get z-index with proper range management
   const getZIndex = () => {
-    // Import Z_INDEX_RANGES
-    const { Z_INDEX_RANGES } = require('./types');
-    
     if (props.isDragging) {
       // Use the drag z-index range
       return Z_INDEX_RANGES.DRAGGING.MIN + (props.zIndex || 0);

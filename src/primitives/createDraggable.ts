@@ -1,7 +1,7 @@
 import { createSignal, onMount, onCleanup, createEffect } from "solid-js";
 import { Store, SetStoreFunction } from "solid-js/store";
 import { Point, Vector, TransformContextValue } from "./infiniteCanvas/TransformContext";
-import { InfiniteCanvasAPI } from "~/types/infiniteCanvasTypes";
+import { InfiniteCanvasAPI, Z_INDEX_RANGES } from "~/types/infiniteCanvasTypes";
 import { findParentCanvasItem } from "./infiniteCanvas/CanvasItem";
 
 /**
@@ -470,9 +470,6 @@ export function createDraggable<T extends DraggableItem>(
     if (canvasAPI && canvasAPI.setItemZIndex) {
       canvasAPI.setItemZIndex(id, "front");
     } else {
-      // Import Z_INDEX_RANGES
-      const { Z_INDEX_RANGES } = require('./infiniteCanvas/types');
-      
       // Determine appropriate z-index range based on id pattern
       const range = id.startsWith('menu-') ? Z_INDEX_RANGES.MENU_ITEMS :
                    id.startsWith('system-') ? Z_INDEX_RANGES.SYSTEM :
@@ -488,7 +485,6 @@ export function createDraggable<T extends DraggableItem>(
     
     // If dragging, set to even higher z-index range
     if (draggedId() === id) {
-      const { Z_INDEX_RANGES } = require('./infiniteCanvas/types');
       setItems(
         item => item.id === id,
         "zIndex",
@@ -504,9 +500,6 @@ export function createDraggable<T extends DraggableItem>(
     if (canvasAPI && canvasAPI.setItemZIndex) {
       canvasAPI.setItemZIndex(id, "back");
     } else {
-      // Import Z_INDEX_RANGES
-      const { Z_INDEX_RANGES } = require('./infiniteCanvas/types');
-      
       // Determine appropriate z-index range based on id pattern
       const range = id.startsWith('menu-') ? Z_INDEX_RANGES.MENU_ITEMS :
                    id.startsWith('system-') ? Z_INDEX_RANGES.SYSTEM :

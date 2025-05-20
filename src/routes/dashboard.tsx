@@ -1,4 +1,5 @@
-import { createSignal, onMount, createEffect } from "solid-js";
+import { createSignal, onMount, createEffect, For, Show } from "solid-js";
+import { createStore } from "solid-js/store";
 import { Title } from "@solidjs/meta";
 import { useNavigate } from "@solidjs/router";
 
@@ -15,6 +16,9 @@ import {
   storePosts,
   storeCursor,
   transformPostsToPolaroids,
+  getCanvasViewport,
+  saveCanvasViewport,
+  savePhotoRotation,
 } from "~/utils/storage";
 
 // Component imports
@@ -22,10 +26,20 @@ import { DownloadCompleteModal } from "~/components/DownloadCompleteModal";
 import { ExportProgressModal } from "~/components/ExportProgressModal";
 import { ExportErrorModal } from "~/components/ExportErrorModal";
 import { ErrorNotification } from "~/components/ErrorNotification";
-import { LoadingState } from "~/components/LoadingState";
 import { EmptyStateMessage } from "~/components/EmptyStateMessage";
-import { PeachPhotoCanvas } from "~/components/PeachPhotoCanvas";
 import { DownloadButton } from "~/components/DownloadButton";
+import { Polaroid } from "~/components/Polaroid";
+
+// InfiniteCanvas imports
+import { InfiniteCanvas } from "~/primitives/infiniteCanvas/InfiniteCanvas";
+import { CanvasItem } from "~/primitives/infiniteCanvas/CanvasItem";
+import { useInfiniteCanvas } from "~/primitives/infiniteCanvas/InfiniteCanvas";
+import { createDraggable, DraggableItem } from "~/primitives/createDraggable";
+import {
+  Vector,
+  useTransform,
+  Point,
+} from "~/primitives/infiniteCanvas/TransformContext";
 
 export default function Dashboard() {
   const { isAuthenticated, user, token, logout } = usePeach();
@@ -47,17 +61,52 @@ export default function Dashboard() {
     if (!user.data?.username) return [];
     return retrievePosts({ username: user.data.username });
   });
-  const [loading, setLoading] = createSignal(posts().length === 0);
   const [cursor, setCursor] = createSignal<string | null>(() => {
     if (!user.data?.username) return null;
     return retrieveCursor({ username: user.data.username });
   });
-  const [loadingMore, setLoadingMore] = createSignal(false);
-  const [polaroidPhotos, setPolaroidPhotos] = createSignal<PolaroidPhoto[]>([]);
+  const [polaroidPhotos, setPolaroidPhotos] = createStore<
+    (PolaroidPhoto & DraggableItem)[]
+  >([]);
   const [canvasWidth, setCanvasWidth] = createSignal(0);
   const [canvasHeight, setCanvasHeight] = createSignal(0);
   const [clientOnly, setClientOnly] = createSignal(false);
-  
+
+  // Create draggable behavior without InfiniteCanvas integration for now
+  const {
+    draggedId,
+    handleDragStart,
+    handleDragMove,
+    handleDragEnd,
+    isDragging,
+    bringToFront,
+    sendToBack,
+  } = createDraggable(polaroidPhotos, setPolaroidPhotos, {
+    route,
+    username: getUserName(),
+    zIndexRange: { min: 0, max: 9 },
+    onDragStart: (id) => {
+      // Bring photo to front when dragging starts
+      bringToFront(id);
+    },
+  });
+
+  // Handle rotation
+  const handleRotatePhoto = (id: string) => {
+    const photo = polaroidPhotos.find((p) => p.id === id);
+    if (!photo) return;
+
+    // Rotate in 15 degree increments
+    const currentRotation = photo.rotation || 0;
+    const newRotation = (currentRotation + 15) % 360;
+
+    // Update rotation in store
+    setPolaroidPhotos((p) => p.id === id, "rotation", newRotation);
+
+    // Persist rotation
+    savePhotoRotation(id, newRotation, route, getUserName());
+  };
+
   // Handle logout action
   const handleLogout = () => {
     logout();
@@ -71,8 +120,6 @@ export default function Dashboard() {
     }
 
     try {
-      setLoading(true);
-
       // Get username and token
       const username = user.data.username;
       const streamToken = user.data.streams[0].token;
@@ -108,67 +155,11 @@ export default function Dashboard() {
       }
     } catch (err) {
       setError("Failed to load your posts. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadMorePosts = async () => {
-    if (!cursor() || loadingMore()) return;
-
-    try {
-      setLoadingMore(true);
-
-      // Get username, token and cursor
-      const username = user.data.username;
-      const streamToken = user.data.streams[0].token;
-      const currentCursor = cursor();
-
-      // Create form data for server action
-      const formData = new FormData();
-      formData.append("username", username);
-      formData.append("token", streamToken);
-      formData.append("cursor", currentCursor);
-
-      // Use server action to avoid CORS
-      const response = await fetchStream(formData);
-
-      // Extract data from server response
-      const data = response.success ? response.data : null;
-
-      // Same data structure as initial load
-      if (data && data.data && data.data.posts) {
-        // Update posts with new ones appended
-        const updatedPosts = [...posts(), ...data.data.posts];
-        setPosts(updatedPosts);
-        setCursor(data.data.cursor);
-
-        // Update localStorage
-        if (typeof window !== "undefined") {
-          localStorage.setItem(
-            `${storageKeyPrefix()}posts`,
-            JSON.stringify(updatedPosts),
-          );
-          if (data.data.cursor) {
-            localStorage.setItem(
-              `${storageKeyPrefix()}cursor`,
-              data.data.cursor,
-            );
-          } else {
-            localStorage.removeItem(`${storageKeyPrefix()}cursor`);
-          }
-        }
-      }
-    } catch (err) {
-      // Silent fail - user can try again
-    } finally {
-      setLoadingMore(false);
     }
   };
 
   // Handle download action
   const downloadPeachData = async () => {
-    setDownloading(true);
     setError(null);
 
     try {
@@ -206,14 +197,8 @@ export default function Dashboard() {
 
       // Reset the export context on error
       exportContext.resetExport();
-    } finally {
-      setDownloading(false);
     }
   };
-
-
-
-
 
   // Authentication and initialization
   onMount(() => {
@@ -226,7 +211,6 @@ export default function Dashboard() {
     // Check credentials
     if (isAuthenticated() && (!user.data?.username || !token())) {
       setError("Missing username or token");
-      setLoading(false);
     }
 
     // Set canvas dimensions
@@ -246,13 +230,20 @@ export default function Dashboard() {
       setTimeout(() => loadPosts(), 100);
     } else {
       const storedPosts = posts();
-      setPolaroidPhotos(
-        transformPostsToPolaroids(storedPosts, {
-          route,
-          username: getUserName(),
-        })
-      );
-      setLoading(false);
+      const transformedPhotos = transformPostsToPolaroids(storedPosts, {
+        route,
+        username: getUserName(),
+      });
+
+      // Ensure position is defined for each photo and add rotation capability
+      const photosWithPosition = transformedPhotos.map((photo) => ({
+        ...photo,
+        position: photo.position || { x: 0, y: 0 },
+        isRotatable: true, // Enable rotation for photos
+      }));
+
+      // Update the store with the new photos
+      setPolaroidPhotos(photosWithPosition);
     }
 
     // Set client-only flag for hydration safety
@@ -285,70 +276,110 @@ export default function Dashboard() {
       }
 
       // Transform posts to polaroids using the storage utility
-      setPolaroidPhotos(
-        transformPostsToPolaroids(uniquePosts, {
-          route,
-          username: getUserName(),
-        }),
-      );
+      const transformedPhotos = transformPostsToPolaroids(uniquePosts, {
+        route,
+        username: getUserName(),
+      });
+
+      // Ensure position is defined for each photo
+      const photosWithPosition = transformedPhotos.map((photo) => ({
+        ...photo,
+        position: photo.position || { x: 0, y: 0 },
+        isRotatable: true, // Enable rotation for photos
+      }));
+
+      // Update the store with the new photos
+      setPolaroidPhotos(photosWithPosition);
     }
   });
 
   return (
     <div class={styles["peach-preserve"]}>
       <Title>Peach Preserves</Title>
-      <header class={styles["header"]}>
-        <div class={styles["logo"]}>
-          <img src="/logo.png" alt="Peach Preserves Logo" class={styles["logo-img"]} />
-          <span>Peach Preserves</span>
-        </div>
-        <div class={styles["header-buttons"]}>
-          <button class={styles["header-button"]} onClick={handleLogout}>
-            Log Out
-          </button>
-        </div>
-      </header>
 
-      <main class={styles["interactive-canvas"]}>
-        {/* Only render dynamic content on client */}
-        {clientOnly() ? (
-          <>
-            {/* Modals and notifications */}
-            <DownloadCompleteModal visible={downloadComplete()} />
-            <ExportProgressModal />
-            <ExportErrorModal />
-            <ErrorNotification
-              message={error()}
-              onDismiss={() => setError(null)}
-            />
-
-            {/* Main content */}
-            {loading() ? (
-              <LoadingState message="Gathering your peachy memories..." />
-            ) : polaroidPhotos().length === 0 ? (
-              <EmptyStateMessage />
-            ) : (
-              <>
-                <PeachPhotoCanvas
-                  photos={polaroidPhotos()}
-                  username={getUserName()}
-                  route={route}
-                  canvasWidth={canvasWidth()}
-                  canvasHeight={canvasHeight()}
-                />
-
-                <DownloadButton
-                  onClick={downloadPeachData}
-                  downloading={downloading()}
-                />
-              </>
+      <div
+        ref={setCorkboardRef}
+        class={styles.corkboard}
+        style={{
+          width: `${canvasWidth()}px`,
+          height: `${canvasHeight()}px`,
+        }}
+      >
+        <InfiniteCanvas
+          showGrid={false}
+          storageKey={`peach_preserves_${getUserName()}_${route}_canvas`}
+          initialViewport={
+            getCanvasViewport(route, getUserName()) || {
+              position: { x: 0, y: 0 },
+              scale: 1,
+            }
+          }
+          className={styles["canvas-container"]}
+          onViewportChange={handleViewportChange}
+          focalPointId="login-menu"
+          onGetItemPosition={getItemPosition}
+          // Added options for better control
+          panMode="always"
+          minScale={0.1}
+          maxScale={5}
+          backgroundColor="#f5f2e8" // Corkboard color
+        >
+          <For each={polaroidPhotos}>
+            {(photo) => (
+              <Show
+                when={photo.type === "menu"}
+                fallback={
+                  <CanvasItem
+                    id={photo.id}
+                    position={photo.position || { x: 0, y: 0 }}
+                    rotation={photo.rotation}
+                    zIndex={photo.zIndex}
+                    isDraggable={true}
+                    isSelected={isDragging(photo.id)}
+                    isDragging={isDragging(photo.id)}
+                    onSelect={(id, e) => handleDragStart(e, id)}
+                    onDrag={(id, delta) => handleDragHandler(id, delta)}
+                    onDragEnd={(id) => handleDragEnd(id)}
+                    onClick={(id) => {
+                      // Could implement selection logic here
+                    }}
+                    visible={true}
+                    isSelectable={true}
+                  >
+                    <Polaroid
+                      id={photo.id}
+                      src={photo.src}
+                      caption={photo.caption}
+                      date={photo.date}
+                      position={{ x: 0, y: 0 }} // Position handled by CanvasItem
+                      rotation={0} // Rotation handled by CanvasItem
+                      zIndex={1} // zIndex handled by CanvasItem
+                      useRandomValues={true}
+                      onMouseDown={(e) => e.stopPropagation()} // Prevent duplicate events
+                      onTouchStart={(e) => e.stopPropagation()} // Prevent duplicate events
+                      class={styles["background-polaroid"]}
+                    />
+                  </CanvasItem>
+                }
+              >
+                <CanvasItem
+                  id={photo.id}
+                  position={photo.position || { x: 0, y: 0 }}
+                  zIndex={photo.zIndex || 10000}
+                  isDraggable={true}
+                  isSelected={isDragging(photo.id)}
+                  isDragging={isDragging(photo.id)}
+                  onSelect={(id, e) => handleDragStart(e, id)}
+                  onDrag={(id, delta) => handleDragHandler(id, delta)}
+                  onDragEnd={(id) => handleDragEnd(id)}
+                >
+                  <LoginForm />
+                </CanvasItem>
+              </Show>
             )}
-          </>
-        ) : (
-          // Static loading state during SSR and initial client render
-          <LoadingState message="Loading..." />
-        )}
-      </main>
+          </For>
+        </InfiniteCanvas>
+      </div>
     </div>
   );
 }

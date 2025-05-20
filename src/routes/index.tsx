@@ -8,13 +8,11 @@ import { PolaroidPhoto } from "~/types/polaroid";
 import { Polaroid } from "~/components/Polaroid";
 import { stockImages, predefinedPositions } from "~/data/stockImages";
 import LoginForm from "~/components/LoginForm";
-import {
-  InfiniteCanvas,
-  CanvasItem,
-  useInfiniteCanvas,
-} from "~/primitives/infiniteCanvas/InfiniteCanvas";
+import { InfiniteCanvas } from "~/primitives/infiniteCanvas/InfiniteCanvas";
+import { CanvasItem } from "~/primitives/infiniteCanvas/CanvasItem";
+import { useInfiniteCanvas } from "~/primitives/infiniteCanvas/InfiniteCanvas";
 import { createDraggable, DraggableItem } from "~/primitives/createDraggable";
-import { Vector } from "~/primitives/infiniteCanvas/TransformContext";
+import { Vector, useTransform } from "~/primitives/infiniteCanvas/TransformContext";
 import {
   initializeCanvasPhotos,
   storeInitialPositions,
@@ -52,8 +50,7 @@ export default function Home() {
   } = createDraggable(polaroidPhotos, setPolaroidPhotos, {
     route,
     username: getUserName(),
-    zIndexRange: { min: 0, max: 9 },
-    cssModuleStyles: styles,
+    zIndexRange: { min: 0, max: 9 }
   });
 
   // Handle canvas viewport change
@@ -61,9 +58,10 @@ export default function Home() {
     saveCanvasViewport(viewport, route, getUserName());
   };
 
+  
   // Handle dragging a polaroid
   const handleDragHandler = (id: string, delta: Vector) => {
-    handleDragMove(id, delta.dx, delta.dy);
+    handleDragMove(id, delta);
   };
 
   // Function to get an item position - used by InfiniteCanvas for focal points

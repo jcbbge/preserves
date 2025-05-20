@@ -12,7 +12,7 @@ import {
 import { createStore, produce } from "solid-js/store";
 import { TransformProvider, Point, CanvasViewport } from "./TransformContext";
 import { createInteractionManager } from "./InteractionManager";
-import { InfiniteCanvasProps, InfiniteCanvasAPI } from "~/types/infiniteCanvasTypes";
+import { InfiniteCanvasProps, InfiniteCanvasAPI, Z_INDEX_RANGES } from "~/types/infiniteCanvasTypes";
 import styles from "./InfiniteCanvas.module.css";
 
 // Create a context for the canvas API
@@ -681,8 +681,6 @@ export function InfiniteCanvas(props: InfiniteCanvasProps) {
   
   // Set an item's z-index
   const setItemZIndex = (id: string, position: "front" | "back" | number) => {
-    // Import Z_INDEX_RANGES
-    const { Z_INDEX_RANGES } = require('./types');
     
     // Find the item in registered items
     const itemIndex = registeredItems.findIndex(item => item.id === id);
