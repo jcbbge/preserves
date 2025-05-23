@@ -334,9 +334,6 @@ export function CanvasItem(props: CanvasItemProps) {
     return props.zIndex || Z_INDEX_RANGES.PHOTOS.MIN;
   };
   
-  // Compute screen coordinates once for rendering
-  const screenPos = screenPosition();
-  
   // Whether to render the component (always render if alwaysRender is true)
   const shouldRender = () => props.alwaysRender || isVisible();
   
@@ -352,8 +349,8 @@ export function CanvasItem(props: CanvasItemProps) {
                ${props.class || ""}`}
         style={{
           position: "absolute",
-          left: `${screenPos.x}px`,
-          top: `${screenPos.y}px`,
+          left: `${screenPosition().x}px`,
+          top: `${screenPosition().y}px`,
           transform: getTransform(),
           "transform-origin": "center center",
           "z-index": getZIndex(),

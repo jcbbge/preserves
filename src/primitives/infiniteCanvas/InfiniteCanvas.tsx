@@ -435,7 +435,6 @@ export function InfiniteCanvas(props: InfiniteCanvasProps) {
 
   // Pan to a specific world position
   const panTo = (x: number, y: number, options?: { animate?: boolean }) => {
-    console.log("[INFINITE CANVAS] panTo called with world position:", { x, y });
     // Calculate new position in screen space
     const container = containerRef();
     if (!container) return;
@@ -444,11 +443,9 @@ export function InfiniteCanvas(props: InfiniteCanvasProps) {
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
 
-    // Convert world to screen, centering it
+    // Convert world position to screen position
     const newPositionX = centerX - x * viewport.scale;
     const newPositionY = centerY - y * viewport.scale;
-
-    console.log("[INFINITE CANVAS] Calculated viewport position:", { x: newPositionX, y: newPositionY });
 
     // Adjust for bounds
     let finalX = newPositionX;
@@ -533,18 +530,15 @@ export function InfiniteCanvas(props: InfiniteCanvasProps) {
     itemId: string,
     options?: { scale?: number; animate?: boolean },
   ) => {
-    console.log("[INFINITE CANVAS] centerOn called for item:", itemId, "with options:", options);
     // Find the item by ID in registered items
     const item = registeredItems.find((item) => item.id === itemId);
 
     // If not found in registered items, try the parent's callback
     if (!item && props.onGetItemPosition) {
       const position = props.onGetItemPosition(itemId);
-      console.log("[INFINITE CANVAS] Got position from parent callback:", position);
       if (position) {
         // Use the provided scale or maintain current
         const targetScale = options?.scale ?? viewport.scale;
-        console.log("[INFINITE CANVAS] Panning to position:", position, "with scale:", targetScale);
         panTo(position.x, position.y, { animate: options?.animate });
 
         if (targetScale !== viewport.scale) {
@@ -560,7 +554,6 @@ export function InfiniteCanvas(props: InfiniteCanvasProps) {
       const centerX = item.position.x + item.size.width / 2;
       const centerY = item.position.y + item.size.height / 2;
 
-      console.log("[INFINITE CANVAS] Centering on registered item at:", { x: centerX, y: centerY });
       panTo(centerX, centerY, { animate: options?.animate });
 
       if (targetScale !== viewport.scale) {
@@ -569,14 +562,11 @@ export function InfiniteCanvas(props: InfiniteCanvasProps) {
       return;
     }
 
-    console.log("[INFINITE CANVAS] Could not find item:", itemId);
     // If we couldn't find the item, do nothing
   };
 
   // Reset view to center world origin (0,0)
   const resetView = (options?: { animate?: boolean }) => {
-    console.log("[INFINITE CANVAS] Reset view called");
-    
     // Always center world origin (0,0) at screen center
     const container = containerRef();
     if (container) {
@@ -588,8 +578,7 @@ export function InfiniteCanvas(props: InfiniteCanvasProps) {
         },
         scale: 1,
       };
-      
-      console.log("[INFINITE CANVAS] Reset viewport to center world (0,0):", centeringViewport);
+
       if (options?.animate) {
         // TODO: Add animation
         setViewport(centeringViewport);

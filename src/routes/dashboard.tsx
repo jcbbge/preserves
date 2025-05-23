@@ -373,8 +373,8 @@ export default function Dashboard() {
                     zIndex={1}
                     useRandomValues={true}
                     onRotate={() => handleRotatePhoto(photo.id)}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onTouchStart={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => {}} // Allow events to bubble for dragging
+                    onTouchStart={(e) => {}} // Allow events to bubble for dragging
                     class={styles["background-polaroid"]}
                   />
                 </CanvasItem>

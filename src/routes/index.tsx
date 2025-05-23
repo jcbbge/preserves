@@ -55,16 +55,7 @@ export default function Home() {
   });
 
   // Handle canvas viewport change
-  const handleViewportChange = (viewport) => {
-    console.log("[DEBUG] Viewport changed to:", viewport);
-    console.log("[DEBUG] World (0,0) is at screen coordinates:", {
-      x: viewport.position.x,
-      y: viewport.position.y
-    });
-    console.log("[DEBUG] Login component is at screen coordinates:", {
-      x: viewport.position.x + DEFAULT_POSITIONS.loginComponent.x * viewport.scale,
-      y: viewport.position.y + DEFAULT_POSITIONS.loginComponent.y * viewport.scale
-    });
+  const handleViewportChange = (viewport: any) => {
     saveCanvasViewport(viewport, route, getUserName());
   };
 
@@ -77,9 +68,6 @@ export default function Home() {
   // Function to get an item position - used by InfiniteCanvas for focal points
   const getItemPosition = (id: string) => {
     const found = polaroidPhotos.find((p) => p.id === id);
-    console.log("[DEBUG] getItemPosition called for:", id);
-    console.log("[DEBUG] Found item:", found);
-    console.log("[DEBUG] Returning position:", found?.position);
     return found?.position;
   };
 
@@ -91,22 +79,23 @@ export default function Home() {
     setCanvasWidth(window.innerWidth);
     setCanvasHeight(window.innerHeight);
 
-    console.log("[DEBUG] Screen dimensions:", { width: window.innerWidth, height: window.innerHeight });
-    console.log("[DEBUG] Login component world position:", DEFAULT_POSITIONS.loginComponent);
-    console.log("[DEBUG] Calculated viewport for centering:", getViewportForLoginCenter(window.innerWidth, window.innerHeight));
-
     // Initialize photos using our unified storage API with default world positions
     const photos = initializeCanvasPhotos(stockImages, route, {
       username: getUserName(),
       predefinedPositions,
-      centerX: 0, // Use world origin as center
-      centerY: 0,
     });
+
+    // Ensure all photos have valid positions for DraggableItem compatibility
+    const photosWithPositions = photos.map(photo => ({
+      ...photo,
+      position: photo.position || { x: 0, y: 0 },
+      type: "photo" as const
+    }));
 
     // Create login menu at calculated position
     const menuItem = {
       id: "login-menu",
-      type: "menu",
+      type: "menu" as const,
       position: DEFAULT_POSITIONS.loginComponent,
       zIndex: 10000,
       rotation: 0,
@@ -115,10 +104,8 @@ export default function Home() {
       date: new Date().toISOString(),
     };
 
-    console.log("[DEBUG] Login menu item created at position:", menuItem.position);
-
     // Set photos in store
-    setPolaroidPhotos([menuItem, ...photos]);
+    setPolaroidPhotos([menuItem, ...photosWithPositions]);
 
     // Store initial positions if not already set
     storeInitialPositions(predefinedPositions, route, getUserName());
@@ -160,7 +147,7 @@ export default function Home() {
           focalPointId="login-menu"
           onGetItemPosition={getItemPosition}
           // Added options for better control
-          panMode="always"
+          panMode="spacebar"
           minScale={0.1}
           maxScale={5}
           backgroundColor="#f5f2e8" // Corkboard color
@@ -169,7 +156,7 @@ export default function Home() {
           <CanvasItem
             id="debug-origin"
             position={{ x: 0, y: 0 }}
-            zIndex={99999}
+            zIndex={-1}
             isDraggable={false}
             isSelectable={false}
           >
@@ -188,7 +175,8 @@ export default function Home() {
               "font-weight": "bold",
               "border-radius": "50%",
               "box-shadow": "0 0 10px rgba(255, 0, 0, 0.5)",
-              "z-index": "99999"
+              "pointer-events": "none",
+              "z-index": "-1"
             }}>
               +
             </div>
@@ -209,7 +197,12 @@ export default function Home() {
                     isDragging={isDragging(photo.id)}
                     onSelect={(id, e) => handleDragStart(e, id)}
                     onDrag={(id, delta) => handleDragHandler(id, delta)}
-                    onDragEnd={(id) => handleDragEnd(id)}
+                    onDragEnd={(id) => {
+                      const item = polaroidPhotos.find(p => p.id === id);
+                      if (item && item.position) {
+                        handleDragEnd(id, item.position);
+                      }
+                    }}
                     onClick={(id) => {
                       // Could implement selection logic here
                     }}
@@ -225,8 +218,12 @@ export default function Home() {
                       rotation={0} // Rotation handled by CanvasItem
                       zIndex={1} // zIndex handled by CanvasItem
                       useRandomValues={true}
-                      onMouseDown={(e) => e.stopPropagation()} // Prevent duplicate events
-                      onTouchStart={(e) => e.stopPropagation()} // Prevent duplicate events
+                      onMouseDown={(e) => {
+                        // Allow events to bubble for dragging
+                      }}
+                      onTouchStart={(e) => {
+                        // Allow events to bubble for dragging
+                      }}
                       class={styles["background-polaroid"]}
                     />
                   </CanvasItem>
@@ -241,7 +238,12 @@ export default function Home() {
                   isDragging={isDragging(photo.id)}
                   onSelect={(id, e) => handleDragStart(e, id)}
                   onDrag={(id, delta) => handleDragHandler(id, delta)}
-                  onDragEnd={(id) => handleDragEnd(id)}
+                  onDragEnd={(id) => {
+                    const item = polaroidPhotos.find(p => p.id === id);
+                    if (item && item.position) {
+                      handleDragEnd(id, item.position);
+                    }
+                  }}
                 >
                   <LoginForm />
                 </CanvasItem>

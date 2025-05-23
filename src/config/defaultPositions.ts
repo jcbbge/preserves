@@ -28,8 +28,8 @@ export const DEFAULT_POSITIONS: DefaultPositions = {
   // Login component pinned at world origin (0,0) - same as red debugger +
   // The polaroid container's visual offset will be handled by CSS positioning
   loginComponent: {
-    x: 0,
-    y: 0,
+    x: -130,
+    y: -170,
   },
 
   // Stock photos arranged in concentric circles around WORLD ORIGIN (0,0)
