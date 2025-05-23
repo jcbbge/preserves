@@ -22,6 +22,7 @@ import {
   savePhotoRotation,
 } from "~/utils/storage";
 import { redirectIfAuthenticated } from "~/utils/authUtils";
+import { DEFAULT_POSITIONS, getViewportForLoginCenter } from "~/config/defaultPositions";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -77,22 +78,19 @@ export default function Home() {
     setCanvasWidth(window.innerWidth);
     setCanvasHeight(window.innerHeight);
 
-    // Initialize photos using our unified storage API
+    // Initialize photos using our unified storage API with default world positions
     const photos = initializeCanvasPhotos(stockImages, route, {
       username: getUserName(),
       predefinedPositions,
-      centerX: window.innerWidth / 2,
-      centerY: window.innerHeight / 2,
+      centerX: 0, // Use world origin as center
+      centerY: 0,
     });
 
-    // Create login menu centered on screen
+    // Create login menu at world origin (0,0)
     const menuItem = {
       id: "login-menu",
       type: "menu",
-      position: {
-        x: window.innerWidth / 2,
-        y: window.innerHeight / 2,
-      },
+      position: DEFAULT_POSITIONS.loginComponent,
       zIndex: 10000,
       rotation: 0,
       src: "",
@@ -135,10 +133,8 @@ export default function Home() {
           showGrid={false}
           storageKey={`peach_preserves_${getUserName()}_${route}_canvas`}
           initialViewport={
-            getCanvasViewport(route, getUserName()) || {
-              position: { x: 0, y: 0 },
-              scale: 1,
-            }
+            getCanvasViewport(route, getUserName()) || 
+            getViewportForLoginCenter(window.innerWidth, window.innerHeight)
           }
           className={styles["canvas-container"]}
           onViewportChange={handleViewportChange}

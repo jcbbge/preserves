@@ -975,11 +975,11 @@ export function InfiniteCanvas(props: InfiniteCanvasProps) {
             >
               ↺
             </button>
-          </div>
-
-          {/* Scale indicator */}
-          <div class={styles["canvas-scale-indicator"]}>
-            {Math.round(viewport.scale * 100)}%
+            
+            {/* Scale indicator */}
+            <div class={styles["canvas-scale-indicator"]}>
+              {Math.round(viewport.scale * 100)}%
+            </div>
           </div>
         </div>
       </TransformProvider>

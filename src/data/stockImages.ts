@@ -80,21 +80,9 @@ export const stockImages = [
   },
 ];
 
-// Predefined positions for stock images in a circular pattern
-export const predefinedPositions = {
-  // Calculate positions in a circle around the center (0,0)
-  // Using a radius of 600 and distributing evenly
-  stock1: { x: 600, y: 0 },                                  // 0 degrees
-  stock2: { x: 553.5, y: 235.5 },                            // 23 degrees
-  stock3: { x: 424, y: 424 },                                // 45 degrees
-  stock4: { x: 235.5, y: 553.5 },                            // 68 degrees
-  stock5: { x: 0, y: 600 },                                  // 90 degrees
-  stock6: { x: -235.5, y: 553.5 },                           // 113 degrees
-  stock7: { x: -424, y: 424 },                               // 135 degrees
-  stock8: { x: -553.5, y: 235.5 },                           // 158 degrees
-  stock9: { x: -600, y: 0 },                                 // 180 degrees
-  stock10: { x: -553.5, y: -235.5 },                         // 203 degrees
-  stock11: { x: -424, y: -424 },                             // 225 degrees
-  stock12: { x: -235.5, y: -553.5 },                         // 248 degrees
-  stock13: { x: 0, y: -600 },                                // 270 degrees
-};
+// Import default positions from configuration
+import { DEFAULT_POSITIONS } from "~/config/defaultPositions";
+
+// Use configured default positions for stock images
+// These create a circular scattering around the login component at world origin (0,0)
+export const predefinedPositions = DEFAULT_POSITIONS.stockPhotos;
