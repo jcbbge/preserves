@@ -56,6 +56,15 @@ export default function Home() {
 
   // Handle canvas viewport change
   const handleViewportChange = (viewport) => {
+    console.log("[DEBUG] Viewport changed to:", viewport);
+    console.log("[DEBUG] World (0,0) is at screen coordinates:", {
+      x: viewport.position.x,
+      y: viewport.position.y
+    });
+    console.log("[DEBUG] Login component is at screen coordinates:", {
+      x: viewport.position.x + DEFAULT_POSITIONS.loginComponent.x * viewport.scale,
+      y: viewport.position.y + DEFAULT_POSITIONS.loginComponent.y * viewport.scale
+    });
     saveCanvasViewport(viewport, route, getUserName());
   };
 
@@ -67,7 +76,11 @@ export default function Home() {
 
   // Function to get an item position - used by InfiniteCanvas for focal points
   const getItemPosition = (id: string) => {
-    return polaroidPhotos.find((p) => p.id === id)?.position;
+    const found = polaroidPhotos.find((p) => p.id === id);
+    console.log("[DEBUG] getItemPosition called for:", id);
+    console.log("[DEBUG] Found item:", found);
+    console.log("[DEBUG] Returning position:", found?.position);
+    return found?.position;
   };
 
   // Use onMount to ensure we don't redirect during SSR
@@ -78,6 +91,10 @@ export default function Home() {
     setCanvasWidth(window.innerWidth);
     setCanvasHeight(window.innerHeight);
 
+    console.log("[DEBUG] Screen dimensions:", { width: window.innerWidth, height: window.innerHeight });
+    console.log("[DEBUG] Login component world position:", DEFAULT_POSITIONS.loginComponent);
+    console.log("[DEBUG] Calculated viewport for centering:", getViewportForLoginCenter(window.innerWidth, window.innerHeight));
+
     // Initialize photos using our unified storage API with default world positions
     const photos = initializeCanvasPhotos(stockImages, route, {
       username: getUserName(),
@@ -86,7 +103,7 @@ export default function Home() {
       centerY: 0,
     });
 
-    // Create login menu at world origin (0,0)
+    // Create login menu at calculated position
     const menuItem = {
       id: "login-menu",
       type: "menu",
@@ -97,6 +114,8 @@ export default function Home() {
       caption: "",
       date: new Date().toISOString(),
     };
+
+    console.log("[DEBUG] Login menu item created at position:", menuItem.position);
 
     // Set photos in store
     setPolaroidPhotos([menuItem, ...photos]);
@@ -146,6 +165,35 @@ export default function Home() {
           maxScale={5}
           backgroundColor="#f5f2e8" // Corkboard color
         >
+          {/* Debug indicator for world origin (0,0) */}
+          <CanvasItem
+            id="debug-origin"
+            position={{ x: 0, y: 0 }}
+            zIndex={99999}
+            isDraggable={false}
+            isSelectable={false}
+          >
+            <div style={{
+              position: "absolute",
+              width: "40px",
+              height: "40px",
+              left: "-20px",
+              top: "-20px",
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "center",
+              background: "rgba(255, 0, 0, 0.8)",
+              color: "white",
+              "font-size": "24px",
+              "font-weight": "bold",
+              "border-radius": "50%",
+              "box-shadow": "0 0 10px rgba(255, 0, 0, 0.5)",
+              "z-index": "99999"
+            }}>
+              +
+            </div>
+          </CanvasItem>
+
           <For each={polaroidPhotos}>
             {(photo) => (
               <Show
