@@ -313,11 +313,6 @@ export function CanvasItem(props: CanvasItemProps) {
   
   // Get z-index with proper range management
   const getZIndex = () => {
-    if (props.isDragging) {
-      // Use the drag z-index range
-      return Z_INDEX_RANGES.DRAGGING.MIN + (props.zIndex || 0);
-    }
-    
     // Determine range based on ID pattern
     const isMenu = props.id.startsWith('menu-');
     const isSystem = props.id.startsWith('system-');

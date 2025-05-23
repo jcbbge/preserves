@@ -1,0 +1,861 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<typescript-solidjs-guide>
+  <meta>
+    <title>Comprehensive TypeScript + SolidJS Development Guide</title>
+    <purpose>Zero-shortcuts TypeScript implementation with proper type safety</purpose>
+    <philosophy>Type safety from the start, handle dependency cascades systematically</philosophy>
+    <last-updated>2025-01-27</last-updated>
+  </meta>
+
+  <core-principles>
+    <principle id="type-first-design">
+      <title>Type-First Design</title>
+      <description>Define types before implementation to catch issues early</description>
+      <rule>Always define interfaces/types before creating functions or components</rule>
+      <rule>Use strict TypeScript settings to catch all potential issues</rule>
+    </principle>
+    
+    <principle id="dependency-cascade">
+      <title>Dependency Cascade Management</title>
+      <description>When making changes, systematically update all dependent types</description>
+      <rule>Map out type dependencies before making changes</rule>
+      <rule>Update from leaf types to root types</rule>
+      <rule>Use TypeScript compiler to identify all affected areas</rule>
+    </principle>
+    
+    <principle id="generic-constraints">
+      <title>Proper Generic Constraints</title>
+      <description>Use generic constraints to maintain type safety while allowing flexibility</description>
+      <rule>Define clear constraints for generic types</rule>
+      <rule>Use extends keyword to limit generic types appropriately</rule>
+    </principle>
+  </core-principles>
+
+  <typescript-configuration>
+    <tsconfig-strict>
+      <description>Strict TypeScript configuration for maximum type safety</description>
+      <required-settings>
+        <setting name="strict" value="true" />
+        <setting name="noImplicitAny" value="true" />
+        <setting name="strictNullChecks" value="true" />
+        <setting name="strictFunctionTypes" value="true" />
+        <setting name="noImplicitReturns" value="true" />
+        <setting name="noUnusedLocals" value="true" />
+        <setting name="noUnusedParameters" value="true" />
+        <setting name="exactOptionalPropertyTypes" value="true" />
+      </required-settings>
+    </tsconfig-strict>
+  </typescript-configuration>
+
+  <solidjs-type-patterns>
+    <pattern name="store-definition">
+      <title>Proper Store Type Definition</title>
+      <description>Define complete store types with all nested properties</description>
+      <implementation>
+        <base-types>
+          <code>
+            // Define base types first
+            interface Point {
+              x: number;
+              y: number;
+            }
+
+            interface DraggableItem {
+              id: string;
+              position: Point;
+              rotation?: number;
+              zIndex?: number;
+            }
+
+            interface PolaroidPhoto extends DraggableItem {
+              src: string;
+              caption: string;
+              date: string;
+              flipped?: boolean;
+              textAngle?: number;
+              textX?: number;
+              textY?: number;
+              dateAngle?: number;
+              dateX?: number;
+              dateY?: number;
+              bgColor?: string;
+            }
+          </code>
+        </base-types>
+        
+        <store-types>
+          <code>
+            // Define store structure
+            interface AppStore {
+              polaroidPhotos: PolaroidPhoto[];
+              canvasWidth: number;
+              canvasHeight: number;
+              dragState: DragState | null;
+              selectedId: string | null;
+            }
+
+            interface DragState {
+              id: string;
+              startScreenX: number;
+              startScreenY: number;
+              currentScreenX: number;
+              currentScreenY: number;
+              startWorldPos: Point;
+              currentWorldPos: Point;
+              isDragActive: boolean;
+              hasMoved: boolean;
+            }
+          </code>
+        </store-types>
+
+        <store-creation>
+          <code>
+            // Create store with complete type safety
+            const [store, setStore] = createStore&lt;AppStore&gt;({
+              polaroidPhotos: [],
+              canvasWidth: 0,
+              canvasHeight: 0,
+              dragState: null,
+              selectedId: null
+            });
+          </code>
+        </store-creation>
+      </implementation>
+    </pattern>
+
+    <pattern name="component-props">
+      <title>Component Props Type Definition</title>
+      <description>Define complete prop interfaces with proper constraints</description>
+      <implementation>
+        <props-interface>
+          <code>
+            interface CanvasItemProps {
+              id: string;
+              position: Point;
+              rotation?: number;
+              scale?: number;
+              zIndex?: number;
+              isDraggable: boolean;
+              isSelectable: boolean;
+              isSelected?: boolean;
+              isDragging?: boolean;
+              visible?: boolean;
+              alwaysRender?: boolean;
+              width?: number;
+              height?: number;
+              children: JSX.Element;
+              class?: string;
+              style?: JSX.CSSProperties;
+              
+              // Event handlers with proper signatures
+              onSelect?: (id: string, event: MouseEvent) => void;
+              onDeselect?: (id: string) => void;
+              onDrag?: (id: string, delta: Vector) => void;
+              onDragEnd?: (id: string, finalPosition: Point) => void;
+              onClick?: (id: string, event: MouseEvent) => void;
+            }
+          </code>
+        </props-interface>
+
+        <component-definition>
+          <code>
+            // Component with fully typed props
+            export function CanvasItem(props: CanvasItemProps): JSX.Element {
+              // All props are properly typed from the start
+              const screenPosition = (): Point => {
+                return transform.worldToScreen(props.position);
+              };
+              
+              // Type-safe event handlers
+              const handleMouseDown = (e: MouseEvent): void => {
+                if (!props.isDraggable || !props.onSelect) return;
+                props.onSelect(props.id, e);
+              };
+              
+              return (
+                &lt;div
+                  onMouseDown={handleMouseDown}
+                  style={{
+                    position: "absolute",
+                    left: `${screenPosition().x}px`,
+                    top: `${screenPosition().y}px`,
+                    ...props.style
+                  }}
+                &gt;
+                  {props.children}
+                &lt;/div&gt;
+              );
+            }
+          </code>
+        </component-definition>
+      </implementation>
+    </pattern>
+
+    <pattern name="event-handlers">
+      <title>Type-Safe Event Handlers</title>
+      <description>Define proper event handler types with complete signatures</description>
+      <implementation>
+        <handler-types>
+          <code>
+            // Event handler type definitions
+            type MouseEventHandler = (event: MouseEvent) => void;
+            type TouchEventHandler = (event: TouchEvent) => void;
+            type DragStartHandler = (event: MouseEvent, id: string) => void;
+            type DragMoveHandler = (id: string, delta: Vector) => void;
+            type DragEndHandler = (id: string, finalPosition: Point) => void;
+
+            // Generic event handler for flexibility
+            type EventHandler&lt;T extends Event&gt; = (event: T) => void;
+            type ItemEventHandler&lt;T extends Event&gt; = (id: string, event: T) => void;
+          </code>
+        </handler-types>
+
+        <handler-implementation>
+          <code>
+            // Implement handlers with proper types
+            const createDragHandlers = (
+              items: Store&lt;PolaroidPhoto[]&gt;,
+              setItems: SetStoreFunction&lt;PolaroidPhoto[]&gt;
+            ) => {
+              const handleDragStart: DragStartHandler = (event, id) => {
+                const item = items.find(item => item.id === id);
+                if (!item) return;
+                
+                // Type-safe store update
+                const index = items.findIndex(item => item.id === id);
+                setItems(index, produce(item => {
+                  item.isDragging = true;
+                }));
+              };
+
+              const handleDragMove: DragMoveHandler = (id, delta) => {
+                const index = items.findIndex(item => item.id === id);
+                if (index === -1) return;
+                
+                setItems(index, produce(item => {
+                  item.position = {
+                    x: item.position.x + delta.dx,
+                    y: item.position.y + delta.dy
+                  };
+                }));
+              };
+
+              const handleDragEnd: DragEndHandler = (id, finalPosition) => {
+                const index = items.findIndex(item => item.id === id);
+                if (index === -1) return;
+                
+                batch(() => {
+                  setItems(index, produce(item => {
+                    item.position = finalPosition;
+                    item.isDragging = false;
+                  }));
+                });
+              };
+
+              return { handleDragStart, handleDragMove, handleDragEnd };
+            };
+          </code>
+        </handler-implementation>
+      </implementation>
+    </pattern>
+
+    <pattern name="store-updates">
+      <title>Type-Safe Store Updates</title>
+      <description>Proper store update patterns with full type safety</description>
+      <implementation>
+        <update-utilities>
+          <code>
+            // Type-safe store update utilities
+            const updateItemProperty = &lt;T extends DraggableItem, K extends keyof T&gt;(
+              items: Store&lt;T[]&gt;,
+              setItems: SetStoreFunction&lt;T[]&gt;,
+              id: string,
+              property: K,
+              value: T[K]
+            ): void => {
+              const index = items.findIndex(item => item.id === id);
+              if (index === -1) return;
+              
+              setItems(index, produce(item => {
+                item[property] = value;
+              }));
+            };
+
+            const updateItemPosition = (
+              items: Store&lt;DraggableItem[]&gt;,
+              setItems: SetStoreFunction&lt;DraggableItem[]&gt;,
+              id: string,
+              position: Point
+            ): void => {
+              updateItemProperty(items, setItems, id, 'position', position);
+            };
+
+            const batchUpdateItems = &lt;T extends DraggableItem&gt;(
+              items: Store&lt;T[]&gt;,
+              setItems: SetStoreFunction&lt;T[]&gt;,
+              updates: Array&lt;{ id: string; updates: Partial&lt;T&gt; }&gt;
+            ): void => {
+              batch(() => {
+                updates.forEach(({ id, updates: itemUpdates }) => {
+                  const index = items.findIndex(item => item.id === id);
+                  if (index !== -1) {
+                    setItems(index, produce(item => {
+                      Object.assign(item, itemUpdates);
+                    }));
+                  }
+                });
+              });
+            };
+          </code>
+        </update-utilities>
+
+        <path-syntax-types>
+          <code>
+            // Type-safe path syntax for complex updates
+            type StorePath&lt;T&gt; = T extends object 
+              ? { [K in keyof T]: [K] | [K, ...StorePath&lt;T[K]&gt;] }[keyof T]
+              : never;
+
+            type StorePathValue&lt;T, P&gt; = P extends [infer K, ...infer Rest]
+              ? K extends keyof T
+                ? Rest extends []
+                  ? T[K]
+                  : StorePathValue&lt;T[K], Rest&gt;
+                : never
+              : never;
+
+            // Usage with type safety
+            setStore(['polaroidPhotos', 0, 'position'], { x: 100, y: 200 });
+            setStore(['canvasWidth'], 800);
+          </code>
+        </path-syntax-types>
+      </implementation>
+    </pattern>
+
+    <pattern name="generic-constraints">
+      <title>Proper Generic Constraints</title>
+      <description>Use generic constraints to maintain type safety while allowing flexibility</description>
+      <implementation>
+        <draggable-generic>
+          <code>
+            // Constrained generic for draggable items
+            interface BaseDraggableItem {
+              id: string;
+              position: Point;
+            }
+
+            function createDraggable&lt;T extends BaseDraggableItem&gt;(
+              items: Store&lt;T[]&gt;,
+              setItems: SetStoreFunction&lt;T[]&gt;,
+              options: DraggableOptions
+            ): DraggableState&lt;T&gt; {
+              const updateItemPosition = (id: string, position: Point): void => {
+                const index = items.findIndex((item: T) => item.id === id);
+                if (index === -1) return;
+                
+                setItems(index, produce((item: T) => {
+                  item.position = position;
+                }));
+              };
+
+              const getItemById = (id: string): T | undefined => {
+                return items.find((item: T) => item.id === id);
+              };
+
+              return {
+                updateItemPosition,
+                getItemById,
+                // ... other methods with proper T constraints
+              };
+            }
+          </code>
+        </draggable-generic>
+
+        <component-generic>
+          <code>
+            // Generic component with proper constraints
+            interface ListItem {
+              id: string;
+            }
+
+            interface ListProps&lt;T extends ListItem&gt; {
+              items: T[];
+              onItemSelect: (item: T) => void;
+              renderItem: (item: T, index: number) => JSX.Element;
+              keyExtractor?: (item: T) => string;
+            }
+
+            function List&lt;T extends ListItem&gt;(props: ListProps&lt;T&gt;): JSX.Element {
+              return (
+                &lt;For each={props.items}&gt;
+                  {(item: T, index) => (
+                    &lt;div onClick={() => props.onItemSelect(item)}&gt;
+                      {props.renderItem(item, index())}
+                    &lt;/div&gt;
+                  )}
+                &lt;/For&gt;
+              );
+            }
+          </code>
+        </component-generic>
+      </implementation>
+    </pattern>
+  </solidjs-type-patterns>
+
+  <dependency-cascade-management>
+    <process>
+      <step number="1">
+        <title>Identify Change Scope</title>
+        <description>Use TypeScript compiler to identify all affected types</description>
+        <commands>
+          <command>npx tsc --noEmit --listFiles</command>
+          <command>npx tsc --noEmit --extendedDiagnostics</command>
+        </commands>
+      </step>
+
+      <step number="2">
+        <title>Map Type Dependencies</title>
+        <description>Create dependency graph of affected types</description>
+        <example>
+          <scenario>Changing Point interface</scenario>
+          <dependencies>
+            <type name="Point" level="0">Base type being changed</type>
+            <type name="DraggableItem" level="1">Uses Point for position</type>
+            <type name="PolaroidPhoto" level="2">Extends DraggableItem</type>
+            <type name="CanvasItemProps" level="2">Uses Point for position</type>
+            <type name="DragState" level="2">Uses Point for positions</type>
+            <type name="AppStore" level="3">Contains DragState and PolaroidPhoto[]</type>
+          </dependencies>
+        </example>
+      </step>
+
+      <step number="3">
+        <title>Update from Leaf to Root</title>
+        <description>Update types starting from the most dependent (leaves) to least dependent (roots)</description>
+        <order>
+          <update order="1">Update Point interface</update>
+          <update order="2">Update all interfaces using Point directly</update>
+          <update order="3">Update interfaces using those interfaces</update>
+          <update order="4">Update component props and store types</update>
+          <update order="5">Update component implementations</update>
+          <update order="6">Update function signatures</update>
+        </order>
+      </step>
+
+      <step number="4">
+        <title>Verify Cascade Completion</title>
+        <description>Ensure all TypeScript errors are resolved</description>
+        <verification>
+          <command>npx tsc --noEmit</command>
+          <requirement>Zero TypeScript errors</requirement>
+          <requirement>Zero TypeScript warnings</requirement>
+        </verification>
+      </step>
+    </process>
+
+    <tools>
+      <tool name="typescript-compiler">
+        <purpose>Identify all affected files and types</purpose>
+        <usage>
+          <command>npx tsc --noEmit --listFiles | grep -E '\.(ts|tsx)$'</command>
+          <command>npx tsc --build --dry --verbose</command>
+        </usage>
+      </tool>
+
+      <tool name="find-references">
+        <purpose>Find all references to a type or interface</purpose>
+        <vscode-command>F12 (Go to Definition) + Shift+F12 (Find All References)</vscode-command>
+        <cli-alternative>grep -r "TypeName" src/ --include="*.ts" --include="*.tsx"</cli-alternative>
+      </tool>
+
+      <tool name="incremental-checking">
+        <purpose>Check types incrementally during refactoring</purpose>
+        <command>npx tsc --noEmit --incremental</command>
+      </tool>
+    </tools>
+  </dependency-cascade-management>
+
+  <common-type-change-scenarios>
+    <scenario name="adding-optional-property">
+      <description>Adding optional property to existing interface</description>
+      <safe>Low risk - optional properties don't break existing code</safe>
+      <steps>
+        <step>Add property to interface with ? modifier</step>
+        <step>Update default values in createStore calls</step>
+        <step>Add property to any object literals</step>
+      </steps>
+      <example>
+        <before>
+          <code>
+            interface PolaroidPhoto {
+              id: string;
+              src: string;
+              position: Point;
+            }
+          </code>
+        </before>
+        <after>
+          <code>
+            interface PolaroidPhoto {
+              id: string;
+              src: string;
+              position: Point;
+              caption?: string; // New optional property
+            }
+          </code>
+        </after>
+      </example>
+    </scenario>
+
+    <scenario name="adding-required-property">
+      <description>Adding required property to existing interface</description>
+      <risk>High risk - breaks all existing implementations</risk>
+      <steps>
+        <step>Add property to interface without ? modifier</step>
+        <step>Find all createStore calls using this type</step>
+        <step>Find all object literals creating this type</step>
+        <step>Update all usages to include new property</step>
+        <step>Update any factory functions</step>
+        <step>Update any default values</step>
+      </steps>
+      <dependencies>
+        <affected>All object literals of this type</affected>
+        <affected>All store initializations</affected>
+        <affected>All factory functions</affected>
+        <affected>All function parameters expecting this type</affected>
+      </dependencies>
+    </scenario>
+
+    <scenario name="changing-property-type">
+      <description>Changing the type of an existing property</description>
+      <risk>High risk - affects all property access</risk>
+      <steps>
+        <step>Change property type in interface</step>
+        <step>Find all direct property access</step>
+        <step>Find all property assignments</step>
+        <step>Update all store setters</step>
+        <step>Update all function parameters</step>
+        <step>Update all comparisons and operations</step>
+      </steps>
+      <example>
+        <before>
+          <code>
+            interface PolaroidPhoto {
+              id: string;
+              position: Point;
+            }
+            
+            // Usage
+            setPhoto('position', { x: 10, y: 20 });
+            const x = photo.position.x;
+          </code>
+        </before>
+        <after>
+          <code>
+            interface PolaroidPhoto {
+              id: string;
+              position: Point3D; // Changed from Point to Point3D
+            }
+            
+            // All usages must be updated
+            setPhoto('position', { x: 10, y: 20, z: 0 });
+            const x = photo.position.x; // Still works if Point3D extends Point
+          </code>
+        </after>
+      </example>
+    </scenario>
+
+    <scenario name="renaming-property">
+      <description>Renaming an existing property</description>
+      <risk>High risk - breaks all property access</risk>
+      <approach>Two-phase migration for safety</approach>
+      <steps>
+        <phase name="1">
+          <step>Add new property as optional</step>
+          <step>Keep old property as deprecated</step>
+          <step>Update all new code to use new property</step>
+        </phase>
+        <phase name="2">
+          <step>Update all existing code to use new property</step>
+          <step>Remove old property</step>
+        </phase>
+      </steps>
+    </scenario>
+
+    <scenario name="changing-function-signature">
+      <description>Changing function parameter or return types</description>
+      <risk>High risk - affects all function calls</risk>
+      <steps>
+        <step>Change function signature</step>
+        <step>Find all function calls using TypeScript compiler</step>
+        <step>Update all call sites</step>
+        <step>Update any function compositions</step>
+        <step>Update any higher-order functions</step>
+        <step>Update any callbacks that reference this function</step>
+      </steps>
+    </scenario>
+  </common-type-change-scenarios>
+
+  <type-evolution-strategies>
+    <strategy name="versioned-interfaces">
+      <description>Create new versions of interfaces for major changes</description>
+      <implementation>
+        <code>
+          interface PolaroidPhotoV1 {
+            id: string;
+            src: string;
+            position: Point;
+          }
+
+          interface PolaroidPhotoV2 extends Omit&lt;PolaroidPhotoV1, 'position'&gt; {
+            position: Point3D;
+            version: 2;
+          }
+
+          type PolaroidPhoto = PolaroidPhotoV1 | PolaroidPhotoV2;
+
+          // Type guards for version checking
+          const isV2Photo = (photo: PolaroidPhoto): photo is PolaroidPhotoV2 =&gt; {
+            return 'version' in photo && photo.version === 2;
+          };
+        </code>
+      </implementation>
+    </strategy>
+
+    <strategy name="gradual-migration">
+      <description>Use union types for gradual property migration</description>
+      <implementation>
+        <code>
+          // During migration period
+          interface PolaroidPhoto {
+            id: string;
+            src: string;
+            // Allow both old and new position formats
+            position: Point | Point3D;
+          }
+
+          // Helper functions for type narrowing
+          const isPoint3D = (pos: Point | Point3D): pos is Point3D =&gt; {
+            return 'z' in pos;
+          };
+
+          const normalizePosition = (pos: Point | Point3D): Point3D =&gt; {
+            return isPoint3D(pos) ? pos : { ...pos, z: 0 };
+          };
+        </code>
+      </implementation>
+    </strategy>
+
+    <strategy name="type-adapters">
+      <description>Create adapter functions for type conversions</description>
+      <implementation>
+        <code>
+          // Adapters for converting between type versions
+          const adaptPhotoV1ToV2 = (photoV1: PolaroidPhotoV1): PolaroidPhotoV2 =&gt; {
+            return {
+              ...photoV1,
+              position: { ...photoV1.position, z: 0 },
+              version: 2 as const
+            };
+          };
+
+          const adaptPhotoV2ToV1 = (photoV2: PolaroidPhotoV2): PolaroidPhotoV1 =&gt; {
+            const { version, position, ...rest } = photoV2;
+            return {
+              ...rest,
+              position: { x: position.x, y: position.y }
+            };
+          };
+        </code>
+      </implementation>
+    </strategy>
+  </type-evolution-strategies>
+
+  <testing-type-safety>
+    <approach name="compile-time-tests">
+      <description>Create TypeScript files that test type correctness</description>
+      <implementation>
+        <code>
+          // types/tests/type-tests.ts
+          import { PolaroidPhoto, Point, DraggableItem } from '../index';
+
+          // Test that PolaroidPhoto extends DraggableItem
+          const _testExtends: DraggableItem = {} as PolaroidPhoto; // Should compile
+
+          // Test that required properties are enforced
+          const _testRequiredProps: PolaroidPhoto = {
+            id: "test",
+            src: "test.jpg",
+            position: { x: 0, y: 0 },
+            caption: "test",
+            date: "2025-01-01"
+          }; // Should compile
+
+          // Test that invalid assignments fail
+          // @ts-expect-error - Missing required properties
+          const _testInvalid: PolaroidPhoto = {
+            id: "test"
+          }; // Should NOT compile
+
+          // Test generic constraints
+          function testGeneric&lt;T extends DraggableItem&gt;(item: T): T {
+            item.position.x = 100; // Should compile
+            return item;
+          }
+
+          const result = testGeneric({} as PolaroidPhoto); // Should compile
+          // @ts-expect-error - String doesn't extend DraggableItem
+          const invalid = testGeneric("string"); // Should NOT compile
+        </code>
+      </implementation>
+    </approach>
+
+    <approach name="runtime-type-validation">
+      <description>Use runtime validation to ensure type safety at boundaries</description>
+      <implementation>
+        <code>
+          import { z } from 'zod';
+
+          // Define Zod schemas that match TypeScript interfaces
+          const PointSchema = z.object({
+            x: z.number(),
+            y: z.number()
+          });
+
+          const PolaroidPhotoSchema = z.object({
+            id: z.string(),
+            src: z.string(),
+            position: PointSchema,
+            caption: z.string(),
+            date: z.string(),
+            rotation: z.number().optional(),
+            zIndex: z.number().optional(),
+            flipped: z.boolean().optional()
+          });
+
+          // Type-safe parsing with runtime validation
+          const parsePolaroidPhoto = (data: unknown): PolaroidPhoto =&gt; {
+            return PolaroidPhotoSchema.parse(data);
+          };
+
+          // Use at API boundaries
+          const loadPhotosFromAPI = async (): Promise&lt;PolaroidPhoto[]&gt; =&gt; {
+            const response = await fetch('/api/photos');
+            const data = await response.json();
+            
+            if (!Array.isArray(data)) {
+              throw new Error('Expected array of photos');
+            }
+            
+            return data.map(parsePolaroidPhoto);
+          };
+        </code>
+      </implementation>
+    </approach>
+  </testing-type-safety>
+
+  <type-maintenance-checklist>
+    <before-changes>
+      <item>Run npx tsc --noEmit to ensure clean starting state</item>
+      <item>Identify all files that use the types being changed</item>
+      <item>Create a list of all dependent types and interfaces</item>
+      <item>Plan the order of updates (leaf types first)</item>
+    </before-changes>
+
+    <during-changes>
+      <item>Make one type change at a time</item>
+      <item>Run TypeScript compiler after each change</item>
+      <item>Update all errors before moving to next change</item>
+      <item>Use Find All References to ensure complete coverage</item>
+    </during-changes>
+
+    <after-changes>
+      <item>Run full TypeScript compilation: npx tsc --noEmit</item>
+      <item>Run tests to ensure runtime behavior is correct</item>
+      <item>Check that all store updates still work correctly</item>
+      <item>Verify component props are properly typed</item>
+      <item>Test that event handlers have correct signatures</item>
+    </after-changes>
+  </type-maintenance-checklist>
+
+  <best-practices>
+    <practice name="explicit-return-types">
+      <description>Always specify return types for functions</description>
+      <reason>Prevents unintended type changes from breaking consumers</reason>
+      <example>
+        <good>
+          <code>
+            const getItemById = (id: string): PolaroidPhoto | undefined =&gt; {
+              return items.find(item =&gt; item.id === id);
+            };
+          </code>
+        </good>
+        <bad>
+          <code>
+            const getItemById = (id: string) =&gt; {
+              return items.find(item =&gt; item.id === id); // Return type inferred
+            };
+          </code>
+        </bad>
+      </example>
+    </practice>
+
+    <practice name="readonly-for-immutable-data">
+      <description>Use readonly for data that shouldn't be mutated</description>
+      <implementation>
+        <code>
+          interface ReadonlyPolaroidPhoto {
+            readonly id: string;
+            readonly src: string;
+            readonly caption: string;
+            readonly date: string;
+            position: Point; // Mutable through store updates
+          }
+        </code>
+      </implementation>
+    </practice>
+
+    <practice name="branded-types">
+      <description>Use branded types for IDs and other primitive values that need distinction</description>
+      <implementation>
+        <code>
+          type PolaroidId = string &amp; { __brand: 'PolaroidId' };
+          type UserId = string &amp; { __brand: 'UserId' };
+
+          const createPolaroidId = (id: string): PolaroidId =&gt; id as PolaroidId;
+          const createUserId = (id: string): UserId =&gt; id as UserId;
+
+          interface PolaroidPhoto {
+            id: PolaroidId; // Cannot accidentally use UserId
+            src: string;
+            position: Point;
+          }
+        </code>
+      </implementation>
+    </practice>
+
+    <practice name="exhaustive-type-checking">
+      <description>Use never type to ensure exhaustive handling of union types</description>
+      <implementation>
+        <code>
+          type Theme = 'light' | 'dark' | 'auto';
+
+          const getThemeColor = (theme: Theme): string =&gt; {
+            switch (theme) {
+              case 'light':
+                return '#ffffff';
+              case 'dark':
+                return '#000000';
+              case 'auto':
+                return '#f0f0f0';
+              default:
+                // TypeScript will error if we add new theme without handling it
+                const exhaustiveCheck: never = theme;
+                throw new Error(`Unhandled theme: ${exhaustiveCheck}`);
+            }
+          };
+        </code>
+      </implementation>
+    </practice>
+  </best-practices>
+</typescript-solidjs-guide>

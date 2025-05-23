@@ -33,8 +33,6 @@
 }
 
 .canvas-item.dragging {
-  z-index: 10000 !important; /* Ensure dragged items appear on top */
-  opacity: 0.9;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
 }
 

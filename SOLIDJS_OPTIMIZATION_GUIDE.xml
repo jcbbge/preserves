@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<solidjs-optimization-guide>
+  <meta>
+    <title>SolidJS Performance & TypeScript Development Guide</title>
+    <purpose>LLM assistant reference for high-performance SolidJS development</purpose>
+    <last-updated>2025-01-27</last-updated>
+  </meta>
+
+  <core-principles>
+    <principle id="reactivity">
+      <title>Fine-Grained Reactivity</title>
+      <description>SolidJS updates only the exact DOM nodes that need to change</description>
+      <rule>Always access signals/stores inside tracking scopes (JSX, createEffect, createMemo)</rule>
+    </principle>
+    
+    <principle id="immutability">
+      <title>Immutable Updates</title>
+      <description>Never mutate signals or stores directly</description>
+      <rule>Use setters and store utilities (produce, batch) for all updates</rule>
+    </principle>
+    
+    <principle id="batching">
+      <title>Update Batching</title>
+      <description>Group multiple updates to prevent excessive re-renders</description>
+      <rule>Use batch() for multiple synchronous updates</rule>
+    </principle>
+  </core-principles>
+
+  <performance-patterns>
+    <pattern type="store-updates">
+      <title>Efficient Store Updates</title>
+      <bad>
+        <code>
+          setItems(index, (item) => ({ ...item, position: newPos }));
+          setItems(index, (item) => ({ ...item, rotation: newRot }));
+          setOtherState(value);
+        </code>
+        <problems>
+          <problem>Object spreading creates new objects</problem>
+          <problem>Multiple separate updates = multiple re-renders</problem>
+          <problem>Performance degrades with complex objects</problem>
+        </problems>
+      </bad>
+      <good>
+        <code>
+          batch(() => {
+            setItems(index, produce((item) => {
+              item.position = newPos;
+              item.rotation = newRot;
+            }));
+            setOtherState(value);
+          });
+        </code>
+        <benefits>
+          <benefit>Direct mutation style (SolidJS handles immutability)</benefit>
+          <benefit>Single re-render for all updates</benefit>
+          <benefit>Better performance with nested objects</benefit>
+        </benefits>
+      </good>
+    </pattern>
+
+    <pattern type="reactive-calculations">
+      <title>Reactive vs Static Calculations</title>
+      <bad>
+        <code>
+          const screenPos = transform.worldToScreen(props.position);
+          return &lt;div style={{ left: `${screenPos.x}px` }} /&gt;;
+        </code>
+        <problems>
+          <problem>Calculated once, never updates when props.position changes</problem>
+          <problem>Breaks reactivity chain</problem>
+        </problems>
+      </bad>
+      <good>
+        <code>
+          return &lt;div style={{ left: `${transform.worldToScreen(props.position).x}px` }} /&gt;;
+        </code>
+        <benefits>
+          <benefit>Recalculates when props.position changes</benefit>
+          <benefit>Maintains reactivity</benefit>
+        </benefits>
+      </good>
+    </pattern>
+
+    <pattern type="event-handling">
+      <title>Event Handler Optimization</title>
+      <bad>
+        <code>
+          onMouseDown={(e) => {
+            console.log("Mouse down"); // Performance killer
+            e.stopPropagation(); // Breaks event bubbling
+            handleMouseDown(e);
+          }}
+        </code>
+        <problems>
+          <problem>Console logs in hot paths kill performance</problem>
+          <problem>stopPropagation prevents event delegation</problem>
+          <problem>Unnecessary function wrapping</problem>
+        </problems>
+      </bad>
+      <good>
+        <code>
+          onMouseDown={handleMouseDown}
+        </code>
+        <benefits>
+          <benefit>Direct function reference</benefit>
+          <benefit>No performance overhead</benefit>
+          <benefit>Proper event bubbling</benefit>
+        </benefits>
+      </good>
+    </pattern>
+
+    <pattern type="conditional-rendering">
+      <title>Conditional Rendering</title>
+      <bad>
+        <code>
+          {isVisible() ? &lt;ExpensiveComponent /&gt; : null}
+        </code>
+        <problems>
+          <problem>Component unmounts/remounts on toggle</problem>
+          <problem>Loses internal state</problem>
+        </problems>
+      </bad>
+      <good>
+        <code>
+          &lt;Show when={isVisible()}&gt;
+            &lt;ExpensiveComponent /&gt;
+          &lt;/Show&gt;
+        </code>
+        <benefits>
+          <benefit>Built-in optimization for conditional rendering</benefit>
+          <benefit>Preserves component state when possible</benefit>
+        </benefits>
+      </good>
+    </pattern>
+  </performance-patterns>
+
+  <store-utilities>
+    <utility name="batch">
+      <purpose>Group multiple updates into single re-render</purpose>
+      <import>import { batch } from "solid-js"</import>
+      <usage>
+        <code>
+          batch(() => {
+            setSignal1(value1);
+            setSignal2(value2);
+            setStore("key", value3);
+          });
+        </code>
+      </usage>
+      <when-to-use>
+        <use-case>Multiple related state updates</use-case>
+        <use-case>Drag operations with position + visual state</use-case>
+        <use-case>Form submissions updating multiple fields</use-case>
+      </when-to-use>
+    </utility>
+
+    <utility name="produce">
+      <purpose>Efficient nested object/array updates</purpose>
+      <import>import { produce } from "solid-js/store"</import>
+      <usage>
+        <code>
+          setStore("users", userId, produce((user) => {
+            user.name = newName;
+            user.email = newEmail;
+            user.preferences.theme = newTheme;
+          }));
+        </code>
+      </usage>
+      <when-to-use>
+        <use-case>Updating multiple properties at once</use-case>
+        <use-case>Nested object modifications</use-case>
+        <use-case>Complex state transformations</use-case>
+      </when-to-use>
+    </utility>
+
+    <utility name="unwrap">
+      <purpose>Get non-reactive snapshot of store</purpose>
+      <import>import { unwrap } from "solid-js/store"</import>
+      <usage>
+        <code>
+          const snapshot = unwrap(store);
+          console.log(snapshot); // Safe to use outside tracking scope
+        </code>
+      </usage>
+      <when-to-use>
+        <use-case>Debugging store state</use-case>
+        <use-case>Passing data to non-reactive APIs</use-case>
+        <use-case>Creating deep copies</use-case>
+      </when-to-use>
+    </utility>
+
+    <utility name="reconcile">
+      <purpose>Efficiently merge new data with existing store</purpose>
+      <import>import { reconcile } from "solid-js/store"</import>
+      <usage>
+        <code>
+          setStore("items", reconcile(newItemsArray));
+        </code>
+      </usage>
+      <when-to-use>
+        <use-case>API responses updating large datasets</use-case>
+        <use-case>Real-time data synchronization</use-case>
+        <use-case>Minimizing unnecessary updates</use-case>
+      </when-to-use>
+    </utility>
+  </store-utilities>
+
+  <typescript-survival-guide>
+    <philosophy>
+      <title>TypeScript: Tool, Not Master</title>
+      <rule>TypeScript should accelerate development, not hinder it</rule>
+      <rule>Use 'any' strategically when types are more trouble than they're worth</rule>
+      <rule>Focus on business logic first, types second</rule>
+    </philosophy>
+
+    <quick-fixes>
+      <fix type="store-setter-errors">
+        <problem>setItems(predicate, "property", value) type errors</problem>
+        <solution>
+          <code>
+            // Instead of this:
+            setItems(item => item.id === id, "position", newPos);
+            
+            // Use this:
+            const index = items.findIndex(item => item.id === id);
+            setItems(index, produce(item => { item.position = newPos; }));
+          </code>
+        </solution>
+      </fix>
+
+      <fix type="generic-constraints">
+        <problem>Generic type constraints too restrictive</problem>
+        <solution>
+          <code>
+            // Add explicit type assertion
+            const item = items.find(i => i.id === id) as MyItemType;
+            
+            // Or use any for rapid development
+            const item = items.find(i => i.id === id) as any;
+          </code>
+        </solution>
+      </fix>
+
+      <fix type="event-handler-types">
+        <problem>Event handler parameter type errors</problem>
+        <solution>
+          <code>
+            // Use MouseEvent for mouse events
+            const handleClick = (e: MouseEvent) => { ... };
+            
+            // Use any for complex event scenarios
+            const handleComplexEvent = (e: any) => { ... };
+          </code>
+        </solution>
+      </fix>
+
+      <fix type="missing-properties">
+        <problem>Property doesn't exist on type errors</problem>
+        <solution>
+          <code>
+            // Extend the interface temporarily
+            interface ExtendedType extends OriginalType {
+              newProperty?: any;
+            }
+            
+            // Or use bracket notation
+            (obj as any)['newProperty'] = value;
+          </code>
+        </solution>
+      </fix>
+    </quick-fixes>
+
+    <development-workflow>
+      <step number="1">Build feature with minimal types (use 'any' liberally)</step>
+      <step number="2">Get functionality working completely</step>
+      <step number="3">Add proper types incrementally</step>
+      <step number="4">Only fix type errors that provide real value</step>
+    </development-workflow>
+
+    <type-strategies>
+      <strategy name="progressive-typing">
+        <description>Start loose, tighten gradually</description>
+        <code>
+          // Start with any
+          const [data, setData] = createStore&lt;any&gt;({});
+          
+          // Evolve to specific types later
+          interface DataType { id: string; name: string; }
+          const [data, setData] = createStore&lt;DataType[]&gt;([]);
+        </code>
+      </strategy>
+
+      <strategy name="utility-first-types">
+        <description>Focus on commonly used patterns</description>
+        <code>
+          // Create reusable type utilities
+          type ID = string;
+          type Position = { x: number; y: number };
+          type DraggableItem = { id: ID; position: Position };
+        </code>
+      </strategy>
+
+      <strategy name="escape-hatches">
+        <description>Know when to bypass TypeScript</description>
+        <code>
+          // Use type assertions for complex scenarios
+          (complexObject as any).doSomething();
+          
+          // Use @ts-ignore for temporary workarounds
+          // @ts-ignore
+          problematicCode();
+        </code>
+      </strategy>
+    </type-strategies>
+  </typescript-survival-guide>
+
+  <anti-patterns>
+    <anti-pattern name="excessive-console-logging">
+      <description>Console logs in render loops kill performance</description>
+      <bad>
+        <code>
+          const Component = () => {
+            console.log("Rendering..."); // Fires on every update
+            return &lt;div&gt;{store.value}&lt;/div&gt;;
+          };
+        </code>
+      </bad>
+      <good>
+        <code>
+          const Component = () => {
+            // Use createEffect for debugging
+            createEffect(() => {
+              console.log("Value changed:", store.value);
+            });
+            return &lt;div&gt;{store.value}&lt;/div&gt;;
+          };
+        </code>
+      </good>
+    </anti-pattern>
+
+    <anti-pattern name="breaking-reactivity">
+      <description>Accessing reactive values outside tracking scopes</description>
+      <bad>
+        <code>
+          const position = store.position; // Breaks reactivity
+          return &lt;div style={{ left: position.x }} /&gt;;
+        </code>
+      </bad>
+      <good>
+        <code>
+          return &lt;div style={{ left: store.position.x }} /&gt;; // Maintains reactivity
+        </code>
+      </good>
+    </anti-pattern>
+
+    <anti-pattern name="event-propagation-blocking">
+      <description>Unnecessary stopPropagation breaks event delegation</description>
+      <bad>
+        <code>
+          onMouseDown={(e) => {
+            e.stopPropagation(); // Prevents parent handlers
+            doSomething();
+          }}
+        </code>
+      </bad>
+      <good>
+        <code>
+          onMouseDown={(e) => {
+            doSomething();
+            // Let events bubble naturally
+          }}
+        </code>
+      </good>
+    </anti-pattern>
+  </anti-patterns>
+
+  <debugging-checklist>
+    <item>Check if reactive values are accessed inside tracking scopes</item>
+    <item>Verify store updates use proper setters (not direct mutation)</item>
+    <item>Look for console.log statements in hot code paths</item>
+    <item>Ensure event handlers don't break propagation unnecessarily</item>
+    <item>Check for multiple unmatched updates that should be batched</item>
+    <item>Verify TypeScript errors aren't preventing compilation</item>
+  </debugging-checklist>
+
+  <common-patterns>
+    <pattern name="drag-and-drop">
+      <description>High-performance drag implementation</description>
+      <code>
+        const handleDrag = (id: string, newPosition: Point) => {
+          batch(() => {
+            setItems(
+              item => item.id === id,
+              produce(item => {
+                item.position = newPosition;
+                item.isDragging = true;
+              })
+            );
+            saveToStorage(id, newPosition);
+          });
+        };
+      </code>
+    </pattern>
+
+    <pattern name="form-handling">
+      <description>Efficient form state management</description>
+      <code>
+        const [form, setForm] = createStore({
+          name: "",
+          email: "",
+          preferences: { theme: "dark" }
+        });
+
+        const updateForm = (field: string, value: any) => {
+          setForm(field, value);
+        };
+
+        const submitForm = () => {
+          batch(() => {
+            setForm("isSubmitting", true);
+            setForm("errors", {});
+            // API call here
+          });
+        };
+      </code>
+    </pattern>
+
+    <pattern name="list-management">
+      <description>Efficient list updates</description>
+      <code>
+        const addItem = (newItem: Item) => {
+          setItems(items.length, newItem);
+        };
+
+        const removeItem = (id: string) => {
+          setItems(items => items.filter(item => item.id !== id));
+        };
+
+        const updateItem = (id: string, updates: Partial&lt;Item&gt;) => {
+          const index = items.findIndex(item => item.id === id);
+          setItems(index, produce(item => {
+            Object.assign(item, updates);
+          }));
+        };
+      </code>
+    </pattern>
+  </common-patterns>
+</solidjs-optimization-guide>
