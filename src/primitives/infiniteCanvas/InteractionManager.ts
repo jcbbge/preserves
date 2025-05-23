@@ -178,7 +178,7 @@ export function createInteractionManager(props?: InteractionManagerProps) {
       return "allow";
     }
     
-    // For pan, check if the click is directly on the canvas (not a child)
+    // For pan, check if we're within the canvas area
     if (type === "pan") {
       // Check if the event has the spacebar modifier
       const isSpacebarPressed = (e as any).spacebarPressed;
@@ -188,14 +188,24 @@ export function createInteractionManager(props?: InteractionManagerProps) {
         return "allow";
       }
       
-      // Get the closest parent canvas container
+      // Check if we're within a canvas container (including child elements)
       let element = targetElement;
-      while (element && !element.classList.contains("infinite-canvas-container")) {
+      let foundCanvasContainer = false;
+      
+      // Look for canvas container in the element hierarchy
+      while (element && !foundCanvasContainer) {
+        // Check for CSS module class name pattern or data attribute
+        if (element.classList.toString().includes("infinite-canvas-container") || 
+            element.dataset?.canvasContainer === "true") {
+          foundCanvasContainer = true;
+          break;
+        }
         element = element.parentElement as HTMLElement;
       }
       
-      // Only allow panning if the click is directly on the canvas container
-      return targetElement === element ? "allow" : "deny";
+      // Allow panning if we found a canvas container in the hierarchy
+      // This allows panning even when clicking on child elements
+      return foundCanvasContainer ? "allow" : "deny";
     }
     
     // For drag, check if the element is draggable
