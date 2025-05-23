@@ -15,46 +15,36 @@
 /* Login container - for canvas item */
 .login-container {
     position: relative;
-    width: 260px;
-    height: 350px;
+    width: 280px;
+    height: 380px;
     perspective: 1000px;
-    background: rgba(255, 0, 0, 0.1); /* Debug */
-    border: 1px solid red; /* Debug */
     pointer-events: all;
+}
+
+/* Login polaroid wrapper - top layer */
+.login-polaroid-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 20;
+    transform: rotate(-3deg);
 }
 
 /* Login polaroid styling */
 .login-polaroid {
-    position: relative;
-    transform: rotate(-3deg);
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
-    padding-bottom: 0;
-    background: white;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25) !important;
     pointer-events: all;
     cursor: grab;
 }
 
-.login-polaroid .polaroid-caption {
-    height: auto;
-    min-height: 45px;
-    padding: 4px 0;
-}
-
-.login-image-area {
-    display: flex;
-    background: var(--peach-background);
-    overflow: hidden;
-    padding: 0;
-    margin-bottom: 6px;
-    height: 210px;
-}
-
-.login-logo {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    padding: 0;
-    object-position: center;
+/* Login form overlay positioned over the polaroid caption area */
+.login-form-overlay {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    z-index: 1;
+    pointer-events: all;
 }
 
 .login-form {
@@ -102,53 +92,79 @@
 
 .error-message {
     position: absolute;
-    bottom: -20px;
+    bottom: -25px;
     left: 50%;
     transform: translateX(-50%) rotate(-1deg);
     color: var(--error-color);
     font-size: 0.8rem;
+    font-family: "Caveat", cursive;
     background: rgba(255, 255, 255, 0.95);
     padding: 2px 8px;
     border-radius: 4px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
     white-space: nowrap;
     max-width: 250px;
-    z-index: 80;
+    z-index: 25;
 }
 
-/* Connect button polaroid */
-.connect-polaroid {
-    position: relative;
-    margin-top: -50px;
-    margin-left: 15px;
+/* Connect polaroid wrapper - bottom layer, peeking out */
+.connect-polaroid-wrapper {
+    position: absolute;
+    top: 45px;
+    left: 35px;
+    z-index: 10;
     transform: rotate(5deg);
+}
+
+/* Connect button - styled as invisible button over polaroid */
+.connect-button {
     border: none;
+    background: transparent;
+    padding: 0;
     cursor: pointer;
-    background: #fff;
-    transition:
-        transform 0.2s,
-        box-shadow 0.2s;
-    width: 230px;
-    height: 270px;
+    transition: transform 0.2s;
     pointer-events: all;
-    border: 1px solid blue; /* Debug */
 }
 
-.connect-polaroid:hover:not(:disabled) {
-    transform: rotate(5deg) scale(1.03);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+.connect-button:hover:not(:disabled) {
+    transform: scale(1.03);
 }
 
-.connect-polaroid:active:not(:disabled) {
-    transform: rotate(5deg) scale(0.98);
+.connect-button:active:not(:disabled) {
+    transform: scale(0.98);
 }
 
-.connect-polaroid:disabled {
+.connect-button:disabled {
     opacity: 0.7;
     cursor: not-allowed;
 }
 
+/* Connect polaroid container - mimics Polaroid structure */
+.connect-polaroid-container {
+    width: 260px;
+    height: 300px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 12px 35px 12px;
+    box-sizing: border-box;
+    transition: box-shadow 0.2s;
+}
+
+.connect-button:hover:not(:disabled) .connect-polaroid-container {
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+}
+
 .connect-image-area {
+    width: 100%;
+    height: 220px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 1px;
+    margin-bottom: 6px;
     background: linear-gradient(
         45deg,
         var(--peach-secondary),
@@ -166,12 +182,13 @@
     font-size: 2rem;
     font-weight: bold;
     color: white;
+    transform: translate(50px, 50px);
 }
 
 .arrow-down-container {
     position: absolute;
-    right: 8px;
-    bottom: 8px;
+    right: -42px;
+    bottom: -42px;
     width: 24px;
     height: 24px;
     display: flex;
@@ -182,6 +199,34 @@
     padding: 2px;
 }
 
+.polaroid-grit-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('data:image/svg+xml;utf8,<svg width="250" height="250" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="250" height="250" filter="url(%23noise)" opacity="0.4"/></svg>');
+    opacity: 0.1;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+.connect-caption {
+    width: 100%;
+    text-align: center;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 0;
+}
+
 .connect-text {
+    font-family: "Caveat", cursive;
+    color: #333;
+    line-height: 1.2;
+    font-size: 1.2rem;
     font-weight: 700;
+    transform: translate(35px, 25px);
+    display: inline-block;
 }

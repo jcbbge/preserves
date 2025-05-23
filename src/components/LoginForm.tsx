@@ -1,6 +1,7 @@
 import { createSignal } from "solid-js";
 import { query, useNavigate } from "@solidjs/router";
 import { usePeach } from "~/context/peach";
+import { Polaroid } from "./Polaroid";
 
 import styles from "./LoginForm.module.css";
 
@@ -118,22 +119,17 @@ export default function LoginForm() {
   };
 
   return (
-    <div class={styles["login-container"]} style={{ "z-index": 60 }}>
-      <div
-        class={`${styles.polaroid} ${styles["login-polaroid"]}`}
-        style={{ "z-index": 70 }}
-      >
-        <div
-          class={`${styles["polaroid-image-area"]} ${styles["login-image-area"]}`}
-        >
-          <img
-            src="/peachdotcool.png"
-            alt="Peach"
-            class={styles["login-logo"]}
-          />
-          <div class={styles["polaroid-grit-overlay"]}></div>
-        </div>
-        <div class={styles["polaroid-caption"]}>
+    <div class={styles["login-container"]}>
+      {/* Login form polaroid - top layer */}
+      <div class={styles["login-polaroid-wrapper"]}>
+        <Polaroid
+          id="login-form"
+          src="/peachdotcool.png"
+          class={styles["login-polaroid"]}
+          onMouseDown={(e) => e.stopPropagation()}
+        />
+        {/* Login form overlay */}
+        <div class={styles["login-form-overlay"]}>
           <form onSubmit={handleSubmit} class={styles["login-form"]}>
             <div class={styles["input-wrapper"]}>
               <input
@@ -156,9 +152,7 @@ export default function LoginForm() {
               />
             </div>
             {error() && (
-              <div
-                class={`${styles["error-message"]} ${styles["polaroid-handwritten"]}`}
-              >
+              <div class={styles["error-message"]}>
                 {error()}
               </div>
             )}
@@ -166,39 +160,38 @@ export default function LoginForm() {
         </div>
       </div>
 
-      {/* Connect button polaroid */}
-      <button
-        type="submit"
-        class={`${styles.polaroid} ${styles["connect-polaroid"]}`}
-        style={{ "z-index": 55 }}
-        onClick={() =>
-          document
-            .querySelector("form")
-            ?.dispatchEvent(new Event("submit", { cancelable: true }))
-        }
-        disabled={loading()}
-      >
-        <div
-          class={`${styles["polaroid-image-area"]} ${styles["connect-image-area"]}`}
+      {/* Connect button polaroid - bottom layer, peeking out */}
+      <div class={styles["connect-polaroid-wrapper"]}>
+        <button
+          type="submit"
+          class={styles["connect-button"]}
+          onClick={() =>
+            document
+              .querySelector("form")
+              ?.dispatchEvent(new Event("submit", { cancelable: true }))
+          }
+          disabled={loading()}
         >
-          <div class={styles["connect-photo"]}>
-            {loading() ? "Connecting..." : "Connect"}
+          <div class={styles["connect-polaroid-container"]}>
+            <div class={styles["connect-image-area"]}>
+              <div class={styles["connect-photo"]}>
+                {loading() ? "Connecting..." : "Connect"}
+              </div>
+              <div class={styles["arrow-down-container"]}>
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
+                  <path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
+                </svg>
+              </div>
+              <div class={styles["polaroid-grit-overlay"]}></div>
+            </div>
+            <div class={styles["connect-caption"]}>
+              <span class={styles["connect-text"]}>
+                Connect Peach Account
+              </span>
+            </div>
           </div>
-          <div class={styles["arrow-down-container"]}>
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
-              <path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
-            </svg>
-          </div>
-          <div class={styles["polaroid-grit-overlay"]}></div>
-        </div>
-        <div class={styles["polaroid-caption"]}>
-          <span
-            class={`${styles["polaroid-handwritten"]} ${styles["connect-text"]}`}
-          >
-            Connect Peach Account
-          </span>
-        </div>
-      </button>
+        </button>
+      </div>
     </div>
   );
 }
