@@ -32,26 +32,26 @@ export const DEFAULT_POSITIONS: DefaultPositions = {
     y: -170,
   },
 
-  // Stock photos arranged in concentric circles around WORLD ORIGIN (0,0)
-  // Inner circle: radius 400px, outer circle: radius 650px
+  // Stock photos arranged in a loose circular pattern around WORLD ORIGIN (0,0)
+  // Positions adjusted for polaroid dimensions (260x300) - centers are positioned, then offset by half dimensions
   // These positions NEVER change regardless of login component position
   stockPhotos: {
-    // Inner circle - 6 photos at radius 400
-    stock1: { x: 400, y: 0 }, // East
-    stock2: { x: 200, y: 346 }, // Southeast
-    stock3: { x: -200, y: 346 }, // Southwest
-    stock4: { x: -400, y: 0 }, // West
-    stock5: { x: -200, y: -346 }, // Northwest
-    stock6: { x: 200, y: -346 }, // Northeast
+    // Inner cluster - roughly 250-380px radius with random variations, adjusted for polaroid centering
+    stock1: { x: 200, y: -345 },  // 330 - 130, -195 - 150
+    stock2: { x: 90, y: -10 },    // 220 - 130, 140 - 150
+    stock3: { x: -240, y: -80 },  // -110 - 130, 70 - 150
+    stock4: { x: -350, y: -220 }, // -220 - 130, -70 - 150
+    stock5: { x: -180, y: -480 }, // -50 - 130, -330 - 150
+    stock6: { x: 150, y: -400 },  // 280 - 130, -250 - 150
 
-    // Outer circle - 7 photos at radius 650
-    stock7: { x: 650, y: 0 }, // East
-    stock8: { x: 456, y: 464 }, // Southeast
-    stock9: { x: 0, y: 650 }, // South
-    stock10: { x: -456, y: 464 }, // Southwest
-    stock11: { x: -650, y: 0 }, // West
-    stock12: { x: -456, y: -464 }, // Northwest
-    stock13: { x: 0, y: -650 }, // North
+    // Outer cluster - roughly 420-550px radius with random variations, adjusted for polaroid centering
+    stock7: { x: 350, y: -120 },  // 480 - 130, 30 - 150
+    stock8: { x: 260, y: 110 },   // 390 - 130, 260 - 150
+    stock9: { x: -80, y: 230 },   // 50 - 130, 380 - 150
+    stock10: { x: -450, y: 20 },  // -320 - 130, 170 - 150
+    stock11: { x: -520, y: -300 }, // -390 - 130, -150 - 150
+    stock12: { x: -350, y: -540 }, // -220 - 130, -390 - 150
+    stock13: { x: 80, y: -580 },  // 210 - 130, -430 - 150
   },
 };
 
