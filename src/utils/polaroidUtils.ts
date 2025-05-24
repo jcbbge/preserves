@@ -54,7 +54,7 @@ export function seededRandom(seed: string, min: number, max: number) {
 }
 
 /**
- * Generate deterministic visual styles for a polaroid
+ * Generate deterministic visual styles for a polaroid including handwriting variations
  */
 export function generatePolaroidStyles(id: string) {
   const textAngle = seededRandom(`${id}_text_angle`, -2, 2);
@@ -63,6 +63,23 @@ export function generatePolaroidStyles(id: string) {
   const dateAngle = seededRandom(`${id}_date_angle`, -2, 2);
   const dateX = seededRandom(`${id}_date_x`, -3, 3);
   const dateY = seededRandom(`${id}_date_y`, -2, 2);
+
+  // Handwriting font size variations (24-30px for caption, 20-26px for date)
+  const captionFontSize = seededRandom(`${id}_caption_font`, 24, 30);
+  const dateFontSize = seededRandom(`${id}_date_font`, 20, 26);
+
+  // Additional positioning offsets for handwritten randomness
+  // These simulate writing at different spots on the polaroid
+  const captionOffsetX = seededRandom(`${id}_caption_offset_x`, 0, 20);
+  const captionOffsetY = seededRandom(`${id}_caption_offset_y`, 0, 30);
+  const dateOffsetX = seededRandom(`${id}_date_offset_x`, 5, 20);
+  const dateOffsetY = seededRandom(`${id}_date_offset_y`, 5, 20);
+
+  // Random date visibility - only show on about 1/3 of polaroids
+  const showDate = seededRandom(`${id}_show_date`, 0, 1) < 0.33;
+
+  // Worn text effect intensity (0.1 to 0.4 for subtle to moderate wear)
+  const wornIntensity = seededRandom(`${id}_worn`, 0.1, 0.4);
 
   // Subtle background color variations
   const bgColors = ["#f8f6f1", "#f6f3e9", "#f7f5ed", "#f3f0e7"];
@@ -78,7 +95,15 @@ export function generatePolaroidStyles(id: string) {
     dateAngle,
     dateX,
     dateY,
-    bgColor
+    bgColor,
+    captionFontSize,
+    dateFontSize,
+    captionOffsetX,
+    captionOffsetY,
+    dateOffsetX,
+    dateOffsetY,
+    showDate,
+    wornIntensity
   };
 }
 

@@ -81,7 +81,15 @@ export function Polaroid(props: PolaroidProps): JSX.Element {
     dateAngle,
     dateX,
     dateY,
-    bgColor
+    bgColor,
+    captionFontSize,
+    dateFontSize,
+    captionOffsetX,
+    captionOffsetY,
+    dateOffsetX,
+    dateOffsetY,
+    showDate,
+    wornIntensity
   } = props.useRandomValues
     ? generatePolaroidStyles(props.id)
     : {
@@ -91,7 +99,15 @@ export function Polaroid(props: PolaroidProps): JSX.Element {
         dateAngle: props.dateAngle || 0,
         dateX: props.dateX || 0,
         dateY: props.dateY || 0,
-        bgColor: props.bgColor || "#f8f6f1"
+        bgColor: props.bgColor || "#f8f6f1",
+        captionFontSize: 14,
+        dateFontSize: 12,
+        captionOffsetX: 0,
+        captionOffsetY: 0,
+        dateOffsetX: 0,
+        dateOffsetY: 0,
+        showDate: true,
+        wornIntensity: 0.2
       };
 
   // Format date from timestamp if available
@@ -138,20 +154,28 @@ export function Polaroid(props: PolaroidProps): JSX.Element {
             class={styles["polaroid-handwritten"]}
             style={{
               display: "inline-block",
-              transform: `rotate(${textAngle}deg) translate(${textX}px, ${textY}px)`,
+              transform: `rotate(${textAngle}deg) translate(${textX + captionOffsetX}px, ${textY + captionOffsetY}px)`,
+              "font-size": `${captionFontSize}px`,
+              "mask": `radial-gradient(circle at 30% 40%, transparent ${wornIntensity * 100}%, black ${(wornIntensity + 0.1) * 100}%), radial-gradient(circle at 70% 80%, transparent ${wornIntensity * 80}%, black ${(wornIntensity + 0.15) * 100}%)`,
+              "-webkit-mask": `radial-gradient(circle at 30% 40%, transparent ${wornIntensity * 100}%, black ${(wornIntensity + 0.1) * 100}%), radial-gradient(circle at 70% 80%, transparent ${wornIntensity * 80}%, black ${(wornIntensity + 0.15) * 100}%)`,
             }}
           >
             {displayCaption}
           </span>
-          <span
-            class={`${styles["polaroid-handwritten"]} ${styles.date}`}
-            style={{
-              display: "inline-block",
-              transform: `rotate(${dateAngle}deg) translate(${dateX}px, ${dateY}px)`,
-            }}
-          >
-            {displayDate}
-          </span>
+          <Show when={showDate && displayDate}>
+            <span
+              class={`${styles["polaroid-handwritten"]} ${styles.date}`}
+              style={{
+                display: "inline-block",
+                transform: `rotate(${dateAngle}deg) translate(${dateX + dateOffsetX}px, ${dateY + dateOffsetY}px)`,
+                "font-size": `${dateFontSize}px`,
+                "mask": `radial-gradient(circle at 40% 30%, transparent ${wornIntensity * 90}%, black ${(wornIntensity + 0.12) * 100}%), radial-gradient(circle at 80% 70%, transparent ${wornIntensity * 70}%, black ${(wornIntensity + 0.18) * 100}%)`,
+                "-webkit-mask": `radial-gradient(circle at 40% 30%, transparent ${wornIntensity * 90}%, black ${(wornIntensity + 0.12) * 100}%), radial-gradient(circle at 80% 70%, transparent ${wornIntensity * 70}%, black ${(wornIntensity + 0.18) * 100}%)`,
+              }}
+            >
+              {displayDate}
+            </span>
+          </Show>
           
           {/* Show like count if available */}
           <Show when={props.likeCount && props.likeCount > 0}>
