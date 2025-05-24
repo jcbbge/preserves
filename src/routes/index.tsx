@@ -152,36 +152,6 @@ export default function Home() {
           maxScale={5}
           backgroundColor="#f5f2e8" // Corkboard color
         >
-          {/* Debug indicator for world origin (0,0) */}
-          <CanvasItem
-            id="debug-origin"
-            position={{ x: 0, y: 0 }}
-            zIndex={-1}
-            isDraggable={false}
-            isSelectable={false}
-          >
-            <div style={{
-              position: "absolute",
-              width: "40px",
-              height: "40px",
-              left: "-20px",
-              top: "-20px",
-              display: "flex",
-              "align-items": "center",
-              "justify-content": "center",
-              background: "rgba(255, 0, 0, 0.8)",
-              color: "white",
-              "font-size": "24px",
-              "font-weight": "bold",
-              "border-radius": "50%",
-              "box-shadow": "0 0 10px rgba(255, 0, 0, 0.5)",
-              "pointer-events": "none",
-              "z-index": "-1"
-            }}>
-              +
-            </div>
-          </CanvasItem>
-
           <For each={polaroidPhotos}>
             {(photo) => (
               <Show
