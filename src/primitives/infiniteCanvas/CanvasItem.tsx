@@ -151,6 +151,15 @@ export function CanvasItem(props: CanvasItemProps) {
     
     // Check if the event target is this element or a child
     const target = e.target as Node;
+    
+    // For login menu, allow form inputs to receive events
+    if (props.id === "login-menu") {
+      const targetElement = target as HTMLElement;
+      if (targetElement.tagName === 'INPUT' || targetElement.tagName === 'BUTTON') {
+        return false;
+      }
+    }
+    
     return element.contains(target);
   };
   
@@ -339,8 +348,8 @@ export function CanvasItem(props: CanvasItemProps) {
         ref={setElementRef}
         id={`canvas-item-${props.id}`}
         class={`${styles["canvas-item"]} 
-               ${props.isSelected ? styles.selected : ""} 
-               ${props.isDragging ? styles.dragging : ""} 
+               ${props.isSelected && props.id !== "login-menu" ? styles.selected : ""} 
+               ${props.isDragging && props.id !== "login-menu" ? styles.dragging : ""} 
                ${props.class || ""}`}
         style={{
           position: "absolute",

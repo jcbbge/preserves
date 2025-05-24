@@ -71,7 +71,11 @@ const connect = query(async (formData: FormData) => {
   }
 }, "login");
 
-export default function LoginForm() {
+interface LoginFormProps {
+  isDragging?: boolean;
+}
+
+export default function LoginForm(props: LoginFormProps = {}) {
   const navigate = useNavigate();
   const { login } = usePeach();
   const [error, setError] = createSignal<string | null>(null);
@@ -125,8 +129,8 @@ export default function LoginForm() {
         <Polaroid
           id="login-form"
           src="/peachdotcool.png"
-          class={styles["login-polaroid"]}
-          onMouseDown={(e) => e.stopPropagation()}
+          class={`${styles["login-polaroid"]} ${props.isDragging ? styles["dragging"] : ""}`}
+          onMouseDown={(e) => {}} // Allow events to bubble for dragging
         />
         {/* Login form overlay */}
         <div class={styles["login-form-overlay"]}>
@@ -161,7 +165,7 @@ export default function LoginForm() {
       </div>
 
       {/* Connect button polaroid - bottom layer, peeking out */}
-      <div class={styles["connect-polaroid-wrapper"]}>
+      <div class={`${styles["connect-polaroid-wrapper"]} ${props.isDragging ? styles["dragging"] : ""}`}>
         <button
           type="submit"
           class={styles["connect-button"]}

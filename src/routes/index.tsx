@@ -215,7 +215,7 @@ export default function Home() {
                     }
                   }}
                 >
-                  <LoginForm />
+                  <LoginForm isDragging={isDragging(photo.id)} />
                 </CanvasItem>
               </Show>
             )}
