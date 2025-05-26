@@ -1,5 +1,5 @@
 import { useNavigate } from "@solidjs/router";
-import { onMount, For, Show, createSignal } from "solid-js";
+import { onMount, For, Show, createSignal, batch } from "solid-js";
 import { usePeach } from "~/context/peach";
 import { Title } from "@solidjs/meta";
 import { createStore } from "solid-js/store";
@@ -10,90 +10,86 @@ import { stockImages, predefinedPositions } from "~/data/stockImages";
 import LoginForm from "~/components/LoginForm";
 import { InfiniteCanvas } from "~/primitives/infiniteCanvas/InfiniteCanvas";
 import { CanvasItem } from "~/primitives/infiniteCanvas/CanvasItem";
-import { useInfiniteCanvas } from "~/primitives/infiniteCanvas/InfiniteCanvas";
 import { createDraggable, DraggableItem } from "~/primitives/createDraggable";
-import { Vector, useTransform } from "~/primitives/infiniteCanvas/TransformContext";
+import { Vector, Point } from "~/primitives/infiniteCanvas/TransformContext";
 import {
   initializeCanvasPhotos,
   storeInitialPositions,
   getCanvasViewport,
   saveCanvasViewport,
-  savePhotoPosition,
-  savePhotoRotation,
 } from "~/utils/storage";
 import { redirectIfAuthenticated } from "~/utils/authUtils";
 import { DEFAULT_POSITIONS, getViewportForLoginCenter } from "~/config/defaultPositions";
+
+interface LoginPhoto extends Omit<PolaroidPhoto, 'position'> {
+  position: Point;
+  type: "photo" | "menu";
+}
+
+interface LoginState {
+  canvasWidth: number;
+  canvasHeight: number;
+}
 
 export default function Home() {
   const navigate = useNavigate();
   const { isAuthenticated } = usePeach();
   const [corkboardRef, setCorkboardRef] = createSignal<HTMLDivElement>();
-  const [polaroidPhotos, setPolaroidPhotos] = createStore<
-    (PolaroidPhoto & { type?: "photo" | "menu" } & DraggableItem)[]
-  >([]);
-  const [canvasWidth, setCanvasWidth] = createSignal(0);
-  const [canvasHeight, setCanvasHeight] = createSignal(0);
+  
+  const [state, setState] = createStore<LoginState>({
+    canvasWidth: 0,
+    canvasHeight: 0,
+  });
 
-  // Route identifier for storage - used by our unified storage API
+  const [polaroidPhotos, setPolaroidPhotos] = createStore<LoginPhoto[]>([]);
+
   const route = "login";
+  const getUserName = (): string => "guest";
 
-  // Use guest username for consistent storage approach with dashboard
-  const getUserName = () => "guest";
-  const storageKeyPrefix = () => `peach_preserves_${getUserName()}_`;
-
-  // Create draggable primitive for handling polaroid interactions
   const {
-    draggedId,
     handleDragStart,
     handleDragMove,
     handleDragEnd,
     isDragging,
-  } = createDraggable(polaroidPhotos, setPolaroidPhotos, {
+  } = createDraggable(polaroidPhotos as any, setPolaroidPhotos, {
     route,
     username: getUserName(),
     zIndexRange: { min: 0, max: 9 }
   });
 
-  // Handle canvas viewport change
-  const handleViewportChange = (viewport: any) => {
+  const handleViewportChange = (viewport: { position: Point; scale: number }): void => {
     saveCanvasViewport(viewport, route, getUserName());
   };
 
-  
-  // Handle dragging a polaroid
-  const handleDragHandler = (id: string, delta: Vector) => {
+  const handleDragHandler = (id: string, delta: Vector): void => {
     handleDragMove(id, delta);
   };
 
-  // Function to get an item position - used by InfiniteCanvas for focal points
-  const getItemPosition = (id: string) => {
+  const getItemPosition = (id: string): Point => {
     const found = polaroidPhotos.find((p) => p.id === id);
-    return found?.position;
+    return found?.position || { x: 0, y: 0 };
   };
 
-  // Use onMount to ensure we don't redirect during SSR
-  onMount(() => {
+  const initializeLogin = (): (() => void) | void => {
     redirectIfAuthenticated(isAuthenticated, navigate);
 
-    // Set canvas dimensions
-    setCanvasWidth(window.innerWidth);
-    setCanvasHeight(window.innerHeight);
+    batch(() => {
+      setState("canvasWidth", window.innerWidth);
+      setState("canvasHeight", window.innerHeight);
+    });
 
-    // Initialize photos using our unified storage API with default world positions
     const photos = initializeCanvasPhotos(stockImages, route, {
       username: getUserName(),
       predefinedPositions,
     });
 
-    // Ensure all photos have valid positions for DraggableItem compatibility
-    const photosWithPositions = photos.map(photo => ({
+    const photosWithPositions: LoginPhoto[] = photos.map(photo => ({
       ...photo,
       position: photo.position || { x: 0, y: 0 },
       type: "photo" as const
     }));
 
-    // Create login menu at calculated position
-    const menuItem = {
+    const menuItem: LoginPhoto = {
       id: "login-menu",
       type: "menu" as const,
       position: DEFAULT_POSITIONS.loginComponent,
@@ -104,24 +100,26 @@ export default function Home() {
       date: new Date().toISOString(),
     };
 
-    // Set photos in store
     setPolaroidPhotos([menuItem, ...photosWithPositions]);
 
-    // Store initial positions if not already set
     storeInitialPositions(predefinedPositions, route, getUserName());
 
-    // Add window resize handler
-    const handleResize = () => {
-      setCanvasWidth(window.innerWidth);
-      setCanvasHeight(window.innerHeight);
+    const handleResize = (): void => {
+      batch(() => {
+        setState("canvasWidth", window.innerWidth);
+        setState("canvasHeight", window.innerHeight);
+      });
     };
 
     window.addEventListener("resize", handleResize);
 
-    return () => {
+    const cleanup = (): void => {
       window.removeEventListener("resize", handleResize);
     };
-  });
+    return cleanup;
+  };
+
+  onMount(initializeLogin);
 
   return (
     <div class={styles["peach-preserve"]}>
@@ -131,8 +129,8 @@ export default function Home() {
         ref={setCorkboardRef}
         class={styles.corkboard}
         style={{
-          width: `${canvasWidth()}px`,
-          height: `${canvasHeight()}px`,
+          width: `${state.canvasWidth}px`,
+          height: `${state.canvasHeight}px`,
         }}
       >
         <InfiniteCanvas
@@ -146,11 +144,10 @@ export default function Home() {
           onViewportChange={handleViewportChange}
           focalPointId="login-menu"
           onGetItemPosition={getItemPosition}
-          // Added options for better control
           panMode="spacebar"
           minScale={0.1}
           maxScale={5}
-          backgroundColor="#f5f2e8" // Corkboard color
+          backgroundColor="#f5f2e8"
         >
           <For each={polaroidPhotos}>
             {(photo) => (
@@ -159,7 +156,7 @@ export default function Home() {
                 fallback={
                   <CanvasItem
                     id={photo.id}
-                    position={photo.position || { x: 0, y: 0 }}
+                    position={photo.position}
                     rotation={photo.rotation}
                     zIndex={photo.zIndex}
                     isDraggable={true}
@@ -173,9 +170,7 @@ export default function Home() {
                         handleDragEnd(id, item.position);
                       }
                     }}
-                    onClick={(id) => {
-                      // Could implement selection logic here
-                    }}
+                    onClick={() => {}}
                     visible={true}
                     isSelectable={true}
                   >
@@ -184,16 +179,12 @@ export default function Home() {
                       src={photo.src}
                       caption={photo.caption}
                       date={photo.date}
-                      position={{ x: 0, y: 0 }} // Position handled by CanvasItem
-                      rotation={0} // Rotation handled by CanvasItem
-                      zIndex={1} // zIndex handled by CanvasItem
+                      position={{ x: 0, y: 0 }}
+                      rotation={0}
+                      zIndex={1}
                       useRandomValues={true}
-                      onMouseDown={(e) => {
-                        // Allow events to bubble for dragging
-                      }}
-                      onTouchStart={(e) => {
-                        // Allow events to bubble for dragging
-                      }}
+                      onMouseDown={() => {}}
+                      onTouchStart={() => {}}
                       class={styles["background-polaroid"]}
                     />
                   </CanvasItem>
@@ -201,7 +192,7 @@ export default function Home() {
               >
                 <CanvasItem
                   id={photo.id}
-                  position={photo.position || { x: 0, y: 0 }}
+                  position={photo.position}
                   zIndex={photo.zIndex || 10000}
                   isDraggable={true}
                   isSelected={isDragging(photo.id)}
