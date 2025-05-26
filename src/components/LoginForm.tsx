@@ -35,7 +35,7 @@ const connect = query(async (formData: FormData) => {
     });
 
     const data = await response.json();
-
+    console.log("data >> ", data);
     // Check for API error response
     if (data.success === 0) {
       console.error("[SERVER] API returned error:", data.error);
@@ -155,17 +155,15 @@ export default function LoginForm(props: LoginFormProps = {}) {
                 class={styles["handwritten-input"]}
               />
             </div>
-            {error() && (
-              <div class={styles["error-message"]}>
-                {error()}
-              </div>
-            )}
+            {error() && <div class={styles["error-message"]}>{error()}</div>}
           </form>
         </div>
       </div>
 
       {/* Connect button polaroid - bottom layer, peeking out */}
-      <div class={`${styles["connect-polaroid-wrapper"]} ${props.isDragging ? styles["dragging"] : ""}`}>
+      <div
+        class={`${styles["connect-polaroid-wrapper"]} ${props.isDragging ? styles["dragging"] : ""}`}
+      >
         <button
           type="submit"
           class={styles["connect-button"]}
@@ -189,9 +187,7 @@ export default function LoginForm(props: LoginFormProps = {}) {
               <div class={styles["polaroid-grit-overlay"]}></div>
             </div>
             <div class={styles["connect-caption"]}>
-              <span class={styles["connect-text"]}>
-                Connect Peach Account
-              </span>
+              <span class={styles["connect-text"]}>Connect Peach Account</span>
             </div>
           </div>
         </button>

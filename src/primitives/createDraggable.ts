@@ -495,6 +495,12 @@ export function createDraggable<T extends DraggableItem>(
    * Bring item to front of z-index stack
    */
   const bringToFront = (id: string): void => {
+    // Guard against undefined id
+    if (!id) {
+      console.warn("[DRAGGABLE] bringToFront called with undefined id");
+      return;
+    }
+
     if (canvasAPI && canvasAPI.setItemZIndex) {
       canvasAPI.setItemZIndex(id, "front");
     } else {

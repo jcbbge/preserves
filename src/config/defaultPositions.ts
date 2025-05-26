@@ -10,6 +10,10 @@ export interface DefaultPositions {
     x: number;
     y: number;
   };
+  dashboardNavComponent: {
+    x: number;
+    y: number;
+  };
   stockPhotos: {
     [key: string]: { x: number; y: number };
   };
@@ -28,6 +32,12 @@ export const DEFAULT_POSITIONS: DefaultPositions = {
   // Login component pinned at world origin (0,0) - same as red debugger +
   // The polaroid container's visual offset will be handled by CSS positioning
   loginComponent: {
+    x: -130,
+    y: -170,
+  },
+
+  // Dashboard nav component at same position as login for consistency
+  dashboardNavComponent: {
     x: -130,
     y: -170,
   },
@@ -68,6 +78,26 @@ export function generateCircularPositions(
     const angle = startAngle + i * angleStep;
     const x = Math.round(radius * Math.cos(angle));
     const y = Math.round(radius * Math.sin(angle));
+    positions.push({ x, y });
+  }
+
+  return positions;
+}
+
+// Utility function to get oval/elliptical positions with more Y-axis spread
+export function generateOvalPositions(
+  count: number,
+  radiusX: number,
+  radiusY: number,
+  startAngle: number = 0,
+): { x: number; y: number }[] {
+  const positions = [];
+  const angleStep = (2 * Math.PI) / count;
+
+  for (let i = 0; i < count; i++) {
+    const angle = startAngle + i * angleStep;
+    const x = Math.round(radiusX * Math.cos(angle));
+    const y = Math.round(radiusY * Math.sin(angle));
     positions.push({ x, y });
   }
 

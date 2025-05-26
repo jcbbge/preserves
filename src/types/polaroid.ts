@@ -7,6 +7,7 @@ export interface PolaroidPhoto {
   rotation?: number;
   zIndex?: number;
   captionStyle?: { fontSize: number; offsetY: number };
+  type?: "photo" | "menu";
 }
 
 export interface PolaroidProps {

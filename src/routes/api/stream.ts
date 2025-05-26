@@ -50,13 +50,13 @@ export const fetchStream = query(async (formData: FormData) => {
 
     // Get the full raw response text
     const responseText = await response.text();
-
+    console.log("responseText >> ", responseText);
     // Parse the response directly
 
     // Try to parse the response
     try {
       const data = JSON.parse(responseText);
-
+      console.log("data >> ", data);
       return {
         success: true,
         data,

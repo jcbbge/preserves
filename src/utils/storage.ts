@@ -476,23 +476,35 @@ export function transformPostsToPolaroids(
   
   const { route, username } = options;
   
-  // Filter posts to only include those with image-type blocks
-  const postsWithImages = posts.filter(post => {
+  // Extract all image message blocks from all posts
+  const imageBlocks: any[] = [];
+  
+  posts.forEach(post => {
     if (post.message && Array.isArray(post.message)) {
-      return post.message.some((part: any) => part.type === "image" && part.src);
+      post.message.forEach((part: any, partIndex: number) => {
+        if (part.type === "image" && part.src) {
+          imageBlocks.push({
+            ...part,
+            postId: post.id,
+            postCreatedTime: post.createdTime,
+            postMessage: post.message,
+            imageIndex: partIndex,
+            uniqueId: `${post.id}-image-${partIndex}`
+          });
+        }
+      });
     }
-    return false;
   });
   
-  if (!postsWithImages.length) return [];
+  if (!imageBlocks.length) return [];
   
-  return postsWithImages.map((post, index) => {
+  return imageBlocks.map((imageBlock, index) => {
     // Get stored data if available
-    const storedData = retrievePhotoData(post.id, route, username);
+    const storedData = retrievePhotoData(imageBlock.uniqueId, route, username);
     
     // Generate circular spread pattern for initial positions
     const position = storedData?.position || (() => {
-      const angle = (index / postsWithImages.length) * 2 * Math.PI;
+      const angle = (index / imageBlocks.length) * 2 * Math.PI;
       const radius = 300 + Math.random() * 200; // 300-500px radius
       const baseX = Math.cos(angle) * radius;
       const baseY = Math.sin(angle) * radius;
@@ -511,11 +523,11 @@ export function transformPostsToPolaroids(
       
     // Format the date string for display - handle different timestamp formats
     let date = "";
-    if (post.createdTime) {
+    if (imageBlock.postCreatedTime) {
       // Try different timestamp formats
-      const timestamp = typeof post.createdTime === 'string' 
-        ? parseInt(post.createdTime) 
-        : post.createdTime;
+      const timestamp = typeof imageBlock.postCreatedTime === 'string' 
+        ? parseInt(imageBlock.postCreatedTime) 
+        : imageBlock.postCreatedTime;
       
       // Check if it's in seconds (Unix timestamp) or milliseconds
       const dateObj = timestamp > 1000000000000 
@@ -529,8 +541,8 @@ export function transformPostsToPolaroids(
     let caption = "";
     let captionStyle = { fontSize: 14, offsetY: 0 }; // Default styling
     
-    if (post.message && Array.isArray(post.message)) {
-      const firstTextPart = post.message.find((part: any) => part.type === "text" && part.text);
+    if (imageBlock.postMessage && Array.isArray(imageBlock.postMessage)) {
+      const firstTextPart = imageBlock.postMessage.find((part: any) => part.type === "text" && part.text);
       if (firstTextPart) {
         let fullText = firstTextPart.text.trim();
         
@@ -558,24 +570,16 @@ export function transformPostsToPolaroids(
       }
     }
     
-    // Extract image URL from message
-    let src = '/placeholder-image.jpg'; // Fallback
-    if (post.message && Array.isArray(post.message)) {
-      for (const part of post.message) {
-        if (part.type === "image" && part.src) {
-          src = part.src;
-          break;
-        }
-      }
-    }
+    // Extract image URL from the specific image block
+    let src = imageBlock.src || '/placeholder-image.jpg'; // Use the image block's src directly
     
     // Use stored zIndex or calculate based on position in array
     const zIndex = storedData?.zIndex !== undefined
       ? storedData.zIndex
-      : postsWithImages.length - index;
+      : imageBlocks.length - index;
     
     return {
-      id: post.id,
+      id: imageBlock.uniqueId,
       src,
       caption,
       date,

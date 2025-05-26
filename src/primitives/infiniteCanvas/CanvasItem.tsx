@@ -322,6 +322,11 @@ export function CanvasItem(props: CanvasItemProps) {
   
   // Get z-index with proper range management
   const getZIndex = () => {
+    // Guard against undefined props.id
+    if (!props.id) {
+      return props.zIndex || Z_INDEX_RANGES.PHOTOS.MIN;
+    }
+    
     // Determine range based on ID pattern
     const isMenu = props.id.startsWith('menu-');
     const isSystem = props.id.startsWith('system-');
