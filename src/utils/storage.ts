@@ -1,845 +1,166 @@
-import { PolaroidPhoto } from "~/types/polaroid";
-import { CanvasViewport } from "~/primitives/infiniteCanvas";
-import { logError } from "~/utils/errorUtils";
-
 /**
- * Storage utility for Peach Preserves app
- * Provides a unified interface for localStorage operations
+ * Simplified storage utility for Peach Preserves
+ * Handles localStorage with minimal API for photos, canvas, user data, and posts
  */
-
-// Constants
-const APP_PREFIX = 'peach_preserves';
 
 // Types
-interface PhotoData {
-  position?: { x: number; y: number };
-  rotation?: number;
-  zIndex?: number;
-  isFlipped?: boolean;
-  isPinned?: boolean;
+export interface PhotoState {
+  x: number;
+  y: number;
+  rotation: number;
+  zIndex: number;
 }
 
-export interface StorageOptions {
-  username?: string;
+export interface CanvasState {
+  x: number;
+  y: number;
+  scale: number;
 }
 
-export interface PolaroidStorageOptions extends StorageOptions {
-  route: string;
+export interface UserData {
+  username: string;
+  token: string;
+  screenName?: string;
+  avatar?: string;
+  bio?: string;
 }
 
-/**
- * Create a storage key with proper prefixing
- * @param key The base key
- * @param options Options including username for user-specific storage
- * @returns Properly prefixed storage key
- */
-function createKey(key: string, options: StorageOptions = {}): string {
-  const prefix = options.username 
-    ? `${APP_PREFIX}_${options.username}`
-    : APP_PREFIX;
-  
-  return `${prefix}_${key}`;
+export interface PostData {
+  id: string;
+  type: 'image' | 'text';
+  src?: string;
+  caption?: string;
+  date: string;
 }
 
-/**
- * Store an item in localStorage with proper serialization
- * @param key The key to store under
- * @param value The value to store
- * @param options Storage options
- */
-export function storeItem<T>(key: string, value: T, options: StorageOptions = {}): void {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    const storageKey = createKey(key, options);
-    const serialized = JSON.stringify(value);
-    localStorage.setItem(storageKey, serialized);
-  } catch (err) {
-    console.error(`[STORAGE] Failed to store item '${key}':`, err);
-  }
+// Storage keys
+const GUEST_PHOTOS_KEY = 'peach_guest_photos';
+const GUEST_CANVAS_KEY = 'peach_guest_canvas';
+
+function getUserPhotosKey(username: string): string {
+  return `peach_${username}_photos`;
 }
 
-/**
- * Retrieve an item from localStorage with proper deserialization
- * @param key The key to retrieve
- * @param options Storage options
- * @returns The deserialized value or null if not found
- */
-export function retrieveItem<T>(key: string, options: StorageOptions = {}): T | null {
-  if (typeof window === 'undefined') return null;
+function getUserCanvasKey(username: string): string {
+  return `peach_${username}_canvas`;
+}
+
+function getUserDataKey(username: string): string {
+  return `peach_${username}_user`;
+}
+
+function getUserPostsKey(username: string): string {
+  return `peach_${username}_posts`;
+}
+
+// Helper functions
+function safeGet<T>(key: string, defaultValue: T): T {
+  if (typeof window === 'undefined') return defaultValue;
   
   try {
-    const storageKey = createKey(key, options);
-    const value = localStorage.getItem(storageKey);
-    return value ? JSON.parse(value) : null;
-  } catch (err) {
-    console.error(`[STORAGE] Failed to retrieve item '${key}':`, err);
-    return null;
-  }
-}
-
-/**
- * Remove an item from localStorage
- * @param key The key to remove
- * @param options Storage options
- */
-export function removeItem(key: string, options: StorageOptions = {}): void {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    const storageKey = createKey(key, options);
-    localStorage.removeItem(storageKey);
-  } catch (err) {
-    console.error(`[STORAGE] Failed to remove item '${key}':`, err);
-  }
-}
-
-// Photo-specific storage functions
-
-/**
- * Create a photo-specific storage key
- * @param photoId The photo ID
- * @param route The route identifier
- * @param username Optional username for user-specific storage
- * @returns The properly formatted storage key
- */
-function createPhotoKey(photoId: string, route: string, username?: string): string {
-  return createKey(`${route}_photo_${photoId}`, { username });
-}
-
-/**
- * Store photo data with a unified approach
- * @param photoId The photo ID
- * @param data The photo data to store
- * @param route The route identifier
- * @param username Optional username for user-specific storage
- */
-export function storePhotoData(
-  photoId: string, 
-  data: Partial<PhotoData>, 
-  route: string,
-  username?: string
-): void {
-  // First get existing data (if any)
-  const existingData = retrievePhotoData(photoId, route, username) || {};
-  
-  // Merge with new data
-  const mergedData = { ...existingData, ...data };
-  
-  // Store with the unified format
-  const key = createPhotoKey(photoId, route, username);
-  localStorage.setItem(key, JSON.stringify(mergedData));
-}
-
-/**
- * Retrieve photo data
- * @param photoId The photo ID
- * @param route The route identifier 
- * @param username Optional username for user-specific storage
- * @returns The photo data or null if not found
- */
-export function retrievePhotoData(
-  photoId: string, 
-  route: string,
-  username?: string
-): PhotoData | null {
-  if (typeof window === 'undefined') return null;
-  
-  try {
-    // Try the new consolidated format first
-    const key = createPhotoKey(photoId, route, username);
     const stored = localStorage.getItem(key);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    
-    // Fallback to legacy formats if new format not found
-    const legacyPrefixes = [
-      `${APP_PREFIX}_${route}_photo_${photoId}_`,
-      username ? `${APP_PREFIX}_${username}_${route}_photo_${photoId}_` : null,
-      `peach_pos_${photoId}`
-    ].filter(Boolean);
-    
-    let position = null;
-    let rotation = null;
-    let zIndex = null;
-    let isFlipped = false;
-    let isPinned = false;
-    
-    // Check each legacy format
-    for (const prefix of legacyPrefixes) {
-      if (!prefix) continue;
-      
-      if (prefix.startsWith('peach_pos_')) {
-        // Special case for peach_pos_ format
-        const posStored = localStorage.getItem(prefix);
-        if (posStored) {
-          try {
-            const posData = JSON.parse(posStored);
-            position = posData.x !== undefined && posData.y !== undefined 
-              ? { x: posData.x, y: posData.y }
-              : position;
-            rotation = posData.rotation !== undefined ? posData.rotation : rotation;
-            zIndex = posData.zIndex !== undefined ? posData.zIndex : zIndex;
-          } catch (e) {
-            console.error(`[STORAGE] Error parsing ${prefix}:`, e);
-          }
-        }
-      } else {
-        // Standard property-specific legacy format
-        const positionStored = localStorage.getItem(`${prefix}position`);
-        const rotationStored = localStorage.getItem(`${prefix}rotation`);
-        const zIndexStored = localStorage.getItem(`${prefix}zindex`);
-        const flippedStored = localStorage.getItem(`${prefix}flipped`);
-        const pinnedStored = localStorage.getItem(`${prefix}pinned`);
-        
-        try {
-          position = positionStored ? JSON.parse(positionStored) : position;
-        } catch (e) {
-          console.error(`[STORAGE] Error parsing position for ${prefix}:`, e);
-        }
-        
-        rotation = rotationStored ? parseFloat(rotationStored) : rotation;
-        zIndex = zIndexStored ? parseInt(zIndexStored, 10) : zIndex;
-        isFlipped = flippedStored === 'true' ? true : isFlipped;
-        isPinned = pinnedStored === 'true' ? true : isPinned;
-      }
-    }
-    
-    // If we found anything, return a consolidated object
-    if (position || rotation !== null || zIndex !== null || isFlipped || isPinned) {
-      const data: PhotoData = {};
-      if (position) data.position = position;
-      if (rotation !== null) data.rotation = rotation;
-      if (zIndex !== null) data.zIndex = zIndex;
-      if (isFlipped) data.isFlipped = isFlipped;
-      if (isPinned) data.isPinned = isPinned;
-      
-      // Save in new format for future
-      storePhotoData(photoId, data, route, username);
-      
-      return data;
-    }
-    
-    return null;
-  } catch (e) {
-    console.error(`[STORAGE] Error retrieving photo data for ${photoId}:`, e);
-    return null;
+    return stored ? JSON.parse(stored) : defaultValue;
+  } catch (err) {
+    console.error(`[STORAGE] Error loading ${key}:`, err);
+    return defaultValue;
   }
 }
 
-/**
- * Save a photo's position to localStorage
- * @param id Photo ID
- * @param position Position object
- * @param route Route identifier
- * @param username Optional username
- */
-export function savePhotoPosition(
-  id: string,
-  position: { x: number; y: number },
-  route: string,
-  username?: string
-): void {
-  storePhotoData(id, { position }, route, username);
-}
-
-/**
- * Get a photo's position from localStorage
- * @param id Photo ID
- * @param route Route identifier
- * @param username Optional username
- * @returns The position or null if not found
- */
-export function getPhotoPosition(
-  id: string,
-  route: string,
-  username?: string
-): { x: number; y: number } | null {
-  const data = retrievePhotoData(id, route, username);
-  return data?.position || null;
-}
-
-/**
- * Save a photo's rotation to localStorage
- * @param id Photo ID
- * @param rotation Rotation value
- * @param route Route identifier
- * @param username Optional username
- */
-export function savePhotoRotation(
-  id: string,
-  rotation: number,
-  route: string,
-  username?: string
-): void {
-  storePhotoData(id, { rotation }, route, username);
-}
-
-/**
- * Get a photo's rotation from localStorage
- * @param id Photo ID
- * @param route Route identifier
- * @param username Optional username
- * @returns The rotation or null if not found
- */
-export function getPhotoRotation(
-  id: string,
-  route: string,
-  username?: string
-): number | null {
-  const data = retrievePhotoData(id, route, username);
-  return data?.rotation !== undefined ? data.rotation : null;
-}
-
-/**
- * Save a photo's z-index to localStorage
- * @param id Photo ID
- * @param zIndex Z-index value
- * @param route Route identifier
- * @param username Optional username
- */
-export function savePhotoZIndex(
-  id: string,
-  zIndex: number,
-  route: string,
-  username?: string
-): void {
-  storePhotoData(id, { zIndex }, route, username);
-}
-
-/**
- * Get a photo's z-index from localStorage
- * @param id Photo ID
- * @param route Route identifier
- * @param username Optional username
- * @returns The z-index or null if not found
- */
-export function getPhotoZIndex(
-  id: string,
-  route: string,
-  username?: string
-): number | null {
-  const data = retrievePhotoData(id, route, username);
-  return data?.zIndex !== undefined ? data.zIndex : null;
-}
-
-/**
- * Save a photo's flipped state to localStorage
- * @param id Photo ID
- * @param isFlipped Flipped state
- * @param route Route identifier
- * @param username Optional username
- */
-export function savePhotoFlipState(
-  id: string,
-  isFlipped: boolean,
-  route: string,
-  username?: string
-): void {
-  storePhotoData(id, { isFlipped }, route, username);
-}
-
-/**
- * Get a photo's flipped state from localStorage
- * @param id Photo ID
- * @param route Route identifier
- * @param username Optional username
- * @returns The flipped state or false if not found
- */
-export function getPhotoFlipState(
-  id: string,
-  route: string,
-  username?: string
-): boolean {
-  const data = retrievePhotoData(id, route, username);
-  return data?.isFlipped || false;
-}
-
-/**
- * Save a photo's pinned state to localStorage
- * @param id Photo ID
- * @param isPinned Pinned state
- * @param route Route identifier
- * @param username Optional username
- */
-export function savePhotoPinnedState(
-  id: string,
-  isPinned: boolean,
-  route: string,
-  username?: string
-): void {
-  storePhotoData(id, { isPinned }, route, username);
-}
-
-/**
- * Get a photo's pinned state from localStorage
- * @param id Photo ID
- * @param route Route identifier
- * @param username Optional username
- * @returns The pinned state or false if not found
- */
-export function getPhotoPinnedState(
-  id: string,
-  route: string,
-  username?: string
-): boolean {
-  const data = retrievePhotoData(id, route, username);
-  return data?.isPinned || false;
-}
-
-// Canvas viewport storage
-
-/**
- * Save canvas viewport state to localStorage
- * @param viewport The viewport state
- * @param route The route identifier
- * @param username Optional username
- */
-export function saveCanvasViewport(
-  viewport: CanvasViewport,
-  route: string,
-  username?: string
-): void {
-  const key = `${route}_canvas_viewport`;
-  storeItem(key, viewport, { username });
-}
-
-/**
- * Get canvas viewport state from localStorage
- * @param route The route identifier
- * @param username Optional username
- * @returns The viewport state or null if not found
- */
-export function getCanvasViewport(
-  route: string,
-  username?: string
-): CanvasViewport | null {
-  const key = `${route}_canvas_viewport`;
-  return retrieveItem(key, { username });
-}
-
-// Post storage functions
-
-/**
- * Store a collection of posts
- * @param posts The posts to store
- * @param options Storage options
- */
-export function storePosts(posts: any[], options: StorageOptions = {}): void {
-  storeItem('posts', posts, options);
-}
-
-/**
- * Retrieve stored posts
- * @param options Storage options
- * @returns The posts or empty array if none found
- */
-export function retrievePosts<T>(options: StorageOptions = {}): T[] {
-  return retrieveItem<T[]>('posts', options) || [];
-}
-
-/**
- * Store cursor for pagination
- * @param cursor The cursor value
- * @param options Storage options
- */
-export function storeCursor(cursor: string | null, options: StorageOptions = {}): void {
-  if (cursor !== null && cursor !== undefined) {
-    storeItem('cursor', cursor as string, options);
-  } else {
-    removeItem('cursor', options);
-  }
-}
-
-/**
- * Retrieve stored cursor
- * @param options Storage options
- * @returns The cursor or null if not found
- */
-export function retrieveCursor(options: StorageOptions = {}): string | null {
-  return retrieveItem<string>('cursor', options);
-}
-
-/**
- * Transform a collection of posts to polaroid format
- * This implementation is optimized to maintain referential equality when possible
- * @param posts The posts to transform
- * @param options Storage options including username and route
- * @returns Array of PolaroidPhoto objects
- */
-export function transformPostsToPolaroids(
-  posts: any[], 
-  options: PolaroidStorageOptions
-): PolaroidPhoto[] {
-  if (!posts.length) return [];
-  
-  const { route, username } = options;
-  
-  // Extract all image message blocks from all posts
-  const imageBlocks: any[] = [];
-  
-  posts.forEach(post => {
-    if (post.message && Array.isArray(post.message)) {
-      post.message.forEach((part: any, partIndex: number) => {
-        if (part.type === "image" && part.src) {
-          imageBlocks.push({
-            ...part,
-            postId: post.id,
-            postCreatedTime: post.createdTime,
-            postMessage: post.message,
-            imageIndex: partIndex,
-            uniqueId: `${post.id}-image-${partIndex}`
-          });
-        }
-      });
-    }
-  });
-  
-  if (!imageBlocks.length) return [];
-  
-  return imageBlocks.map((imageBlock, index) => {
-    // Get stored data if available
-    const storedData = retrievePhotoData(imageBlock.uniqueId, route, username);
-    
-    // Generate circular spread pattern for initial positions
-    const position = storedData?.position || (() => {
-      const angle = (index / imageBlocks.length) * 2 * Math.PI;
-      const radius = 300 + Math.random() * 200; // 300-500px radius
-      const baseX = Math.cos(angle) * radius;
-      const baseY = Math.sin(angle) * radius;
-      
-      // Add some randomness to make it feel natural
-      return {
-        x: baseX + (Math.random() * 100 - 50),
-        y: baseY + (Math.random() * 100 - 50) - 10
-      };
-    })();
-    
-    // Use stored rotation or generate a random one
-    const rotation = storedData?.rotation !== undefined
-      ? storedData.rotation
-      : Math.random() * 20 - 10;
-      
-    // Format the date string for display - handle different timestamp formats
-    let date = "";
-    if (imageBlock.postCreatedTime) {
-      // Try different timestamp formats
-      const timestamp = typeof imageBlock.postCreatedTime === 'string' 
-        ? parseInt(imageBlock.postCreatedTime) 
-        : imageBlock.postCreatedTime;
-      
-      // Check if it's in seconds (Unix timestamp) or milliseconds
-      const dateObj = timestamp > 1000000000000 
-        ? new Date(timestamp) 
-        : new Date(timestamp * 1000);
-      
-      date = dateObj.toLocaleDateString();
-    }
-    
-    // Extract caption like a natural handwritten polaroid note with dynamic sizing
-    let caption = "";
-    let captionStyle = { fontSize: 14, offsetY: 0 }; // Default styling
-    
-    if (imageBlock.postMessage && Array.isArray(imageBlock.postMessage)) {
-      const firstTextPart = imageBlock.postMessage.find((part: any) => part.type === "text" && part.text);
-      if (firstTextPart) {
-        let fullText = firstTextPart.text.trim();
-        
-        // Handle line breaks - allow up to 2 lines
-        const lines = fullText.split('\n');
-        const firstTwoLines = lines.slice(0, 2).join('\n').trim();
-        
-        // Natural breaking points for polaroid notes
-        const words = firstTwoLines.split(' ');
-        
-        // Determine caption length and styling
-        let naturalCaption = "";
-        
-        if (words.length <= 3) {
-          // Short caption - keep whole, large font
-          naturalCaption = words.join(' ');
-          captionStyle = { fontSize: 30, offsetY: 0 };
-        } else {
-          // Medium/long caption - take first 2-4 words max, medium font
-          naturalCaption = words.slice(0, 4).join(' ');
-          captionStyle = { fontSize: 20, offsetY: 0 };
-        }
-        
-        caption = naturalCaption;
-      }
-    }
-    
-    // Extract image URL from the specific image block
-    let src = imageBlock.src || '/placeholder-image.jpg'; // Use the image block's src directly
-    
-    // Use stored zIndex or calculate based on position in array
-    const zIndex = storedData?.zIndex !== undefined
-      ? storedData.zIndex
-      : imageBlocks.length - index;
-    
-    return {
-      id: imageBlock.uniqueId,
-      src,
-      caption,
-      date,
-      position,
-      rotation,
-      zIndex,
-      captionStyle
-    };
-  });
-}
-
-/**
- * Store initial positions for photos if they don't exist
- * @param predefinedPositions Map of photo IDs to positions
- * @param route The route identifier
- * @param username Optional username
- */
-export function storeInitialPositions(
-  predefinedPositions: Record<string, { x: number; y: number }>,
-  route: string,
-  username?: string
-): void {
+function safeSet<T>(key: string, value: T): void {
   if (typeof window === 'undefined') return;
   
-  Object.entries(predefinedPositions).forEach(([id, position]) => {
-    // Only save if position doesn't already exist
-    if (!getPhotoPosition(id, route, username)) {
-      savePhotoPosition(id, position, route, username);
-    }
-  });
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (err) {
+    console.error(`[STORAGE] Error saving ${key}:`, err);
+  }
 }
 
-/**
- * Initialize photos from a collection of source data
- * @param photos Base photo data
- * @param route Route identifier
- * @param options Additional options
- * @returns Processed photos with positions and properties
- */
-export function initializeCanvasPhotos(
-  photos: Array<{ id: string; src: string; caption: string; date: string }>,
-  route: string,
-  options?: {
-    username?: string;
-    predefinedPositions?: Record<string, { x: number; y: number }>;
-    centerX?: number;
-    centerY?: number;
-  }
-): PolaroidPhoto[] {
-  const { 
-    username,
-    predefinedPositions = {},
-    centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 0,
-    centerY = typeof window !== "undefined" ? window.innerHeight / 2 : 0,
-  } = options || {};
-
-  return photos.map((photo, index) => {
-    // Get stored data
-    const storedData = retrievePhotoData(photo.id, route, username);
-    
-    // Use predefined positions or calculate defaults
-    const predefinedPosition = predefinedPositions[photo.id];
-    
-    // Calculate position - prioritize stored > predefined > calculated default
-    const x = storedData?.position?.x || 
-              predefinedPosition?.x || 
-              centerX + Math.cos(index * 2.4) * Math.sqrt(index) * 80 - 110;
-              
-    const y = storedData?.position?.y || 
-              predefinedPosition?.y || 
-              centerY + Math.sin(index * 2.4) * Math.sqrt(index) * 80 - 135;
-    
-    // Use stored rotation or default to a small random angle
-    const getSeededRandom = (seed: string, min: number, max: number) => {
-      let h = 0;
-      for (let i = 0; i < seed.length; i++) {
-        h = Math.imul(h ^ seed.charCodeAt(i), 956789);
-      }
-      h = h & h; // Convert to 32bit integer
-      return min + ((h % 1000) / 1000) * (max - min);
-    };
-    
-    const rotation = storedData?.rotation || getSeededRandom(photo.id, -10, 10);
-    
-    // Use stored zIndex or default, keeping within the 0-10 range for photos
-    const defaultZIndex = Math.max(0, Math.min(9, 9 - Math.floor((index / photos.length) * 10)));
-    const zIndex = storedData?.zIndex || defaultZIndex;
-    
-    // Use stored flip/pin states or defaults
-    const flipped = storedData?.isFlipped || false;
-
-    return {
-      ...photo,
-      position: { x, y },
-      rotation,
-      zIndex,
-      flipped
-    };
-  });
+// Photos storage
+export function getPhotos(username?: string): Record<string, PhotoState> {
+  const key = username ? getUserPhotosKey(username) : GUEST_PHOTOS_KEY;
+  return safeGet(key, {});
 }
 
-/**
- * Cleanup legacy photo storage formats and consolidate them
- * @returns Summary of cleanup operation results
- */
-export function cleanupPhotoStorage(): {
-  originalEntries: number;
-  consolidatedPhotos: number;
-} {
-  if (typeof window === 'undefined') {
-    return { originalEntries: 0, consolidatedPhotos: 0 };
+export function setPhotos(photos: Record<string, PhotoState>, username?: string): void {
+  const key = username ? getUserPhotosKey(username) : GUEST_PHOTOS_KEY;
+  safeSet(key, photos);
+}
+
+export function setPhotoPosition(photoId: string, x: number, y: number, username?: string): void {
+  const photos = getPhotos(username);
+  if (!photos[photoId]) {
+    photos[photoId] = { x, y, rotation: 0, zIndex: 1 };
+  } else {
+    photos[photoId].x = x;
+    photos[photoId].y = y;
   }
+  setPhotos(photos, username);
+}
 
-  logError("CLEANUP", "Starting photo storage cleanup process", {
-    level: "info",
-  });
+export function setPhotoState(photoId: string, state: Partial<PhotoState>, username?: string): void {
+  const photos = getPhotos(username);
+  if (!photos[photoId]) {
+    photos[photoId] = { x: 0, y: 0, rotation: 0, zIndex: 1 };
+  }
+  Object.assign(photos[photoId], state);
+  setPhotos(photos, username);
+}
 
-  const allKeys = Object.keys(localStorage);
-  const photoKeys = allKeys.filter(
-    (key) =>
-      key.includes("peach_preserves_login_photo_") ||
-      key.includes("peach_preserves_photo_") ||
-      key.includes("peach_pos_"),
-  );
+// Canvas storage
+export function getCanvas(username?: string): CanvasState | null {
+  const key = username ? getUserCanvasKey(username) : GUEST_CANVAS_KEY;
+  return safeGet<CanvasState | null>(key, null);
+}
 
-  const photoPattern =
-    /(?:peach_preserves_(?:([^_]+)_)?(?:([^_]+)_)?photo_([^_]+)|peach_pos_([^_]+))/;
+export function setCanvas(canvas: CanvasState, username?: string): void {
+  const key = username ? getUserCanvasKey(username) : GUEST_CANVAS_KEY;
+  safeSet(key, canvas);
+}
 
-  // Map to track photos and consolidate data
-  const photoMap = new Map<
-    string,
-    {
-      id: string;
-      route: string;
-      username?: string;
-      data: PhotoData;
-    }
-  >();
+// User data storage
+export function getUserData(username: string): UserData | null {
+  const key = getUserDataKey(username);
+  return safeGet<UserData | null>(key, null);
+}
 
-  // Process each key
-  photoKeys.forEach((key) => {
-    try {
-      const match = key.match(photoPattern);
+export function setUserData(userData: UserData): void {
+  const key = getUserDataKey(userData.username);
+  safeSet(key, userData);
+}
 
-      if (match) {
-        // Extract ID and context from key
-        const possibleUsername = match[1];
-        const possibleRoute = match[2] || "login"; // Default to login if not specified
-        const id1 = match[3];
-        const id2 = match[4]; // From peach_pos_ format
-        const id = id1 || id2;
+// Posts storage
+export function getPosts(username: string): PostData[] {
+  const key = getUserPostsKey(username);
+  return safeGet(key, []);
+}
 
-        // Determine username/route based on pattern
-        let username: string | undefined;
-        let route: string;
+export function setPosts(posts: PostData[], username: string): void {
+  const key = getUserPostsKey(username);
+  safeSet(key, posts);
+}
 
-        if (id === id1) {
-          // From peach_preserves format
-          username =
-            possibleUsername && possibleUsername !== "login"
-              ? possibleUsername
-              : undefined;
-          route = possibleRoute;
-        } else {
-          // From peach_pos format
-          route = "login"; // Default for this format
-        }
+// Utility functions
+export function clearUserData(username: string): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.removeItem(getUserPhotosKey(username));
+    localStorage.removeItem(getUserCanvasKey(username));
+    localStorage.removeItem(getUserDataKey(username));
+    localStorage.removeItem(getUserPostsKey(username));
+  } catch (err) {
+    console.error(`[STORAGE] Error clearing data for ${username}:`, err);
+  }
+}
 
-        // If we've identified a valid ID
-        if (id) {
-          // Create unique key for this photo (combine route and ID)
-          const mapKey = `${route}_${id}${username ? `_${username}` : ""}`;
-
-          // Get data for this entry
-          let data: PhotoData = {};
-
-          // Process based on key format
-          if (key.includes("peach_pos_")) {
-            // Handle peach_pos_ format
-            try {
-              const posData = JSON.parse(localStorage.getItem(key) || "{}");
-
-              if (posData.x !== undefined && posData.y !== undefined) {
-                data.position = { x: posData.x, y: posData.y };
-              }
-              if (posData.rotation !== undefined) {
-                data.rotation = posData.rotation;
-              }
-              if (posData.zIndex !== undefined) {
-                data.zIndex = posData.zIndex;
-              }
-            } catch (e) {
-              logError("CLEANUP", e, { operation: "parseJSON", key });
-            }
-          } else if (key.endsWith("_position")) {
-            // Handle position property
-            try {
-              data.position = JSON.parse(localStorage.getItem(key) || "");
-            } catch (e) {
-              logError("CLEANUP", e, { operation: "parsePosition", key });
-            }
-          } else if (key.endsWith("_rotation")) {
-            // Handle rotation property
-            data.rotation = parseFloat(localStorage.getItem(key) || "0");
-          } else if (key.endsWith("_zindex")) {
-            // Handle zIndex property
-            data.zIndex = parseInt(localStorage.getItem(key) || "0", 10);
-          } else if (key.endsWith("_flipped")) {
-            // Handle flipped property
-            data.isFlipped = localStorage.getItem(key) === "true";
-          } else if (key.endsWith("_pinned")) {
-            // Handle pinned property
-            data.isPinned = localStorage.getItem(key) === "true";
-          } else if (!key.includes("_property")) {
-            // This might be a consolidated format already
-            try {
-              const storedData = JSON.parse(localStorage.getItem(key) || "{}");
-              data = storedData;
-            } catch (e) {
-              logError("CLEANUP", e, { operation: "parseData", key });
-            }
-          }
-
-          // Update map - merge with existing data if present
-          if (Object.keys(data).length > 0) {
-            if (photoMap.has(mapKey)) {
-              const existing = photoMap.get(mapKey)!;
-              photoMap.set(mapKey, {
-                ...existing,
-                data: { ...existing.data, ...data },
-              });
-            } else {
-              photoMap.set(mapKey, { id, route, username, data });
-            }
-          }
-        }
-      }
-    } catch (e) {
-      logError("CLEANUP", e, { operation: "processKey", key });
-    }
-  });
-
-  // Remove all old entries
-  photoKeys.forEach((key) => {
-    localStorage.removeItem(key);
-  });
-
-  // Store consolidated entries
-  photoMap.forEach(({ id, route, username, data }) => {
-    storePhotoData(id, data, route, username);
-  });
-
-  logError("CLEANUP", "Cleanup complete", {
-    level: "info",
-    originalEntries: photoKeys.length,
-    consolidatedPhotos: photoMap.size
-  });
-
-  return {
-    originalEntries: photoKeys.length,
-    consolidatedPhotos: photoMap.size,
-  };
+export function clearGuestData(): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.removeItem(GUEST_PHOTOS_KEY);
+    localStorage.removeItem(GUEST_CANVAS_KEY);
+  } catch (err) {
+    console.error('[STORAGE] Error clearing guest data:', err);
+  }
 }

@@ -6,7 +6,7 @@ import {
   createMemo,
 } from "solid-js";
 import { createStore, Store } from "solid-js/store";
-import { storeItem, retrieveItem } from "~/utils/storage";
+import { getUserData, setUserData, clearUserData, UserData } from "~/utils/storage";
 
 export interface PeachPost {
   id: string;
@@ -44,21 +44,38 @@ interface PeachContextValue {
   logout: () => void;
 }
 
-// Auth storage keys
-const TOKEN_KEY = "auth_token";
-const USER_KEY = "auth_user";
+// Auth storage - now handled through new storage system
 
 const PeachContext = createContext<PeachContextValue>();
 
 export function PeachProvider(props: { children: JSX.Element }) {
-  // Initialize from localStorage using storage utilities
-  const savedToken = retrieveItem<string>(TOKEN_KEY);
-  const parsedUserData = retrieveItem<PeachUser>(USER_KEY);
-
-  const [token, setToken] = createSignal<string | null>(savedToken);
+  // Initialize from localStorage using new storage system
+  const [token, setToken] = createSignal<string | null>(null);
   const [user, setUser] = createStore<{ data: PeachUser | null }>({
-    data: parsedUserData,
+    data: null,
   });
+
+  // Try to restore session from any stored user data
+  if (typeof window !== 'undefined') {
+    // Look for any stored user data to restore session
+    const allKeys = Object.keys(localStorage);
+    const userDataKey = allKeys.find(key => key.startsWith('peach_') && key.endsWith('_user'));
+    
+    if (userDataKey) {
+      const username = userDataKey.replace('peach_', '').replace('_user', '');
+      const userData = getUserData(username);
+      
+      if (userData) {
+        setToken(userData.token);
+        setUser("data", {
+          id: userData.username,
+          username: userData.username,
+          sessionId: "restored",
+          streams: []
+        });
+      }
+    }
+  }
 
   const isAuthenticated = createMemo(() => {
     const hasToken = Boolean(token());
@@ -104,9 +121,15 @@ export function PeachProvider(props: { children: JSX.Element }) {
       setToken(tokenToUse);
       setUser("data", userDataObj);
 
-      // Save to localStorage using storage utility
-      storeItem(TOKEN_KEY, tokenToUse);
-      storeItem(USER_KEY, userDataObj);
+      // Save to localStorage using new storage system
+      const userStorageData: UserData = {
+        username: userDataObj.username,
+        token: tokenToUse,
+        screenName: userData?.screenName,
+        avatar: userData?.avatar,
+        bio: userData?.bio
+      };
+      setUserData(userStorageData);
 
       // Set cookie for server middleware authentication (30 days)
       document.cookie = `peach_token=${tokenToUse}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
@@ -119,9 +142,10 @@ export function PeachProvider(props: { children: JSX.Element }) {
       setToken(null);
       setUser("data", null);
 
-      // Remove stored items
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(USER_KEY);
+      // Clear storage - remove user data if we know the username
+      if (user.data?.username) {
+        clearUserData(user.data.username);
+      }
 
       // Clear cookie
       document.cookie = "peach_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
@@ -133,9 +157,10 @@ export function PeachProvider(props: { children: JSX.Element }) {
     setToken(null);
     setUser("data", null);
 
-    // Clear storage
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    // Clear storage using new system
+    if (user.data?.username) {
+      clearUserData(user.data.username);
+    }
 
     // Clear the cookie
     document.cookie = "peach_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";

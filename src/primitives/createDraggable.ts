@@ -347,8 +347,8 @@ export function createDraggable<T extends DraggableItem>(
       } else {
         // Save position to storage
         try {
-          import("~/utils/storage").then(({ savePhotoPosition }) => {
-            savePhotoPosition(id, finalWorldPos, route, username);
+          import("~/utils/storage").then(({ setPhotoPosition }) => {
+            setPhotoPosition(id, finalWorldPos.x, finalWorldPos.y, username);
           });
         } catch (err) {
           // Silent fail - position will not be persisted but still in memory
@@ -428,8 +428,8 @@ export function createDraggable<T extends DraggableItem>(
 
     // Save to storage
     try {
-      import("~/utils/storage").then(({ savePhotoPosition }) => {
-        savePhotoPosition(id, finalPosition, route, username);
+      import("~/utils/storage").then(({ setPhotoPosition }) => {
+        setPhotoPosition(id, finalPosition.x, finalPosition.y, username);
       });
     } catch (err) {
       // Silent fail - position will not be persisted but still in memory

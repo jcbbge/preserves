@@ -13,10 +13,11 @@ import { CanvasItem } from "~/primitives/infiniteCanvas/CanvasItem";
 import { createDraggable, DraggableItem } from "~/primitives/createDraggable";
 import { Vector, Point } from "~/primitives/infiniteCanvas/TransformContext";
 import {
-  initializeCanvasPhotos,
-  storeInitialPositions,
-  getCanvasViewport,
-  saveCanvasViewport,
+  getPhotos,
+  setPhotos,
+  getCanvas,
+  setCanvas,
+  PhotoState
 } from "~/utils/storage";
 import { redirectIfAuthenticated } from "~/utils/authUtils";
 import { DEFAULT_POSITIONS, getViewportForLoginCenter } from "~/config/defaultPositions";
@@ -58,7 +59,7 @@ export default function Home() {
   });
 
   const handleViewportChange = (viewport: { position: Point; scale: number }): void => {
-    saveCanvasViewport(viewport, route, getUserName());
+    setCanvas({ x: viewport.position.x, y: viewport.position.y, scale: viewport.scale });
   };
 
   const handleDragHandler = (id: string, delta: Vector): void => {
@@ -78,16 +79,21 @@ export default function Home() {
       setState("canvasHeight", window.innerHeight);
     });
 
-    const photos = initializeCanvasPhotos(stockImages, route, {
-      username: getUserName(),
-      predefinedPositions,
+    const storedPhotos = getPhotos();
+    
+    const photosWithPositions: LoginPhoto[] = stockImages.map((stockImage, index) => {
+      const storedState = storedPhotos[stockImage.id];
+      const predefinedPos = predefinedPositions[stockImage.id];
+      
+      return {
+        ...stockImage,
+        position: storedState ? { x: storedState.x, y: storedState.y } : 
+                 predefinedPos || { x: 0, y: 0 },
+        rotation: storedState?.rotation || 0,
+        zIndex: storedState?.zIndex || (stockImages.length - index),
+        type: "photo" as const
+      };
     });
-
-    const photosWithPositions: LoginPhoto[] = photos.map(photo => ({
-      ...photo,
-      position: photo.position || { x: 0, y: 0 },
-      type: "photo" as const
-    }));
 
     const menuItem: LoginPhoto = {
       id: "login-menu",
@@ -102,7 +108,21 @@ export default function Home() {
 
     setPolaroidPhotos([menuItem, ...photosWithPositions]);
 
-    storeInitialPositions(predefinedPositions, route, getUserName());
+    if (Object.keys(storedPhotos).length === 0) {
+      const initialPhotoStates: Record<string, PhotoState> = {};
+      stockImages.forEach((stockImage, index) => {
+        const predefinedPos = predefinedPositions[stockImage.id];
+        if (predefinedPos) {
+          initialPhotoStates[stockImage.id] = {
+            x: predefinedPos.x,
+            y: predefinedPos.y,
+            rotation: 0,
+            zIndex: stockImages.length - index
+          };
+        }
+      });
+      setPhotos(initialPhotoStates);
+    }
 
     const handleResize = (): void => {
       batch(() => {
@@ -135,9 +155,10 @@ export default function Home() {
       >
         <InfiniteCanvas
           showGrid={false}
-          storageKey={`peach_preserves_${getUserName()}_${route}_canvas`}
+          storageKey={`peach_guest_canvas`}
           initialViewport={
-            getCanvasViewport(route, getUserName()) || 
+            getCanvas() ? 
+            { position: { x: getCanvas()!.x, y: getCanvas()!.y }, scale: getCanvas()!.scale } :
             getViewportForLoginCenter(window.innerWidth, window.innerHeight)
           }
           className={styles["canvas-container"]}

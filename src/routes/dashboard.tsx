@@ -8,16 +8,16 @@ import { fetchStream } from "./api/stream";
 import { downloadPeachData as fetchPeachData } from "~/lib/api/download";
 import { PolaroidPhoto } from "~/types/polaroid";
 import {
-  retrievePosts,
-  retrieveCursor,
-  storePosts,
-  storeCursor,
-  transformPostsToPolaroids,
-  getCanvasViewport,
-  saveCanvasViewport,
-  savePhotoRotation,
-  initializeCanvasPhotos,
-  storeInitialPositions,
+  getPhotos,
+  setPhotos,
+  getCanvas,
+  setCanvas,
+  getUserData,
+  setUserData,
+  getPosts,
+  setPosts,
+  PhotoState,
+  PostData,
 } from "~/utils/storage";
 
 import { DownloadCompleteModal } from "~/components/DownloadCompleteModal";
@@ -97,7 +97,7 @@ export default function Dashboard() {
   };
 
   const handleViewportChange = (viewport: { position: Point; scale: number }): void => {
-    saveCanvasViewport(viewport, route, getUserName());
+    setCanvas({ x: viewport.position.x, y: viewport.position.y, scale: viewport.scale }, getUserName());
   };
 
   const getItemPosition = (id: string): Point => {
@@ -121,17 +121,38 @@ export default function Dashboard() {
       const response = await fetchStream(formData);
 
       if (response.success && response.data?.data?.posts) {
-        batch(() => {
-          setState("posts", response.data.data.posts);
-          setState("cursor", response.data.data.cursor);
-        });
-
         if (user.data?.username) {
-          storePosts(response.data.data.posts, { username: user.data.username });
-
-          if (response.data.data.cursor) {
-            storeCursor(response.data.data.cursor, { username: user.data.username });
+          const allImages: any[] = [];
+          
+          for (const post of response.data.data.posts) {
+            if (!post.message || !Array.isArray(post.message)) continue;
+            
+            const images = post.message.filter((part: any) => part.type === 'image');
+            
+            for (let i = 0; i < images.length; i++) {
+              if (allImages.length >= 25) break;
+              
+              allImages.push({
+                id: `${post.id}-image-${i}`,
+                message: post.message,
+                createdTime: post.createdTime,
+                imageIndex: i,
+                src: images[i].src
+              });
+            }
+            
+            if (allImages.length >= 25) break;
           }
+          
+          const filteredPosts = allImages;
+
+          batch(() => {
+            setState("posts", filteredPosts);
+            setState("cursor", response.data.data.cursor);
+          });
+
+          console.log(`[DASHBOARD] Filtered posts:`, filteredPosts);
+          setPosts(filteredPosts, user.data.username);
         }
       } else {
         batch(() => {
@@ -140,8 +161,7 @@ export default function Dashboard() {
         });
 
         const userName = getUserName();
-        localStorage.removeItem(`peach_preserves_${userName}_posts`);
-        localStorage.removeItem(`peach_preserves_${userName}_cursor`);
+        setPosts([], userName);
       }
     } catch (err) {
       setState("error", "Failed to load your posts. Please try again.");
@@ -209,13 +229,15 @@ export default function Dashboard() {
       setState("canvasHeight", window.innerHeight);
     });
 
-    const storedPosts = retrievePosts({ username: getUserName() });
+    const storedPosts = getPosts(getUserName());
+    console.log(`[DASHBOARD] Stored posts for ${getUserName()}:`, storedPosts);
     batch(() => {
       setState("posts", storedPosts);
-      setState("cursor", retrieveCursor({ username: getUserName() }));
+      setState("cursor", null);
     });
 
     if (storedPosts.length === 0) {
+      console.log(`[DASHBOARD] No stored posts, loading from API...`);
       loadPosts();
     }
 
@@ -246,39 +268,81 @@ export default function Dashboard() {
 
   createEffect(() => {
     const currentPosts = state.posts;
+    console.log(`[DASHBOARD] createEffect triggered with posts:`, currentPosts);
 
     if (currentPosts.length > 0) {
-      const uniquePosts = [];
-      const seenIds = new Set<string>();
+      const imagePosts = currentPosts;
+      console.log(`[DASHBOARD] Image posts found:`, imagePosts.length);
 
-      for (const post of currentPosts) {
-        if (!post.id) {
-          continue;
-        }
-
-        if (!seenIds.has(post.id)) {
-          seenIds.add(post.id);
-          uniquePosts.push(post);
-        }
-      }
-
-      const transformedPhotos = transformPostsToPolaroids(uniquePosts, {
-        route,
-        username: getUserName(),
-      })
-        .map((photo): DashboardPhoto | null => {
-          if (!photo || !photo.id) {
-            return null;
+      const storedPhotos = getPhotos(getUserName());
+      
+      const transformedPhotos: DashboardPhoto[] = imagePosts
+        .map((imageBlock, index): DashboardPhoto => {
+          const storedState = storedPhotos[imageBlock.id];
+          const navPosition = DEFAULT_POSITIONS.dashboardNavComponent;
+          const angle = (index / imagePosts.length) * 2 * Math.PI;
+          const radius = 300 + Math.random() * 200;
+          
+          // Format date like original logic
+          let date = "";
+          if (imageBlock.createdTime) {
+            const timestamp = typeof imageBlock.createdTime === 'string' 
+              ? parseInt(imageBlock.createdTime) 
+              : imageBlock.createdTime;
+            
+            const dateObj = timestamp > 1000000000000 
+              ? new Date(timestamp) 
+              : new Date(timestamp * 1000);
+            
+            date = dateObj.toLocaleDateString();
           }
-
+          
+          // Extract caption and styling like original logic
+          let caption = "";
+          let captionStyle = { fontSize: 14, offsetY: 0 };
+          
+          if (imageBlock.message && Array.isArray(imageBlock.message)) {
+            const firstTextPart = imageBlock.message.find((part: any) => part.type === "text" && part.text);
+            if (firstTextPart) {
+              let fullText = firstTextPart.text.trim();
+              
+              const lines = fullText.split('\n');
+              const firstTwoLines = lines.slice(0, 2).join('\n').trim();
+              
+              const words = firstTwoLines.split(' ');
+              
+              let naturalCaption = "";
+              
+              if (words.length <= 3) {
+                naturalCaption = words.join(' ');
+                captionStyle = { fontSize: 30, offsetY: 0 };
+              } else {
+                naturalCaption = words.slice(0, 4).join(' ');
+                captionStyle = { fontSize: 20, offsetY: 0 };
+              }
+              
+              caption = naturalCaption;
+            }
+          }
+          
           return {
-            ...photo,
-            position: photo.position || { x: 0, y: 0 },
+            id: imageBlock.id,
+            src: imageBlock.src || '',
+            caption,
+            date,
+            captionStyle,
+            position: storedState ? 
+              { x: storedState.x, y: storedState.y } : 
+              {
+                x: navPosition.x + Math.cos(angle) * radius,
+                y: navPosition.y + Math.sin(angle) * radius
+              },
+            rotation: storedState?.rotation || (Math.random() * 20 - 10),
+            zIndex: storedState?.zIndex || (imagePosts.length - index),
             type: "photo" as const,
             isRotatable: true,
           };
-        })
-        .filter((photo): photo is DashboardPhoto => photo !== null);
+        });
 
       const dashboardNavItem: DashboardPhoto = {
         id: "dashboard-nav",
@@ -293,22 +357,17 @@ export default function Dashboard() {
 
       setPolaroidPhotos([dashboardNavItem, ...transformedPhotos]);
 
-      const navPosition = DEFAULT_POSITIONS.dashboardNavComponent;
-      const baseOvalPositions = generateOvalPositions(transformedPhotos.length, 600, 400);
-      const positionMap: { [key: string]: { x: number; y: number } } = {};
-
-      transformedPhotos.forEach((photo, index) => {
-        if (!photo.position) {
-          const ovalPos = baseOvalPositions[index];
-          positionMap[photo.id] = {
-            x: ovalPos.x + navPosition.x,
-            y: ovalPos.y + navPosition.y
+      if (Object.keys(storedPhotos).length === 0 && transformedPhotos.length > 0) {
+        const initialPhotoStates: Record<string, PhotoState> = {};
+        transformedPhotos.forEach((photo) => {
+          initialPhotoStates[photo.id] = {
+            x: photo.position.x,
+            y: photo.position.y,
+            rotation: photo.rotation || 0,
+            zIndex: photo.zIndex || 1
           };
-        }
-      });
-
-      if (Object.keys(positionMap).length > 0) {
-        storeInitialPositions(positionMap, route, getUserName());
+        });
+        setPhotos(initialPhotoStates, getUserName());
       }
     } else {
       const dashboardNavItem: DashboardPhoto = {
@@ -364,9 +423,10 @@ export default function Dashboard() {
         <Show when={state.clientOnly}>
           <InfiniteCanvas
             showGrid={false}
-            storageKey={`peach_preserves_${getUserName()}_${route}_canvas`}
+            storageKey={`peach_${getUserName()}_canvas`}
             initialViewport={
-              getCanvasViewport(route, getUserName()) ||
+              getCanvas(getUserName()) ? 
+              { position: { x: getCanvas(getUserName())!.x, y: getCanvas(getUserName())!.y }, scale: getCanvas(getUserName())!.scale } :
               getViewportForLoginCenter(window.innerWidth, window.innerHeight)
             }
             className={styles["canvas-container"]}
