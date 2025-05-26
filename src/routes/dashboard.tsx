@@ -88,21 +88,7 @@ export default function Dashboard() {
     return item ? item.position : { x: 0, y: 0 };
   };
 
-  // Handle photo rotation
-  const handleRotatePhoto = (id: string) => {
-    const photo = polaroidPhotos.find((p) => p.id === id);
-    if (!photo) return;
 
-    // Rotate in 15 degree increments
-    const currentRotation = photo.rotation || 0;
-    const newRotation = (currentRotation + 15) % 360;
-
-    // Update rotation in store
-    setPolaroidPhotos((p) => p.id === id, "rotation", newRotation);
-
-    // Persist rotation
-    savePhotoRotation(id, newRotation, route, getUserName());
-  };
 
 
 
@@ -372,7 +358,7 @@ export default function Dashboard() {
                     rotation={0}
                     zIndex={1}
                     useRandomValues={true}
-                    onRotate={() => handleRotatePhoto(photo.id)}
+                    captionStyle={photo.captionStyle}
                     onMouseDown={(e) => {}} // Allow events to bubble for dragging
                     onTouchStart={(e) => {}} // Allow events to bubble for dragging
                     class={styles["background-polaroid"]}

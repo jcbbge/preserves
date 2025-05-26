@@ -21,7 +21,7 @@ export interface PolaroidProps {
   position?: { x: number; y: number };
   rotation?: number;
   zIndex?: number;
-  isFlipped?: boolean;
+
   isPinned?: boolean;
   
   // Display options
@@ -36,13 +36,13 @@ export interface PolaroidProps {
   dateX?: number;
   dateY?: number;
   bgColor?: string;
+  captionStyle?: { fontSize: number; offsetY: number };
   
   // Event handlers
   onMouseDown: (e: MouseEvent, id: string) => void;
   onTouchStart?: (e: TouchEvent) => void;
-  onFlip?: (id: string) => void;
+
   onPin?: (id: string) => void;
-  onRotate?: (id: string) => void;
 }
 
 export function Polaroid(props: PolaroidProps): JSX.Element {
@@ -62,14 +62,7 @@ export function Polaroid(props: PolaroidProps): JSX.Element {
     }
   };
 
-  // Double click to flip if enabled
-  const handleClick = (e: MouseEvent) => {
-    if (e.detail === 2 && props.onFlip) {
-      props.onFlip(props.id);
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  };
+
 
   // Use imported generatePolaroidStyles from polaroidUtils
 
@@ -118,16 +111,20 @@ export function Polaroid(props: PolaroidProps): JSX.Element {
   // Caption/message text priority: caption > messageText
   const displayCaption = props.caption || props.messageText || "";
 
+  // Dynamic caption styling based on length
+  const dynamicCaptionFontSize = props.captionStyle?.fontSize || captionFontSize;
+  const dynamicCaptionOffsetY = (props.captionStyle?.offsetY || 0) + captionOffsetY;
+
   return (
     <div
       id={`photo-${props.id}`}
-      class={`${styles.polaroid} ${props.class || ""} ${props.isFlipped ? styles.flipped : ""} ${props.isPinned ? styles.pinned : ""}`}
+      class={`${styles.polaroid} ${props.class || ""} ${props.isPinned ? styles.pinned : ""}`}
       style={{
         transform: generateTransformString(props.position?.x || 0, props.position?.y || 0, props.rotation || 0),
         "z-index": props.zIndex || 1,
         background: bgColor,
       }}
-      onClick={handleClick}
+
       onMouseDown={(e) => props.onMouseDown(e, props.id)}
       onTouchStart={props.onTouchStart || handleTouchStart}
     >
@@ -154,8 +151,11 @@ export function Polaroid(props: PolaroidProps): JSX.Element {
             class={styles["polaroid-handwritten"]}
             style={{
               display: "inline-block",
-              transform: `rotate(${textAngle}deg) translate(${textX + captionOffsetX}px, ${textY + captionOffsetY}px)`,
-              "font-size": `${captionFontSize}px`,
+              transform: `rotate(${textAngle}deg) translate(${textX + captionOffsetX}px, ${textY + dynamicCaptionOffsetY}px)`,
+              "font-size": `${dynamicCaptionFontSize}px`,
+              "line-height": "1.2",
+              "max-width": "220px",
+              "text-align": "left",
               "mask": `radial-gradient(circle at 30% 40%, transparent ${wornIntensity * 100}%, black ${(wornIntensity + 0.1) * 100}%), radial-gradient(circle at 70% 80%, transparent ${wornIntensity * 80}%, black ${(wornIntensity + 0.15) * 100}%)`,
               "-webkit-mask": `radial-gradient(circle at 30% 40%, transparent ${wornIntensity * 100}%, black ${(wornIntensity + 0.1) * 100}%), radial-gradient(circle at 70% 80%, transparent ${wornIntensity * 80}%, black ${(wornIntensity + 0.15) * 100}%)`,
             }}
@@ -184,7 +184,7 @@ export function Polaroid(props: PolaroidProps): JSX.Element {
         </div>
         
         {/* Interactive controls */}
-        <Show when={props.onPin || props.onRotate}>
+        <Show when={props.onPin}>
           <div class={styles["polaroid-controls"]}>
             <Show when={props.onPin}>
               <button
@@ -198,43 +198,11 @@ export function Polaroid(props: PolaroidProps): JSX.Element {
                 📌
               </button>
             </Show>
-            <Show when={props.onRotate}>
-              <button
-                class={styles["rotate-button"]}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  props.onRotate?.(props.id);
-                }}
-                title="Rotate"
-              >
-                🔄
-              </button>
-            </Show>
           </div>
         </Show>
       </div>
       
-      {/* Back of the polaroid (shown when flipped) */}
-      <Show when={props.onFlip}>
-        <div class={styles["polaroid-back"]}>
-          <div class={styles["sticky-note"]}>
-            <div class={styles["sticky-note-content"]}>
-              <div class={styles["sticky-note-title"]}>PEACH MEMORY</div>
-              <div class={styles["sticky-note-text"]}>{props.messageText || displayCaption}</div>
-              <div class={styles["sticky-note-date"]}>{displayDate}</div>
-              
-              {/* Show comments if available */}
-              <Show when={props.commentCount && props.commentCount > 0}>
-                <div class={styles["sticky-note-comments"]}>
-                  <div class={styles["comments-count"]}>
-                    {props.commentCount} comments
-                  </div>
-                </div>
-              </Show>
-            </div>
-          </div>
-        </div>
-      </Show>
+
     </div>
   );
 }

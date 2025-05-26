@@ -476,37 +476,85 @@ export function transformPostsToPolaroids(
   
   const { route, username } = options;
   
-  return posts.map((post, index) => {
+  // Filter posts to only include those with image-type blocks
+  const postsWithImages = posts.filter(post => {
+    if (post.message && Array.isArray(post.message)) {
+      return post.message.some((part: any) => part.type === "image" && part.src);
+    }
+    return false;
+  });
+  
+  if (!postsWithImages.length) return [];
+  
+  return postsWithImages.map((post, index) => {
     // Get stored data if available
     const storedData = retrievePhotoData(post.id, route, username);
     
-    // Random initial position if not stored
-    const position = storedData?.position || {
-      x: Math.random() * 500 - 250,
-      y: Math.random() * 300 - 100 + index * 30
-    };
+    // Generate circular spread pattern for initial positions
+    const position = storedData?.position || (() => {
+      const angle = (index / postsWithImages.length) * 2 * Math.PI;
+      const radius = 300 + Math.random() * 200; // 300-500px radius
+      const baseX = Math.cos(angle) * radius;
+      const baseY = Math.sin(angle) * radius;
+      
+      // Add some randomness to make it feel natural
+      return {
+        x: baseX + (Math.random() * 100 - 50),
+        y: baseY + (Math.random() * 100 - 50) - 10
+      };
+    })();
     
     // Use stored rotation or generate a random one
     const rotation = storedData?.rotation !== undefined
       ? storedData.rotation
       : Math.random() * 20 - 10;
       
-    // Format the date string for display
-    const date = new Date(post.createdTime).toLocaleDateString();
+    // Format the date string for display - handle different timestamp formats
+    let date = "";
+    if (post.createdTime) {
+      // Try different timestamp formats
+      const timestamp = typeof post.createdTime === 'string' 
+        ? parseInt(post.createdTime) 
+        : post.createdTime;
+      
+      // Check if it's in seconds (Unix timestamp) or milliseconds
+      const dateObj = timestamp > 1000000000000 
+        ? new Date(timestamp) 
+        : new Date(timestamp * 1000);
+      
+      date = dateObj.toLocaleDateString();
+    }
     
-    // Extract caption from message
-    let caption = "Post with content";
-    if (post.message) {
-      if (Array.isArray(post.message)) {
-        const textParts = post.message
-          .filter((part: any) => part.type === "text")
-          .map((part: any) => part.text);
-          
-        if (textParts.length) {
-          caption = textParts.join("\n\n");
+    // Extract caption like a natural handwritten polaroid note with dynamic sizing
+    let caption = "";
+    let captionStyle = { fontSize: 14, offsetY: 0 }; // Default styling
+    
+    if (post.message && Array.isArray(post.message)) {
+      const firstTextPart = post.message.find((part: any) => part.type === "text" && part.text);
+      if (firstTextPart) {
+        let fullText = firstTextPart.text.trim();
+        
+        // Handle line breaks - allow up to 2 lines
+        const lines = fullText.split('\n');
+        const firstTwoLines = lines.slice(0, 2).join('\n').trim();
+        
+        // Natural breaking points for polaroid notes
+        const words = firstTwoLines.split(' ');
+        
+        // Determine caption length and styling
+        let naturalCaption = "";
+        
+        if (words.length <= 3) {
+          // Short caption - keep whole, large font
+          naturalCaption = words.join(' ');
+          captionStyle = { fontSize: 30, offsetY: 0 };
+        } else {
+          // Medium/long caption - take first 2-4 words max, medium font
+          naturalCaption = words.slice(0, 4).join(' ');
+          captionStyle = { fontSize: 20, offsetY: 0 };
         }
-      } else if (typeof post.message === "string") {
-        caption = post.message;
+        
+        caption = naturalCaption;
       }
     }
     
@@ -524,10 +572,7 @@ export function transformPostsToPolaroids(
     // Use stored zIndex or calculate based on position in array
     const zIndex = storedData?.zIndex !== undefined
       ? storedData.zIndex
-      : posts.length - index;
-    
-    // Use stored flip state
-    const flipped = storedData?.isFlipped || false;
+      : postsWithImages.length - index;
     
     return {
       id: post.id,
@@ -537,7 +582,7 @@ export function transformPostsToPolaroids(
       position,
       rotation,
       zIndex,
-      flipped
+      captionStyle
     };
   });
 }

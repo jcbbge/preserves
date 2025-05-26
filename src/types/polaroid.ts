@@ -6,7 +6,7 @@ export interface PolaroidPhoto {
   position?: { x: number; y: number };
   rotation?: number;
   zIndex?: number;
-  flipped?: boolean;
+  captionStyle?: { fontSize: number; offsetY: number };
 }
 
 export interface PolaroidProps {
@@ -17,7 +17,6 @@ export interface PolaroidProps {
   position?: { x: number; y: number };
   rotation?: number;
   zIndex?: number;
-  flipped?: boolean;
   textAngle?: number;
   textX?: number;
   textY?: number;
