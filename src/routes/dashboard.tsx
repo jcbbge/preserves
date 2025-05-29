@@ -277,8 +277,31 @@ export default function Dashboard() {
         .map((imageBlock, index): DashboardPhoto => {
           const storedState = storedPhotos[imageBlock.id];
           const navPosition = DEFAULT_POSITIONS.dashboardNavComponent;
-          const angle = (index / imagePosts.length) * 2 * Math.PI;
-          const radius = 300 + Math.random() * 200;
+          // Create more organic spread across the canvas
+          // Mix of different distribution patterns for natural scattering
+          const distributionType = Math.random();
+          let x, y;
+          
+          if (distributionType < 0.3) {
+            // Circular distribution with much larger radius
+            const angle = (index / imagePosts.length) * 2 * Math.PI + Math.random() * 0.5;
+            const radius = 600 + Math.random() * 800; // 600-1400px from center
+            x = navPosition.x + Math.cos(angle) * radius;
+            y = navPosition.y + Math.sin(angle) * radius;
+          } else if (distributionType < 0.6) {
+            // Grid-like with random offset for organic feel
+            const gridSize = 400;
+            const row = Math.floor(index / 5);
+            const col = index % 5;
+            x = navPosition.x + (col - 2) * gridSize + (Math.random() - 0.5) * 300;
+            y = navPosition.y + (row - 2) * gridSize + (Math.random() - 0.5) * 300;
+          } else {
+            // Pure random scatter in a large area
+            x = navPosition.x + (Math.random() - 0.5) * 2400; // -1200 to +1200
+            y = navPosition.y + (Math.random() - 0.5) * 1600; // -800 to +800
+          }
+          
+
           
           // Determine what to display on this polaroid
           let date = "";
@@ -344,11 +367,8 @@ export default function Dashboard() {
             captionStyle,
             position: storedState ? 
               { x: storedState.x, y: storedState.y } : 
-              {
-                x: navPosition.x + Math.cos(angle) * radius,
-                y: navPosition.y + Math.sin(angle) * radius
-              },
-            rotation: storedState?.rotation || (Math.random() * 20 - 10),
+              { x, y },
+            rotation: storedState?.rotation || (Math.random() * 40 - 20),
             zIndex: storedState?.zIndex || (imagePosts.length - index),
             type: "photo" as const,
             isRotatable: true,
