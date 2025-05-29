@@ -130,18 +130,15 @@ export default function Dashboard() {
             const images = post.message.filter((part: any) => part.type === 'image');
             
             for (let i = 0; i < images.length; i++) {
-              if (allImages.length >= 25) break;
-              
               allImages.push({
                 id: `${post.id}-image-${i}`,
                 message: post.message,
                 createdTime: post.createdTime,
                 imageIndex: i,
-                src: images[i].src
+                src: images[i].src,
+                imageCount: images.length
               });
             }
-            
-            if (allImages.length >= 25) break;
           }
           
           const filteredPosts = allImages;
@@ -283,9 +280,21 @@ export default function Dashboard() {
           const angle = (index / imagePosts.length) * 2 * Math.PI;
           const radius = 300 + Math.random() * 200;
           
-          // Format date like original logic
+          // Determine what to display on this polaroid
           let date = "";
-          if (imageBlock.createdTime) {
+          let caption = "";
+          let captionStyle = { fontSize: 14, offsetY: 0 };
+          
+          // Decide what this polaroid should show
+          const isSingleImage = imageBlock.imageCount === 1;
+          const isFirstImage = imageBlock.imageIndex === 0;
+          
+          // Random factors for variation
+          const showCaption = isSingleImage ? Math.random() < 0.8 : (isFirstImage ? Math.random() < 0.4 : Math.random() < 0.1);
+          const showDate = Math.random() < 0.6;
+          
+          // Format date if we're showing it
+          if (showDate && imageBlock.createdTime) {
             const timestamp = typeof imageBlock.createdTime === 'string' 
               ? parseInt(imageBlock.createdTime) 
               : imageBlock.createdTime;
@@ -297,11 +306,8 @@ export default function Dashboard() {
             date = dateObj.toLocaleDateString();
           }
           
-          // Extract caption and styling like original logic
-          let caption = "";
-          let captionStyle = { fontSize: 14, offsetY: 0 };
-          
-          if (imageBlock.message && Array.isArray(imageBlock.message)) {
+          // Extract caption if we're showing it
+          if (showCaption && imageBlock.message && Array.isArray(imageBlock.message)) {
             const firstTextPart = imageBlock.message.find((part: any) => part.type === "text" && part.text);
             if (firstTextPart) {
               let fullText = firstTextPart.text.trim();
@@ -323,6 +329,11 @@ export default function Dashboard() {
               
               caption = naturalCaption;
             }
+          }
+          
+          // If no caption but showing date, potentially use larger date text
+          if (!caption && date) {
+            captionStyle = { fontSize: 20, offsetY: 0 };
           }
           
           return {
