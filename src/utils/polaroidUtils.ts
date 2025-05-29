@@ -70,8 +70,8 @@ export function generatePolaroidStyles(id: string) {
 
   // Additional positioning offsets for handwritten randomness
   // These simulate writing at different spots on the polaroid
-  const captionOffsetX = seededRandom(`${id}_caption_offset_x`, 0, 20);
-  const captionOffsetY = seededRandom(`${id}_caption_offset_y`, 0, 30);
+  const captionOffsetX = seededRandom(`${id}_caption_offset_x`, 10, 20);
+  const captionOffsetY = seededRandom(`${id}_caption_offset_y`, 5, 20);
   const dateOffsetX = seededRandom(`${id}_date_offset_x`, -5, 10);
   const dateOffsetY = seededRandom(`${id}_date_offset_y`, 5, 20);
 
