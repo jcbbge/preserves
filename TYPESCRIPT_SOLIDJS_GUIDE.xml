@@ -14,7 +14,7 @@
       <rule>Always define interfaces/types before creating functions or components</rule>
       <rule>Use strict TypeScript settings to catch all potential issues</rule>
     </principle>
-    
+
     <principle id="dependency-cascade">
       <title>Dependency Cascade Management</title>
       <description>When making changes, systematically update all dependent types</description>
@@ -22,7 +22,7 @@
       <rule>Update from leaf types to root types</rule>
       <rule>Use TypeScript compiler to identify all affected areas</rule>
     </principle>
-    
+
     <principle id="generic-constraints">
       <title>Proper Generic Constraints</title>
       <description>Use generic constraints to maintain type safety while allowing flexibility</description>
@@ -82,7 +82,7 @@
             }
           </code>
         </base-types>
-        
+
         <store-types>
           <code>
             // Define store structure
@@ -146,7 +146,7 @@
               children: JSX.Element;
               class?: string;
               style?: JSX.CSSProperties;
-              
+
               // Event handlers with proper signatures
               onSelect?: (id: string, event: MouseEvent) => void;
               onDeselect?: (id: string) => void;
@@ -165,13 +165,13 @@
               const screenPosition = (): Point => {
                 return transform.worldToScreen(props.position);
               };
-              
+
               // Type-safe event handlers
               const handleMouseDown = (e: MouseEvent): void => {
                 if (!props.isDraggable || !props.onSelect) return;
                 props.onSelect(props.id, e);
               };
-              
+
               return (
                 &lt;div
                   onMouseDown={handleMouseDown}
@@ -220,7 +220,7 @@
               const handleDragStart: DragStartHandler = (event, id) => {
                 const item = items.find(item => item.id === id);
                 if (!item) return;
-                
+
                 // Type-safe store update
                 const index = items.findIndex(item => item.id === id);
                 setItems(index, produce(item => {
@@ -231,7 +231,7 @@
               const handleDragMove: DragMoveHandler = (id, delta) => {
                 const index = items.findIndex(item => item.id === id);
                 if (index === -1) return;
-                
+
                 setItems(index, produce(item => {
                   item.position = {
                     x: item.position.x + delta.dx,
@@ -243,7 +243,7 @@
               const handleDragEnd: DragEndHandler = (id, finalPosition) => {
                 const index = items.findIndex(item => item.id === id);
                 if (index === -1) return;
-                
+
                 batch(() => {
                   setItems(index, produce(item => {
                     item.position = finalPosition;
@@ -275,7 +275,7 @@
             ): void => {
               const index = items.findIndex(item => item.id === id);
               if (index === -1) return;
-              
+
               setItems(index, produce(item => {
                 item[property] = value;
               }));
@@ -312,7 +312,7 @@
         <path-syntax-types>
           <code>
             // Type-safe path syntax for complex updates
-            type StorePath&lt;T&gt; = T extends object 
+            type StorePath&lt;T&gt; = T extends object
               ? { [K in keyof T]: [K] | [K, ...StorePath&lt;T[K]&gt;] }[keyof T]
               : never;
 
@@ -352,7 +352,7 @@
               const updateItemPosition = (id: string, position: Point): void => {
                 const index = items.findIndex((item: T) => item.id === id);
                 if (index === -1) return;
-                
+
                 setItems(index, produce((item: T) => {
                   item.position = position;
                 }));
@@ -544,7 +544,7 @@
               id: string;
               position: Point;
             }
-            
+
             // Usage
             setPhoto('position', { x: 10, y: 20 });
             const x = photo.position.x;
@@ -556,7 +556,7 @@
               id: string;
               position: Point3D; // Changed from Point to Point3D
             }
-            
+
             // All usages must be updated
             setPhoto('position', { x: 10, y: 20, z: 0 });
             const x = photo.position.x; // Still works if Point3D extends Point
@@ -742,11 +742,11 @@
           const loadPhotosFromAPI = async (): Promise&lt;PolaroidPhoto[]&gt; =&gt; {
             const response = await fetch('/api/photos');
             const data = await response.json();
-            
+
             if (!Array.isArray(data)) {
               throw new Error('Expected array of photos');
             }
-            
+
             return data.map(parsePolaroidPhoto);
           };
         </code>

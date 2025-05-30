@@ -16,6 +16,7 @@ import {
   setUserData,
   getPosts,
   setPosts,
+  setPhotoState,
   PhotoState,
   PostData,
 } from "~/utils/storage";
@@ -27,6 +28,7 @@ import { ErrorNotification } from "~/components/ErrorNotification";
 import { EmptyStateMessage } from "~/components/EmptyStateMessage";
 import { DownloadButton } from "~/components/DownloadButton";
 import { Polaroid } from "~/components/Polaroid";
+import { DropAnimation } from "~/components/DropAnimation";
 import DashboardNav from "~/components/DashboardNav";
 
 import { InfiniteCanvas } from "~/primitives/infiniteCanvas/InfiniteCanvas";
@@ -41,6 +43,7 @@ interface DashboardPhoto extends Omit<PolaroidPhoto, 'position'> {
   position: Point;
   type: "photo" | "menu";
   isRotatable?: boolean;
+  isExposed?: boolean;
 }
 
 interface DashboardState {
@@ -369,9 +372,10 @@ export default function Dashboard() {
               { x: storedState.x, y: storedState.y } : 
               { x, y },
             rotation: storedState?.rotation || (Math.random() * 40 - 20),
-            zIndex: storedState?.zIndex || (imagePosts.length - index),
+            zIndex: storedState?.zIndex || (index + 1),
             type: "photo" as const,
             isRotatable: true,
+            isExposed: storedState?.isExposed || false,
           };
         });
 
@@ -495,20 +499,29 @@ export default function Dashboard() {
                       visible={true}
                       isSelectable={true}
                     >
-                      <Polaroid
+                      <DropAnimation
                         id={photo.id}
-                        src={photo.src}
-                        caption={photo.caption}
-                        date={photo.date}
-                        position={{ x: 0, y: 0 }}
-                        rotation={0}
-                        zIndex={1}
-                        useRandomValues={true}
-                        captionStyle={photo.captionStyle}
-                        onMouseDown={() => {}}
-                        onTouchStart={() => {}}
-                        class={styles["background-polaroid"]}
-                      />
+                        isExposed={photo.isExposed}
+                        delay={((photo.zIndex || 1) - 1) * 50}
+                        onAnimationStart={() => {
+                          setPhotoState(photo.id, { isExposed: true }, getUserName());
+                        }}
+                      >
+                        <Polaroid
+                          id={photo.id}
+                          src={photo.src}
+                          caption={photo.caption}
+                          date={photo.date}
+                          position={{ x: 0, y: 0 }}
+                          rotation={0}
+                          zIndex={1}
+                          useRandomValues={true}
+                          captionStyle={photo.captionStyle}
+                          onMouseDown={() => {}}
+                          onTouchStart={() => {}}
+                          class="background-polaroid"
+                        />
+                      </DropAnimation>
                     </CanvasItem>
                   }
                 >

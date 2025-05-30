@@ -9,6 +9,7 @@ export interface PhotoState {
   y: number;
   rotation: number;
   zIndex: number;
+  isExposed?: boolean;
 }
 
 export interface CanvasState {
@@ -90,7 +91,7 @@ export function setPhotos(photos: Record<string, PhotoState>, username?: string)
 export function setPhotoPosition(photoId: string, x: number, y: number, username?: string): void {
   const photos = getPhotos(username);
   if (!photos[photoId]) {
-    photos[photoId] = { x, y, rotation: 0, zIndex: 1 };
+    photos[photoId] = { x, y, rotation: 0, zIndex: 1, isExposed: false };
   } else {
     photos[photoId].x = x;
     photos[photoId].y = y;
@@ -101,7 +102,7 @@ export function setPhotoPosition(photoId: string, x: number, y: number, username
 export function setPhotoState(photoId: string, state: Partial<PhotoState>, username?: string): void {
   const photos = getPhotos(username);
   if (!photos[photoId]) {
-    photos[photoId] = { x: 0, y: 0, rotation: 0, zIndex: 1 };
+    photos[photoId] = { x: 0, y: 0, rotation: 0, zIndex: 1, isExposed: false };
   }
   Object.assign(photos[photoId], state);
   setPhotos(photos, username);

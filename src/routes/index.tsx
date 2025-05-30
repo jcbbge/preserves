@@ -6,6 +6,7 @@ import { createStore } from "solid-js/store";
 import styles from "./index.module.css";
 import { PolaroidPhoto } from "~/types/polaroid";
 import { Polaroid } from "~/components/Polaroid";
+import { DropAnimation } from "~/components/DropAnimation";
 import { stockImages, predefinedPositions } from "~/data/stockImages";
 import LoginForm from "~/components/LoginForm";
 import { InfiniteCanvas } from "~/primitives/infiniteCanvas/InfiniteCanvas";
@@ -17,6 +18,7 @@ import {
   setPhotos,
   getCanvas,
   setCanvas,
+  setPhotoState,
   PhotoState
 } from "~/utils/storage";
 import { redirectIfAuthenticated } from "~/utils/authUtils";
@@ -195,19 +197,28 @@ export default function Home() {
                     visible={true}
                     isSelectable={true}
                   >
-                    <Polaroid
+                    <DropAnimation
                       id={photo.id}
-                      src={photo.src}
-                      caption={photo.caption}
-                      date={photo.date}
-                      position={{ x: 0, y: 0 }}
-                      rotation={0}
-                      zIndex={1}
-                      useRandomValues={true}
-                      onMouseDown={() => {}}
-                      onTouchStart={() => {}}
-                      class={styles["background-polaroid"]}
-                    />
+                      isExposed={getPhotos()[photo.id]?.isExposed}
+                      delay={((photo.zIndex || 1) - 1) * 50}
+                      onAnimationStart={() => {
+                        setPhotoState(photo.id, { isExposed: true });
+                      }}
+                    >
+                      <Polaroid
+                        id={photo.id}
+                        src={photo.src}
+                        caption={photo.caption}
+                        date={photo.date}
+                        position={{ x: 0, y: 0 }}
+                        rotation={0}
+                        zIndex={1}
+                        useRandomValues={true}
+                        onMouseDown={() => {}}
+                        onTouchStart={() => {}}
+                        class={styles["background-polaroid"]}
+                      />
+                    </DropAnimation>
                   </CanvasItem>
                 }
               >
