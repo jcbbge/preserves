@@ -44,3 +44,33 @@
 }
 
 /* No common polaroid styling needed - moved to LoginForm.module.css */
+
+.error-container {
+  padding: 20px;
+  text-align: center;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.corkboard {
+  position: relative;
+  overflow: hidden;
+}
+
+.canvas-container {
+  width: 100%;
+  height: 100%;
+}
+
+.background-polaroid {
+  cursor: grab;
+}
+
+.background-polaroid:active {
+  cursor: grabbing;
+}

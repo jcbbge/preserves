@@ -1,13 +1,13 @@
-import { useNavigate } from "@solidjs/router";
-import { onMount, For, Show, createSignal, batch } from "solid-js";
+import { useNavigate, createAsync } from "@solidjs/router";
+import { onMount, For, Show, createSignal, batch, createEffect, Suspense, ErrorBoundary } from "solid-js";
 import { usePeach } from "~/context/peach";
 import { Title } from "@solidjs/meta";
-import { createStore } from "solid-js/store";
+import { createStore, produce } from "solid-js/store";
 import styles from "./index.module.css";
 import { PolaroidPhoto } from "~/types/polaroid";
 import { Polaroid } from "~/components/Polaroid";
 import { DropAnimation } from "~/components/DropAnimation";
-import { stockImages, predefinedPositions } from "~/data/stockImages";
+import { getStaticCanvasData } from "~/lib/server/staticData";
 import LoginForm from "~/components/LoginForm";
 import { InfiniteCanvas } from "~/primitives/infiniteCanvas/InfiniteCanvas";
 import { CanvasItem } from "~/primitives/infiniteCanvas/CanvasItem";
@@ -21,8 +21,7 @@ import {
   setPhotoState,
   PhotoState
 } from "~/utils/storage";
-import { redirectIfAuthenticated } from "~/utils/authUtils";
-import { DEFAULT_POSITIONS, getViewportForLoginCenter } from "~/config/defaultPositions";
+import { getViewportForLoginCenter } from "~/config/defaultPositions";
 
 interface LoginPhoto extends Omit<PolaroidPhoto, 'position'> {
   position: Point;
@@ -38,6 +37,7 @@ export default function Home() {
   const navigate = useNavigate();
   const { isAuthenticated } = usePeach();
   const [corkboardRef, setCorkboardRef] = createSignal<HTMLDivElement>();
+  const staticData = createAsync(() => getStaticCanvasData());
   
   const [state, setState] = createStore<LoginState>({
     canvasWidth: 0,
@@ -73,15 +73,40 @@ export default function Home() {
     return found?.position || { x: 0, y: 0 };
   };
 
-  const initializeLogin = (): (() => void) | void => {
-    redirectIfAuthenticated(isAuthenticated, navigate);
-
+  // Initialize viewport dimensions on mount
+  onMount(() => {
     batch(() => {
       setState("canvasWidth", window.innerWidth);
       setState("canvasHeight", window.innerHeight);
     });
+  });
 
+  // Handle window resize events
+  createEffect(() => {
+    const handleResize = (): void => {
+      batch(() => {
+        setState("canvasWidth", window.innerWidth);
+        setState("canvasHeight", window.innerHeight);
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  });
+
+  // Initialize photos when static data is loaded
+  createEffect(() => {
+    const data = staticData();
+    console.log("[INDEX] Static data loaded:", data);
+    if (!data) return;
+
+    const { stockImages, predefinedPositions, defaultPositions } = data;
     const storedPhotos = getPhotos();
+    console.log("[INDEX] Stock images:", stockImages);
+    console.log("[INDEX] Stored photos:", storedPhotos);
     
     const photosWithPositions: LoginPhoto[] = stockImages.map((stockImage, index) => {
       const storedState = storedPhotos[stockImage.id];
@@ -100,7 +125,7 @@ export default function Home() {
     const menuItem: LoginPhoto = {
       id: "login-menu",
       type: "menu" as const,
-      position: DEFAULT_POSITIONS.loginComponent,
+      position: defaultPositions.loginComponent,
       zIndex: 10000,
       rotation: 0,
       src: "",
@@ -109,6 +134,7 @@ export default function Home() {
     };
 
     setPolaroidPhotos([menuItem, ...photosWithPositions]);
+    console.log("[INDEX] Polaroid photos set:", [menuItem, ...photosWithPositions]);
 
     if (Object.keys(storedPhotos).length === 0) {
       const initialPhotoStates: Record<string, PhotoState> = {};
@@ -125,53 +151,50 @@ export default function Home() {
       });
       setPhotos(initialPhotoStates);
     }
-
-    const handleResize = (): void => {
-      batch(() => {
-        setState("canvasWidth", window.innerWidth);
-        setState("canvasHeight", window.innerHeight);
-      });
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    const cleanup = (): void => {
-      window.removeEventListener("resize", handleResize);
-    };
-    return cleanup;
-  };
-
-  onMount(initializeLogin);
+  });
 
   return (
-    <div class={styles["peach-preserve"]}>
-      <Title>Peach Preserves</Title>
+    <ErrorBoundary fallback={(err) => (
+      <div class={styles["peach-preserve"]}>
+        <div class={styles["error-container"]}>
+          <h2>Something went wrong loading the page</h2>
+          <p>Please refresh and try again.</p>
+        </div>
+      </div>
+    )}>
+      <div class={styles["peach-preserve"]}>
+        <Title>Peach Preserves</Title>
 
-      <div
-        ref={setCorkboardRef}
-        class={styles.corkboard}
-        style={{
-          width: `${state.canvasWidth}px`,
-          height: `${state.canvasHeight}px`,
-        }}
-      >
-        <InfiniteCanvas
-          showGrid={false}
-          storageKey={`peach_guest_canvas`}
-          initialViewport={
-            getCanvas() ? 
-            { position: { x: getCanvas()!.x, y: getCanvas()!.y }, scale: getCanvas()!.scale } :
-            getViewportForLoginCenter(window.innerWidth, window.innerHeight)
-          }
-          className={styles["canvas-container"]}
-          onViewportChange={handleViewportChange}
-          focalPointId="login-menu"
-          onGetItemPosition={getItemPosition}
-          panMode="spacebar"
-          minScale={0.1}
-          maxScale={5}
-          backgroundColor="#f5f2e8"
+        <div
+          ref={setCorkboardRef}
+          class={styles.corkboard}
+          style={{
+            width: `${state.canvasWidth}px`,
+            height: `${state.canvasHeight}px`,
+          }}
         >
+          <Suspense fallback={
+            <div class={styles["loading-container"]}>
+              <div>Loading...</div>
+            </div>
+          }>
+            <InfiniteCanvas
+              showGrid={false}
+              storageKey={`peach_guest_canvas`}
+              initialViewport={
+                getCanvas() ? 
+                { position: { x: getCanvas()!.x, y: getCanvas()!.y }, scale: getCanvas()!.scale } :
+                getViewportForLoginCenter(window.innerWidth, window.innerHeight)
+              }
+              className={styles["canvas-container"]}
+              onViewportChange={handleViewportChange}
+              focalPointId="login-menu"
+              onGetItemPosition={getItemPosition}
+              panMode="spacebar"
+              minScale={0.1}
+              maxScale={5}
+              backgroundColor="#f5f2e8"
+            >
           <For each={polaroidPhotos}>
             {(photo) => (
               <Show
@@ -202,6 +225,7 @@ export default function Home() {
                       isExposed={getPhotos()[photo.id]?.isExposed}
                       delay={((photo.zIndex || 1) - 1) * 50}
                       onAnimationStart={() => {
+                        console.log("[INDEX] Animation started for:", photo.id);
                         setPhotoState(photo.id, { isExposed: true });
                       }}
                     >
@@ -243,8 +267,10 @@ export default function Home() {
               </Show>
             )}
           </For>
-        </InfiniteCanvas>
+            </InfiniteCanvas>
+          </Suspense>
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }

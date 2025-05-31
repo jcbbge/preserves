@@ -1,4 +1,4 @@
-import { createSignal, onMount, createEffect, For, Show, batch } from "solid-js";
+import { createSignal, onMount, createEffect, For, Show, batch, Suspense, ErrorBoundary } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Title } from "@solidjs/meta";
 import { useNavigate } from "@solidjs/router";
@@ -151,7 +151,6 @@ export default function Dashboard() {
             setState("cursor", response.data.data.cursor);
           });
 
-          console.log(`[DASHBOARD] Filtered posts:`, filteredPosts);
           setPosts(filteredPosts, user.data.username);
         }
       } else {
@@ -230,14 +229,12 @@ export default function Dashboard() {
     });
 
     const storedPosts = getPosts(getUserName());
-    console.log(`[DASHBOARD] Stored posts for ${getUserName()}:`, storedPosts);
     batch(() => {
       setState("posts", storedPosts);
       setState("cursor", null);
     });
 
     if (storedPosts.length === 0) {
-      console.log(`[DASHBOARD] No stored posts, loading from API...`);
       loadPosts();
     }
 
@@ -268,11 +265,9 @@ export default function Dashboard() {
 
   createEffect(() => {
     const currentPosts = state.posts;
-    console.log(`[DASHBOARD] createEffect triggered with posts:`, currentPosts);
 
     if (currentPosts.length > 0) {
       const imagePosts = currentPosts;
-      console.log(`[DASHBOARD] Image posts found:`, imagePosts.length);
 
       const storedPhotos = getPhotos(getUserName());
       
