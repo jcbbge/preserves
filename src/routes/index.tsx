@@ -100,13 +100,10 @@ export default function Home() {
   // Initialize photos when static data is loaded
   createEffect(() => {
     const data = staticData();
-    console.log("[INDEX] Static data loaded:", data);
     if (!data) return;
 
     const { stockImages, predefinedPositions, defaultPositions } = data;
     const storedPhotos = getPhotos();
-    console.log("[INDEX] Stock images:", stockImages);
-    console.log("[INDEX] Stored photos:", storedPhotos);
     
     const photosWithPositions: LoginPhoto[] = stockImages.map((stockImage, index) => {
       const storedState = storedPhotos[stockImage.id];
@@ -134,7 +131,6 @@ export default function Home() {
     };
 
     setPolaroidPhotos([menuItem, ...photosWithPositions]);
-    console.log("[INDEX] Polaroid photos set:", [menuItem, ...photosWithPositions]);
 
     if (Object.keys(storedPhotos).length === 0) {
       const initialPhotoStates: Record<string, PhotoState> = {};
@@ -225,7 +221,6 @@ export default function Home() {
                       isExposed={getPhotos()[photo.id]?.isExposed}
                       delay={((photo.zIndex || 1) - 1) * 50}
                       onAnimationStart={() => {
-                        console.log("[INDEX] Animation started for:", photo.id);
                         setPhotoState(photo.id, { isExposed: true });
                       }}
                     >

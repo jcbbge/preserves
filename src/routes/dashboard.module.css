@@ -145,6 +145,20 @@
     }
 }
 
+/* Error container */
+.error-container {
+    padding: 20px;
+    text-align: center;
+}
+
+/* Loading container */
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
 /* Responsive styles */
 @media (max-width: 768px) {
     .header {

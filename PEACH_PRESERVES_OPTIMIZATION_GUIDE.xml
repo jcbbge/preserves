@@ -1,0 +1,49 @@
+      <example>
+        <code>
+          // Before: Effect without cleanup
+          createEffect(() => {
+            window.addEventListener("resize", handleResize);
+          });
+
+          // After: Effect with cleanup
+          createEffect(() => {
+            window.addEventListener("resize", handleResize);
+            return () => {
+              window.removeEventListener("resize", handleResize);
+            };
+          });
+        </code>
+      </example>
+    </step>
+
+    <step>
+      <title>5. Logging Improvements</title>
+      <description>Replace console.log with structured logging</description>
+      <tasks>
+        <task>Create logger utility</task>
+        <task>Replace all console.log calls</task>
+        <task>Add log levels</task>
+      </tasks>
+      <example>
+        <code>
+          // Before: Direct console logging
+          console.log("Data loaded:", data);
+
+          // After: Structured logging
+          logger.debug("Data loaded:", data);
+        </code>
+      </example>
+    </step>
+  </migration-guide>
+
+  <credits>
+    <author>Peach Preserves Team</author>
+    <contributors>
+      <contributor>jcbbge</contributor>
+      <contributor>Augment AI</contributor>
+    </contributors>
+    <version>1.0.0</version>
+    <date>2025-01-15</date>
+    <license>MIT</license>
+  </credits>
+</solidjs-optimization-guide>
