@@ -143,6 +143,7 @@ export default function LoginForm(props: LoginFormProps = {}) {
                 placeholder="email / username"
                 required
                 disabled={loading()}
+                autocomplete="off"
                 class={styles["handwritten-input"]}
               />
               <input
@@ -152,6 +153,7 @@ export default function LoginForm(props: LoginFormProps = {}) {
                 placeholder="password"
                 required
                 disabled={loading()}
+                autocomplete="new-password"
                 class={styles["handwritten-input"]}
               />
             </div>

@@ -1,226 +1,713 @@
-Project Configuration
-Project Type: web-app
-Framework: SolidStart with Vinxi
-Task Tracking: tasks.md and features.md
-Docs Location: docs/
-Development Commands
+# PEACH PRESERVES
 
-npm run dev - Start development server on port 3000 with strict port enforcement
-npm run build - Build the application for production
-npm run start - Start production server (kills existing processes on ports 3000/3001 first)
+## CRITICAL WORKFLOW ENFORCEMENT
 
-Core Workflow Rules
-Task-Driven Development
+### CODE CONSERVATIONIST PRINCIPLES
+```
+CORE_DIRECTIVE: Use existing architecture, files, and patterns
+FORBIDDEN_ACTIONS:
+- Creating new files unless ABSOLUTELY necessary
+- Refactoring working code
+- Adding new dependencies
+- Changing existing file structure
+- Creating "helper" or "utility" files
+- Adding new abstractions or layers
 
-NEVER make code changes without an explicitly defined task
-Every conversation about code changes must start by identifying the task ID
-If no task exists, stop and ask the user to create one first
-Tasks must be documented in tasks.md before implementation begins
+REQUIRED_ACTIONS:
+- Work within existing files
+- Use existing patterns and conventions
+- Clean up after modifications
+- Remove dead code during changes
+- Consolidate rather than expand
+```
 
-One Thing at a Time Rule
+### MANDATORY PRE-EXECUTION CHECKS
+```
+BEFORE ANY CODE CHANGES:
+1. VALIDATE: Active task exists in tasks.md with status "Doing"
+2. VALIDATE: Only ONE task has status "Doing"
+3. VALIDATE: Current request matches active task scope
+4. VALIDATE: Changes use existing files and patterns
+5. VALIDATE: No new files/abstractions being created
+6. IF NO ACTIVE TASK → HALT → REQUEST TASK CREATION
+7. IF SCOPE MISMATCH → HALT → SUGGEST NEW TASK
+8. IF NEW FILES PROPOSED → HALT → JUSTIFY OR REFUSE
+```
 
-Only ONE task can have status "Doing" at any time
-Before starting a new task, verify no other task is "Doing"
-If switching tasks, move current task back to "Todo" with notes
+### TASK STATE MACHINE
+```
+STATES: Todo → Doing → Review → Done
+TRANSITIONS:
+- Todo→Doing: ONLY if no other task is "Doing"
+- Doing→Review: All requirements met + user approval needed
+- Doing→Todo: Task switching or scope change
+- Review→Done: User approval received
+- Review→Doing: Changes requested
 
-Change Management Protocol
+INVARIANT: MAX 1 task in "Doing" state at any time
+```
 
-Start every code conversation with: "What task should I work on?" or "Which task is this for?"
-Before any implementation: Confirm task ID, scope, and files to be modified
-No scope creep: If user requests changes outside current task scope, suggest creating a new task
-Document everything: Update task status and notes as work progresses
+## PROJECT CONFIGURATION CONSTANTS
 
-Task Documentation Format
-Task List (tasks.md)
-markdown| ID | Task | Status | Feature | Description |
+```yaml
+PROJECT_TYPE: "web-app"
+FRAMEWORK: "SolidStart with Vinxi"
+DEV_PORT: 3000
+TASK_FILE: "tasks.md"
+FEATURES_FILE: "features.md"
+DOCS_DIR: "docs/"
+
+COMMANDS:
+  dev: "npm run dev"
+  build: "npm run build"
+  start: "npm run start"
+```
+
+## COMMUNICATION PROTOCOL
+
+### CONVERSATION INITIATION
+```
+REQUIRED_OPENING_QUERIES:
+- "What task should I work on?"
+- "Which task is this for?"
+- "What is the current active task?"
+
+NEVER_START_WITH:
+- Code implementation
+- File modifications
+- Architecture discussions
+```
+
+### RESPONSE PATTERNS
+```
+SCOPE_CREEP_TRIGGERS: [
+  "while we're here",
+  "let's also",
+  "quick improvement",
+  "can we also",
+  "this would be better"
+]
+
+SCOPE_CREEP_RESPONSE: "That requires a new task. Create T{X}: {description}?"
+
+FORBIDDEN_PHRASES: [
+  "that's a great question",
+  "excellent point",
+  "fascinating",
+  "let me think about this"
+]
+```
+
+## TASK DOCUMENTATION SCHEMA
+
+### tasks.md FORMAT
+```
+| ID | Task | Status | Feature | Description |
 |----|------|--------|---------|-------------|
-| T1 | Fix canvas drag performance | Doing | F1 | Optimize draggable primitive for large datasets |
-| T2 | Add export progress bar | Todo | F2 | Show download progress with better UX |
-Task Statuses
+| T{N} | {action_verb} {target} | {state} | F{N} | {specific_outcome} |
 
-Todo: Ready to work on
-Doing: Currently in progress (ONLY ONE AT A TIME)
-Review: Implementation done, needs user review
-Done: Complete and approved
+STATUS_VALUES: ["Todo", "Doing", "Review", "Done"]
+```
 
-Individual Task Files (docs/tasks/T{ID}.md)
-For complex tasks, create detailed documentation:
-markdown# Task T1: Fix canvas drag performance
+### TASK VALIDATION RULES
+```
+VALID_TASK_IF:
+- ID follows T{number} pattern
+- Status is one of 4 valid values
+- Description is specific and measurable
+- Feature link exists in features.md
+- Files to modify are listed
 
-## Goal
-Optimize infinite canvas dragging for large numbers of polaroids
+INVALID_TASK_IF:
+- Vague descriptions ("improve", "optimize", "enhance")
+- No specific completion criteria
+- Cross-cutting concerns spanning multiple features
+```
 
-## Requirements
-- Smooth 60fps dragging with 100+ items
-- Maintain position persistence
-- No memory leaks
+## CODE MODIFICATION PROTOCOL
 
-## Files to Modify
-- `src/primitives/infiniteCanvas/createDraggable.ts`
-- `src/components/Polaroid.tsx`
-- `src/context/peach.tsx`
+### FILE MODIFICATION CONSTRAINTS
+```
+EXISTING_FILES_ONLY: Modify existing files, never create new ones
+SURGICAL_CHANGES: Minimal edits to achieve task requirements
+NO_REFACTORING: Do not modify working code outside task scope
+CLEANUP_DUTY: Remove dead code encountered during legitimate changes
 
-## Implementation Notes
-- Use requestAnimationFrame for smooth updates
-- Batch localStorage writes
-- Consider virtualization for off-screen items
+FILE_CREATION_RULES:
+- NEW FILE CREATION: Forbidden unless CRITICAL system requirement
+- JUSTIFICATION_REQUIRED: Must prove no existing file can accommodate change
+- APPROVAL_NEEDED: User must explicitly approve new file creation
+- RESEARCH_DOCS: Only exception - library research in docs/research/
+```
 
-## Done When
-- [ ] Dragging stays smooth with 100+ polaroids
-- [ ] No performance regression
-- [ ] Position persistence works
-- [ ] Manual testing passes
-Project Architecture
-This is a SolidStart application for archiving and visualizing Peach social media data. The app uses an infinite canvas interface where photos are displayed as interactive polaroids.
-Core Architecture Patterns
-Context-based State Management:
+### ARCHITECTURE PRESERVATION
+```
+USE_EXISTING_PATTERNS:
+- Follow established component patterns
+- Use existing state management approaches
+- Leverage current primitive implementations
+- Work within established file organization
 
-PeachProvider (src/context/peach.tsx) - Handles authentication, user sessions, and token management
-ExportProvider (src/context/export.tsx) - Manages data export/download operations with progress tracking
-All state uses SolidJS stores with localStorage persistence via src/utils/storage.ts
+FORBIDDEN_MODIFICATIONS:
+- Changing file structure or organization
+- Creating new abstraction layers
+- Splitting existing files
+- Moving code between files
+- Renaming existing files or directories
+```
 
-Infinite Canvas System:
+### PRE-MODIFICATION CHECKLIST
+```
+REQUIRED_CONFIRMATIONS:
+1. Task ID confirmed
+2. Files to modify listed and approved (EXISTING FILES ONLY)
+3. Scope boundaries defined (NO REFACTORING)
+4. Completion criteria agreed
+5. Changes work within existing architecture
 
-InfiniteCanvas (src/primitives/infiniteCanvas/) - Core zoomable/pannable canvas with viewport persistence
-CanvasItem - Wrapper for draggable items with position/rotation/z-index management
-createDraggable primitive handles drag interactions with automatic state persistence
-Canvas state is persisted per-user in localStorage with keys like peach_${username}_canvas
+HALT_CONDITIONS:
+- No task ID provided
+- New file creation proposed
+- Refactoring of working code suggested
+- Files not pre-approved
+- Scope unclear or expanding
+- Magic numbers/strings being added
+```
 
-Component Architecture:
+### TECHNICAL CONSTRAINTS
+```
+FORBIDDEN_PATTERNS:
+- Magic numbers/strings (define constants in existing config files)
+- SSR-unsafe client code without isServer checks
+- Unbatched state updates in canvas operations
+- localStorage operations without error handling
+- New dependencies without research docs
+- New file creation for "organization" or "cleanliness"
+- Refactoring working code outside task scope
+- Creating new utility functions in separate files
+- Splitting existing components or modules
 
-Routes: index.tsx (login with stock photos), dashboard.tsx (user's photos after auth)
-Polaroid System: Photos are rendered as Polaroid components with realistic styling, random rotations, and optional captions/dates
-Drop Animation: DropAnimation component provides staggered reveal effects for polaroids
-Data Download: Complete export system in src/lib/api/download/ with pagination, media handling, and ZIP creation
+REQUIRED_PATTERNS:
+- Named constants for repeated values (in existing config)
+- SolidJS stores for complex state (existing patterns)
+- RAF for canvas animations (existing implementation)
+- Batched localStorage writes (existing utils)
+- Error boundaries for async operations (existing patterns)
+- Work within existing component architecture
+- Use established primitive patterns
+- Leverage existing utility functions
+```
 
-Key Technical Details
-Authentication Flow:
+## FILE SYSTEM STRUCTURE
+```
+src/
+├── components/         # UI components
+├── primitives/         # Reusable primitives
+├── context/           # Global state providers
+├── utils/             # Utility functions
+├── lib/api/           # API client modules
+├── types/             # TypeScript definitions
+├── config/            # Configuration constants
+├── routes/            # SolidStart routes
+└── middleware/        # Server middleware
 
-Login via token + user data → stored in localStorage per username
-Server middleware (src/middleware/authMiddleware.ts) validates requests
-Cookie-based session management with 30-day expiration
+docs/
+├── tasks/             # Individual task files
+├── research/          # Library research docs
+└── architecture/      # System documentation
+```
 
-Data Persistence:
+## DECISION TREES
 
-Photos, canvas state, and user data stored separately per username in localStorage
-Photo positions/rotations persist across sessions
-Canvas viewport (pan/zoom) state persists across sessions
+### LIBRARY ADDITION WORKFLOW
+```
+DEFAULT_RESPONSE: "Use existing dependencies"
 
-Media Handling:
+IF new_library_absolutely_required:
+  1. JUSTIFY: Why existing libraries cannot solve the problem
+  2. RESEARCH: Create docs/research/T{ID}-{library}-guide.md (ONLY exception to file creation rule)
+  3. VALIDATE: Compatibility with existing SolidStart/Vinxi setup
+  4. DOCUMENT: Installation and integration within existing patterns
+  5. GET_APPROVAL: User must explicitly approve addition
+  ELSE:
+    RESPONSE: "This can be solved with existing dependencies: {list_existing_options}"
+    ACTION: Refuse new library addition
+```
 
-Proxy endpoint (src/routes/api/media-proxy.ts) for serving external images
-Download system supports full data export with media files in ZIP format
-Stock images for login page stored in public/login_images/
+### PERFORMANCE VALIDATION
+```
+IF canvas_related_changes:
+  MUST_VALIDATE:
+  - Smooth 60fps with 100+ polaroids
+  - No memory leaks in drag operations
+  - RequestAnimationFrame usage
+  - Batched DOM updates
+  ELSE: standard performance checks
+```
 
-File Organization
+### COMMIT MESSAGE GENERATION
+```
+FORMAT: "T{ID}: {action_verb} {specific_change}"
+EXAMPLES:
+- "T1: Optimize canvas dragging performance"
+- "T5: Add export progress indicators"
+- "T12: Fix responsive layout breakpoints"
 
-src/components/ - Reusable UI components (LoginForm, Polaroid, modals, etc.)
-src/primitives/ - Low-level reusable primitives (canvas, dragging, etc.)
-src/context/ - SolidJS context providers for global state
-src/utils/ - Utility functions (storage, auth, error handling)
-src/lib/api/ - API client code, especially download/export functionality
-src/types/ - TypeScript type definitions
-src/config/ - Configuration (default positions, etc.)
+FORBIDDEN:
+- Generic messages ("fix bug", "improve code")
+- Multiple concerns in one commit
+- Messages without task ID
+```
 
-Library Research Protocol
-Before using ANY new library/package:
+## ERROR HANDLING PROTOCOLS
 
-Research first: Use web search to understand the library's current API
-Create research doc: docs/research/T{ID}-{library}-guide.md
-Include: Installation, basic usage, key APIs, working examples
-Date stamp: Include research date and link to official docs
-No hallucinations: Only use confirmed, documented APIs
+### SCOPE VIOLATIONS
+```
+IF request_outside_task_scope:
+  RESPONSE: "This requires new task T{next_id}: {description}. Should I create it?"
+  ACTION: HALT current work
+  WAIT_FOR: User approval for new task
 
-Current Key Dependencies
+IF no_active_task:
+  RESPONSE: "No active task found. Please specify task ID or create new task."
+  ACTION: REFUSE to proceed
+  WAIT_FOR: Task identification/creation
+```
 
-@solidjs/start - SolidStart framework (SSR-aware)
-@thisbeyond/solid-dnd - Drag and drop functionality
-@solid-primitives/bounds - Element bounds detection
-@solid-primitives/event-listener - Event handling primitives
-jszip - ZIP file creation for exports
-axios - HTTP client for API calls
+### VALIDATION FAILURES
+```
+IF magic_numbers_detected:
+  ACTION: Define named constant in existing config file
+  LOCATION: src/config/ (use existing constants file)
+  FORBIDDEN: Creating new constants file
 
-Code Quality Rules
-Constants and Values
+IF ssr_violation_detected:
+  ACTION: Add isServer check using existing import pattern
+  PATTERN: import { isServer } from "solid-js/web"
+  LOCATION: Within existing component/utility
 
-NO magic numbers or strings - define named constants for any repeated values
-Example: const MAX_POLAROIDS_PER_VIEW = 50 instead of hardcoded 50
-Example: const CANVAS_ZOOM_SENSITIVITY = 0.1 instead of hardcoded values
+IF unbatched_updates_detected:
+  ACTION: Implement batch() wrapper using existing pattern
+  PATTERN: import { batch } from "solid-js"
+  LOCATION: Within existing state management
 
-SolidJS Specific Rules
+IF architectural_violation_detected:
+  ACTION: Halt and explain why existing pattern should be used
+  RESPONSE: "This should use existing {pattern_name} in {file_location}"
+```
 
-Be mindful of SSR - use isServer checks for client-only code
-Batch state updates for performance (especially canvas operations)
-Use SolidJS stores for complex state, not just signals
-Canvas coordinate handling - be careful with viewport transformations
-Font loading is render-blocking to prevent FOUT (see app.css)
+## QUALITY GATES
 
-File Modifications
+### BEFORE STATUS: Review
+```
+CHECKLIST:
+□ All task requirements completed
+□ No magic numbers/strings introduced
+□ Files match task documentation
+□ SolidJS patterns followed
+□ Performance validated (if canvas-related)
+□ Manual testing completed
+□ No SSR/hydration issues
+□ Error handling implemented
 
-Always list files to be modified before starting implementation
-Ask permission for any file modifications not explicitly discussed
-DO NOT TOUCH UNRELATED CODE unless specifically requested
+VALIDATION_COMMAND: Run through each item before marking Review
+```
 
-Important Project Notes
+### ARCHITECTURE VALIDATION
+```
+COMPONENT_RULES:
+- UI components in src/components/
+- Reusable logic in src/primitives/
+- Global state in src/context/
+- API calls in src/lib/api/
 
-Uses Vinxi/SolidStart with SSR - be mindful of client-only code
-Canvas interactions require careful coordinate system handling
-All drag/drop state changes should batch updates for performance
-Export progress uses structured state management with proper error handling
-DO NOT OVERCOMPLICATE SHIT. GET SHIT DONE. AND GET OUT.
-NO YAPPING - be direct and actionable
+STATE_MANAGEMENT:
+- Simple state: createSignal()
+- Complex state: createStore()
+- Global state: Context providers
+- Persistence: src/utils/storage.ts
+```
 
-Commit Message Format
-Use format: T{ID}: {clear description}
-Examples:
+## DEPENDENCY CONSTRAINTS
 
-T1: Optimize canvas dragging for 100+ polaroids
-T5: Add export progress indicators to download modal
-T12: Fix responsive polaroid layout on mobile
+### APPROVED_LIBRARIES
+```yaml
+framework: "@solidjs/start"
+drag_drop: "@thisbeyond/solid-dnd"
+primitives:
+  - "@solid-primitives/bounds"
+  - "@solid-primitives/event-listener"
+file_handling: "jszip"
+http_client: "axios"
+```
 
-User Communication Style
-DO:
+### RESEARCH_REQUIRED_FOR
+```
+- Any library not in approved list
+- Version upgrades of existing libraries
+- Alternative implementations
+- Performance-critical dependencies
+```
 
-Be direct and actionable
-Ask clarifying questions about scope
-Suggest breaking large requests into multiple tasks
-Confirm understanding before implementing
+## LLM SELF-VALIDATION SYSTEMS
 
-DON'T:
+### RESPONSE_VALIDATION_CHECKLIST
+```yaml
+# Run before every response
+PRE_RESPONSE_CHECKS:
+  - "Did I identify the active task ID?"
+  - "Did I list only existing files to modify?"
+  - "Did I refuse any new file creation?"
+  - "Did I avoid scope creep language?"
+  - "Did I use imperative, not explanatory tone?"
+  - "Is this response actionable and direct?"
+  - "Would following this response violate core rules?"
 
-Start work without task confirmation
-Add "improvements" not requested
-Over-engineer solutions
-Make assumptions about requirements
-Yap unnecessarily
+MANDATORY_HALT_IF:
+  - No active task identified
+  - New file creation suggested
+  - Scope creep detected
+  - Refactoring proposed
+  - Vague language used
+```
 
-Quality Gates
-Before Marking Task as "Review"
+### CONVERSATION_STATE_TRACKING
+```yaml
+# Maintain throughout conversation
+CURRENT_STATE:
+  active_task: null | "T{ID}"
+  task_scope: "specific description"
+  files_identified: []
+  scope_confirmed: boolean
+  user_approval_pending: []
+  changes_made: []
+  conversation_turn: 0
 
- All stated requirements met
- No magic numbers/strings introduced
- Files listed in task documentation
- Code follows existing SolidJS patterns
- Canvas performance tested (if relevant)
- Manual testing completed
- No SSR/client hydration issues
+UPDATE_STATE_EVERY_RESPONSE: true
+RESET_STATE_IF: new_task_started OR conversation_ends
+```
 
-Performance Considerations
+### PATTERN_MATCHING_VIOLATIONS
+```yaml
+# Auto-detect these patterns and halt
+SCOPE_CREEP_PATTERNS:
+  - /(?:while we're here|let's also|quick improvement|can we also)/i
+  - /(?:this would be better|we should also|might as well)/i
 
-Canvas operations must stay smooth with 100+ items
-localStorage writes should be batched/debounced
-Image loading should not block UI
-Export operations must show progress
-Drag operations must use RAF for smoothness
+NEW_FILE_PATTERNS:
+  - /(?:create new|new file|separate file|new component)/i
+  - /(?:split this|extract to|move to new)/i
 
-Scope Creep Prevention
-Common triggers to STOP and create new tasks:
+REFACTORING_PATTERNS:
+  - /(?:refactor|restructure|reorganize|clean up)/i
+  - /(?:improve this|make this better|optimize this)/i
 
-"While we're here, let's also..."
-"This would be better if we..."
-"Quick improvement to..."
-"Can we also add..."
+VAGUE_LANGUAGE_PATTERNS:
+  - /(?:improve|enhance|optimize|better)(?!\s+specific)/i
+  - /(?:fix|update|modify)(?!\s+specific)/i
 
-Response: "That sounds like a separate task. Should I create T{X}: {description} for that?"
+ACTION_ON_MATCH: HALT + reference_specific_rule
+```
 
-Remember: Keep it lean, stay focused, get shit done. This app helps people preserve their Peach memories - ship fast and ship quality.
+### EXACT_RESPONSE_TEMPLATES
+```yaml
+REQUIRED_PHRASES:
+  no_active_task: "No active task found. Current tasks.md status needed. Which task should I work on?"
+  scope_creep_detected: "This requires new task T{next}: {description}. Should I create it?"
+  file_creation_refused: "This needs new files. Current architecture can handle this in {existing_file}."
+  ready_to_proceed: "Task T{ID} confirmed. Modifying: {files}. Proceeding with: {specific_changes}."
+  refactoring_refused: "This would refactor working code. Task scope is: {current_scope}."
+  task_complete: "Task T{ID} ready for Review. Requirements completed: {list}."
+
+FORBIDDEN_PHRASES:
+  - "That's a great question"
+  - "Let me think about this"
+  - "We could improve"
+  - "While we're at it"
+  - "This might be better"
+
+CONVERSATION_OPENERS:
+  - "What task should I work on?"
+  - "Which task is this for?"
+  - "What is the current active task?"
+```
+
+### DECISION_TREE_EXECUTION
+```python
+# Executable logic for every request
+def process_user_request(request):
+    if not conversation_state.active_task:
+        return HALT("No active task found. Which task should I work on?")
+
+    if matches_scope_creep_patterns(request):
+        return HALT(f"Scope creep detected. Current task: {active_task.scope}")
+
+    if matches_new_file_patterns(request):
+        return HALT("New file creation prohibited. Use existing architecture.")
+
+    if matches_refactoring_patterns(request):
+        return HALT("Refactoring working code prohibited. Surgical changes only.")
+
+    if not files_approved_for_modification(request):
+        return HALT("Files to modify must be pre-approved existing files only.")
+
+    return PROCEED_WITH_VALIDATION()
+
+# Run this logic before every substantive response
+```
+
+### AUTO_VALIDATION_TRIGGERS
+```yaml
+# Automatic checkpoints requiring validation
+VALIDATION_POINTS:
+  - before_listing_files_to_modify: true
+  - before_suggesting_implementation: true
+  - before_marking_task_review: true
+  - after_user_correction: true
+  - every_n_messages: 5
+  - on_conversation_restart: true
+
+VALIDATION_ACTIONS:
+  - Confirm active task status
+  - Verify file modification scope
+  - Check for scope creep
+  - Validate against core principles
+  - Update conversation state
+```
+
+### CONTEXT_COMPRESSION_RULES
+```yaml
+# Maintain efficiency in long conversations
+MEMORY_MANAGEMENT:
+  summarize_every: 10_messages
+
+  retain_permanently:
+    - Active task ID and scope
+    - Files approved for modification
+    - Task completion criteria
+    - User preferences explicitly stated
+    - Code conservationist violations to avoid
+
+  compress_or_forget:
+    - Implementation details of completed tasks
+    - Explanatory conversations
+    - Off-topic discussions
+    - Resolved scope questions
+    - Historical task status updates
+
+CONVERSATION_RESTART_TRIGGERS:
+  - Task marked as Done
+  - New active task selected
+  - Major scope changes approved
+```
+
+### ERROR_RECOVERY_PROTOCOLS
+```yaml
+MISTAKE_RECOVERY:
+  if_user_corrects_me:
+    1. "Acknowledged: [specific error]"
+    2. Update conversation_state
+    3. Re-validate current approach against rules
+    4. "Corrected approach: [new approach]"
+    5. Request confirmation before proceeding
+
+  if_i_suggest_prohibited_action:
+    1. "Retracting: [prohibited action]"
+    2. "Rule violated: [specific rule reference]"
+    3. "Compliant alternative: [alternative approach]"
+    4. "Proceeding with: [corrected approach]?"
+
+  if_scope_creep_detected:
+    1. "Scope boundary exceeded"
+    2. "Current task scope: [scope definition]"
+    3. "Suggested new task: T{next}: [out of scope item]"
+    4. "Should I create this new task?"
+```
+
+### PRIORITY_HIERARCHY
+```yaml
+# Clear ranking when rules conflict
+PRIORITY_ORDER:
+  1. TASK_VALIDATION: Must have active task with "Doing" status
+  2. CODE_CONSERVATIONIST: No new files, no refactoring working code
+  3. SCOPE_BOUNDARIES: Stay within current task definition
+  4. TECHNICAL_CONSTRAINTS: Follow existing patterns and architecture
+  5. COMMUNICATION_STYLE: Be direct, actionable, no fluff
+
+CONFLICT_RESOLUTION:
+  if_rules_conflict: Follow higher priority rule
+  if_user_requests_violation: Explain rule and suggest compliant alternative
+  if_ambiguous: Choose most conservative interpretation
+```
+
+## BEHAVIORAL DIRECTIVES
+
+### COMMUNICATION_STYLE
+```
+BE: Direct, actionable, concise
+ASK: Clarifying questions about scope
+SUGGEST: Breaking large requests into tasks
+CONFIRM: Understanding before implementing
+
+NEVER:
+- Start work without task confirmation
+- Add unrequested improvements
+- Over-engineer solutions
+- Make assumptions about requirements
+- Provide lengthy explanations without action
+```
+
+### EXECUTION_PRIORITY
+```
+1. Validate active task status
+2. Confirm scope boundaries (NO REFACTORING)
+3. List existing files to be modified (NO NEW FILES)
+4. Implement minimal viable solution within existing architecture
+5. Clean up any dead code encountered during legitimate changes
+6. Update task status and documentation
+7. Request user review
+
+CONSERVATIONIST_MINDSET:
+- Tread lightly in existing codebase
+- Make surgical, precise changes only
+- Use what's already there
+- Clean up after yourself
+- Preserve working systems
+- Avoid complexity creep
+```
+
+## Application Architecture
+
+```mermaid
+graph TB
+    subgraph "Client Application"
+        subgraph "Routes"
+            Index["/index.tsx<br/>Login Route"]
+            Dashboard["/dashboard.tsx<br/>Protected Route"]
+            API_Routes["API Routes<br/>- /api/stream.ts<br/>- /api/media-proxy.ts"]
+        end
+
+        subgraph "Global Context Providers"
+            PeachCtx["PeachProvider<br/>- Authentication<br/>- User state<br/>- Token management"]
+            ExportCtx["ExportProvider<br/>- Export progress<br/>- Download state<br/>- Error handling"]
+        end
+
+        subgraph "Core UI Components"
+            LoginForm["LoginForm<br/>- Token submission<br/>- API validation"]
+            DashboardNav["DashboardNav<br/>- Export controls<br/>- User actions"]
+            Polaroid["Polaroid<br/>- Photo display<br/>- Captions/dates<br/>- Visual styling"]
+            Modals["Modal Components<br/>- Progress tracking<br/>- Error display<br/>- Success states"]
+        end
+
+        subgraph "Canvas System"
+            InfiniteCanvas["InfiniteCanvas<br/>- Pan/zoom viewport<br/>- Touch/mouse events<br/>- Persistence"]
+            CanvasItem["CanvasItem<br/>- Position wrapper<br/>- Z-index management<br/>- Selection state"]
+            DropAnimation["DropAnimation<br/>- Staggered reveals<br/>- Exposure effects"]
+        end
+
+        subgraph "Interaction Primitives"
+            Draggable["createDraggable<br/>- Drag state<br/>- Position updates<br/>- Storage sync"]
+            InteractionMgr["InteractionManager<br/>- Event coordination<br/>- Priority handling"]
+            TransformCtx["TransformContext<br/>- Coordinate conversion<br/>- Screen ↔ World"]
+        end
+
+        subgraph "Data Layer"
+            Storage["storage.ts<br/>- localStorage API<br/>- Per-user data<br/>- Canvas state"]
+            DownloadAPI["download/ module<br/>- API client<br/>- ZIP creation<br/>- Progress tracking"]
+            StaticData["staticData.ts<br/>- Stock images<br/>- Default positions"]
+        end
+    end
+
+    subgraph "External Services"
+        PeachAPI["Peach API<br/>v1.peachapi.com"]
+        LocalStorage["Browser localStorage<br/>User-specific keys"]
+    end
+
+    subgraph "Data Flow Patterns"
+        AuthFlow["Authentication Flow<br/>1. Login form submission<br/>2. Token validation<br/>3. User data storage<br/>4. Cookie session"]
+
+        DataFlow["Data Persistence<br/>1. API fetch → Context<br/>2. Transform to Polaroids<br/>3. Position via draggable<br/>4. localStorage sync"]
+
+        CanvasFlow["Canvas Interaction<br/>1. Mouse/touch events<br/>2. Coordinate transformation<br/>3. State updates<br/>4. DOM rendering"]
+    end
+
+    %% Route connections
+    Index --> LoginForm
+    Dashboard --> DashboardNav
+    Dashboard --> Polaroid
+
+    %% Context connections
+    PeachCtx --> Index
+    PeachCtx --> Dashboard
+    ExportCtx --> Dashboard
+    ExportCtx --> Modals
+
+    %% Canvas connections
+    Index --> InfiniteCanvas
+    Dashboard --> InfiniteCanvas
+    InfiniteCanvas --> CanvasItem
+    CanvasItem --> Polaroid
+    CanvasItem --> DropAnimation
+
+    %% Interaction connections
+    CanvasItem --> Draggable
+    InfiniteCanvas --> InteractionMgr
+    InfiniteCanvas --> TransformCtx
+    Draggable --> Storage
+
+    %% Data connections
+    LoginForm --> API_Routes
+    DashboardNav --> DownloadAPI
+    Index --> StaticData
+    Dashboard --> Storage
+
+    %% External connections
+    API_Routes --> PeachAPI
+    Storage --> LocalStorage
+    DownloadAPI --> PeachAPI
+
+    %% Flow annotations
+    AuthFlow -.-> PeachCtx
+    DataFlow -.-> Storage
+    CanvasFlow -.-> InfiniteCanvas
+
+    classDef route fill:#e1f5fe
+    classDef context fill:#f3e5f5
+    classDef component fill:#e8f5e8
+    classDef primitive fill:#fff3e0
+    classDef data fill:#fce4ec
+    classDef external fill:#f1f8e9
+    classDef flow fill:#f9f9f9
+
+    class Index,Dashboard,API_Routes route
+    class PeachCtx,ExportCtx context
+    class LoginForm,DashboardNav,Polaroid,Modals component
+    class InfiniteCanvas,CanvasItem,DropAnimation,Draggable,InteractionMgr,TransformCtx primitive
+    class Storage,DownloadAPI,StaticData data
+    class PeachAPI,LocalStorage external
+    class AuthFlow,DataFlow,CanvasFlow flow
+```
+
+### Architecture Overview
+
+**Peach Preserves** is a SolidStart application that transforms Peach social media data into an interactive infinite canvas of draggable polaroid photos. The architecture follows a layered approach with clear separation of concerns:
+
+#### Core Layers:
+1. **Routes**: Entry points (login vs. authenticated dashboard)
+2. **Context Providers**: Global state management for auth and export operations
+3. **UI Components**: Reusable interface elements and modals
+4. **Canvas System**: Infinite scrolling/zooming viewport with draggable items
+5. **Interaction Primitives**: Low-level drag/drop and coordinate transformation
+6. **Data Layer**: Storage abstraction and API client modules
+
+#### Key Data Flows:
+- **Authentication**: Login → API validation → Context storage → Cookie session
+- **Content Loading**: API fetch → Transform to polaroids → Canvas positioning → localStorage persistence
+- **Canvas Interaction**: User input → Coordinate transformation → State updates → Visual rendering
+- **Export Process**: User trigger → API pagination → ZIP creation → Download delivery
+
+#### Performance Considerations:
+- SolidJS reactivity with batched updates for smooth 60fps dragging
+- Per-user localStorage with automatic persistence
+- Viewport-based rendering optimization for large datasets
+- Transform coordinate caching and event delegation

@@ -2,5 +2,10 @@
 
 | ID | Task | Status | Feature | Description |
 |----|------|--------|---------|-------------|
-| T1 | Refactor Aftermath | Todo | Performance | Application was refactored to apply SolidJS patterns, remove dead code, optimize reactivity, and improve performance. Need to start the app and test it thoroughly. Breaking changes may have occurred as we updated architecture and patterns of the application.
+| T1 | Refactor Aftermath | Done | Performance | Application was refactored to apply SolidJS patterns, remove dead code, optimize reactivity, and improve performance. Need to start the app and test it thoroughly. Breaking changes may have occurred as we updated architecture and patterns of the application.
 | T2 | Polaroid Component "Exposure" Animation | Todo | Design | Create a playground for an easy and intuitive way to create animation settings for the Polaroid component
+| T3 | LoginComponent needs to tab to button polaroid for accessiblity | Todo | Accessibility | Following standard html structure and accessibility guidelines, ensure that the login component is accessible and can be navigated using keyboard only.
+| T4 | Increase 'spread' of polaroid photos for both index stock images and dashboard peach images | Todo | Design | Adjust the stored settings for default placements of polaroid photos. currently then are arranged in a circular pattern around the LoginComponent and DashboardNav so this is only a minor change to the default settings to increase the spread of the polaroid photos.
+| T5 | Disable password manager autocomplete on login form | Todo | UX | Add autocomplete="off" or autocomplete="new-password" to prevent password manager modals from appearing during login flow.
+| T6 | Fix DashboardNav image aspect ratio cropping | Todo | Design | Dashboard component image appears cropped with wide margins on left/right sides instead of displaying as full 1:1 ratio image.
+| T7 | Remove ghosting border effect on DashboardNav drag | Todo | Design | DashboardNav shows unwanted border around login-container div when mouse down/dragging. Should match LoginComponent drag behavior without visual artifacts.
