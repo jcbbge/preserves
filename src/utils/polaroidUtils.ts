@@ -150,15 +150,15 @@ export function calculateDefaultPositions(
   const {
     centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 500,
     centerY = typeof window !== "undefined" ? window.innerHeight / 2 : 400,
-    radius = 80,
-    randomness = 0.2
+    radius = 120,
+    randomness = 0.3
   } = options;
   
   const positions = [];
   
   for (let i = 0; i < count; i++) {
     // Use cosine and sine to distribute photos in a spiral pattern
-    const angle = i * 2.4; // Increasing the multiplier spreads the photos further apart
+    const angle = i * 3.2; // Increased multiplier for more spread
     const distance = Math.sqrt(i) * radius;
     
     // Add slight randomness for a natural scattered look

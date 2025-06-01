@@ -121,27 +121,21 @@ export default function Dashboard() {
     return currentPosts.map((imageBlock, index): DashboardPhoto => {
       const storedState = storedPhotos[imageBlock.id];
       
-      // Optimized position calculation
-      const distributionType = Math.random();
+      // Use stored dashboard positions first, then fall back to random calculation
       let x, y;
       
-      if (distributionType < 0.3) {
-        // Circular distribution
-        const angle = (index / currentPosts.length) * 2 * Math.PI + Math.random() * 0.5;
-        const radius = 600 + Math.random() * 800;
-        x = navPosition.x + Math.cos(angle) * radius;
-        y = navPosition.y + Math.sin(angle) * radius;
-      } else if (distributionType < 0.6) {
-        // Grid-like with random offset
-        const gridSize = 400;
-        const row = Math.floor(index / 5);
-        const col = index % 5;
-        x = navPosition.x + (col - 2) * gridSize + (Math.random() - 0.5) * 300;
-        y = navPosition.y + (row - 2) * gridSize + (Math.random() - 0.5) * 300;
+      const dashboardPositions = Object.values(DEFAULT_POSITIONS.dashboardPhotos);
+      if (index < dashboardPositions.length) {
+        // Use predefined dashboard positions for first 13 photos
+        const position = dashboardPositions[index];
+        x = position.x;
+        y = position.y;
       } else {
-        // Pure random scatter
-        x = navPosition.x + (Math.random() - 0.5) * 2400;
-        y = navPosition.y + (Math.random() - 0.5) * 1600;
+        // For additional photos beyond 13, use random scatter pattern
+        const angle = Math.random() * 2 * Math.PI;
+        const radius = 700 + Math.random() * 600; // Outer ring for additional photos
+        x = navPosition.x + Math.cos(angle) * radius + (Math.random() - 0.5) * 400;
+        y = navPosition.y + Math.sin(angle) * radius + (Math.random() - 0.5) * 400;
       }
       
       // Caption and date processing
