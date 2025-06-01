@@ -144,6 +144,7 @@ export default function LoginForm(props: LoginFormProps = {}) {
                 required
                 disabled={loading()}
                 autocomplete="off"
+                autofocus
                 class={styles["handwritten-input"]}
               />
               <input
@@ -175,6 +176,7 @@ export default function LoginForm(props: LoginFormProps = {}) {
               ?.dispatchEvent(new Event("submit", { cancelable: true }))
           }
           disabled={loading()}
+          tabindex="0"
         >
           <div class={styles["connect-polaroid-container"]}>
             <div class={styles["connect-image-area"]}>

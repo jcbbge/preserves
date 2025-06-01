@@ -67,6 +67,12 @@
   font-size: 20px;
   border: none;
   transition: transform 0.2s, background-color 0.2s;
+  outline: none;
+}
+
+.canvas-control-button:focus-visible {
+  outline: 3px dashed #ff9a8b;
+  outline-offset: 2px;
 }
 
 .canvas-control-button:hover {

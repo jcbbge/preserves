@@ -57,6 +57,8 @@ export default function DashboardNav(props: DashboardNavProps) {
           class={styles["connect-button"]}
           onClick={handleDownloadClick}
           disabled={isDownloading()}
+          tabindex="0"
+          autofocus
         >
           <div class={styles["connect-polaroid-container"]}>
             <div class={styles["connect-image-area"]}>

@@ -86,8 +86,10 @@
 }
 
 .handwritten-input:focus {
-    outline: none;
+    outline: none !important;
+    box-shadow: none !important;
     border-bottom-color: var(--peach-primary);
+    border-bottom-width: 3px;
 }
 
 .handwritten-input:disabled {
@@ -132,6 +134,11 @@
     -webkit-user-select: none;
     -webkit-user-drag: none;
     outline: none;
+}
+
+.connect-button:focus-visible {
+    outline: 3px dashed var(--peach-primary);
+    outline-offset: 4px;
 }
 
 .connect-button:hover:not(:disabled) {
@@ -197,29 +204,29 @@
 }
 
 .arrow-down-container {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  padding: 2px;
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    padding: 2px;
 }
 
 /* Dragging styles for login polaroids */
 .login-polaroid.dragging,
 .connect-polaroid-wrapper.dragging {
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Prevent dragging styles on login container */
 .login-container.dragging,
 .login-container.selected {
-  box-shadow: none !important;
+    box-shadow: none !important;
 }
 
 .polaroid-grit-overlay {
