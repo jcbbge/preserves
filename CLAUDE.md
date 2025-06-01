@@ -42,7 +42,6 @@ Todo: Ready to work on
 Doing: Currently in progress (ONLY ONE AT A TIME)
 Review: Implementation done, needs user review
 Done: Complete and approved
-Blocked: Cannot proceed (note reason)
 
 Individual Task Files (docs/tasks/T{ID}.md)
 For complex tasks, create detailed documentation:
