@@ -51,6 +51,7 @@ interface DashboardState {
   canvasWidth: number;
   canvasHeight: number;
   clientOnly: boolean;
+  loading: boolean;
 }
 
 export default function Dashboard() {
@@ -70,6 +71,7 @@ export default function Dashboard() {
     canvasWidth: 0,
     canvasHeight: 0,
     clientOnly: false,
+    loading: false,
   });
 
   const [polaroidPhotos, setPolaroidPhotos] = createStore<DashboardPhoto[]>([]);
@@ -204,6 +206,10 @@ export default function Dashboard() {
       return;
     }
 
+    batch(() => {
+      setState("loading", true);
+    });
+
     try {
       const username = user.data.username;
       const streamToken = token();
@@ -241,6 +247,7 @@ export default function Dashboard() {
             setState(produce(state => {
               state.posts = filteredPosts;
               state.cursor = response.data.data.cursor;
+              state.loading = false;
             }));
 
             setPosts(filteredPosts, user.data?.username || getUserName());
@@ -251,6 +258,7 @@ export default function Dashboard() {
           setState(produce(state => {
             state.posts = [];
             state.cursor = null;
+            state.loading = false;
           }));
         });
 
@@ -260,7 +268,10 @@ export default function Dashboard() {
     } catch (err) {
       logger.error("Failed to load posts", err);
       batch(() => {
-        setState("error", "Failed to load your posts. Please try again.");
+        setState(produce(state => {
+          state.error = "Failed to load your posts. Please try again.";
+          state.loading = false;
+        }));
       });
     }
   };
@@ -464,7 +475,13 @@ export default function Dashboard() {
             height: `${state.canvasHeight}px`,
           }}
         >
-          <Show when={state.posts.length === 0 && state.clientOnly}>
+          <Show when={state.loading && state.clientOnly}>
+            <div class={styles["loading-container"]}>
+              <div>Loading your preserves...</div>
+            </div>
+          </Show>
+
+          <Show when={state.posts.length === 0 && !state.loading && state.clientOnly}>
             <EmptyStateMessage />
           </Show>
 
