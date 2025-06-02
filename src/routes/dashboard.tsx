@@ -1,4 +1,4 @@
-import { onMount, createEffect, For, Show, batch, createMemo, Suspense, ErrorBoundary } from "solid-js";
+import { onMount, createEffect, For, Show, batch, createMemo, createSignal, Suspense, ErrorBoundary } from "solid-js";
 import { createStore, produce } from "solid-js/store";
 import { Title } from "@solidjs/meta";
 import { useNavigate } from "@solidjs/router";
@@ -109,8 +109,43 @@ export default function Dashboard() {
     return item?.position || { x: 0, y: 0 };
   };
 
-  // Memoized canvas state to avoid repeated calls
-  const canvasState = createMemo(() => getCanvas(getUserName()));
+  // Signal to force canvas state refresh when storage is cleared
+  const [storageVersion, setStorageVersion] = createSignal(0);
+  
+  // Memoized canvas state that reacts to storage changes
+  const canvasState = createMemo(() => {
+    storageVersion(); // Subscribe to storage version changes
+    return getCanvas(getUserName());
+  });
+
+  // Force canvas reset to default viewport
+  const resetCanvasToDefault = () => {
+    const username = getUserName();
+    // Clear canvas state from localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(`peach_${username}_canvas`);
+    }
+    // Force storage version update to trigger canvasState refresh
+    setStorageVersion(prev => prev + 1);
+  };
+
+  // Get reliable initial viewport state
+  const getInitialViewport = () => {
+    const canvas = canvasState();
+    // Always ensure we have valid window dimensions
+    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 800;
+    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 600;
+    
+    if (canvas && canvas.x && canvas.y && canvas.scale) {
+      return { 
+        position: { x: canvas.x, y: canvas.y }, 
+        scale: canvas.scale 
+      };
+    }
+    
+    // Default to centered viewport
+    return getViewportForLoginCenter(screenWidth, screenHeight);
+  };
 
   // Memoized photo transformations following SolidJS optimization patterns
   const transformedPhotos = createMemo(() => {
@@ -370,6 +405,9 @@ export default function Dashboard() {
       setState("clientOnly", true);
     });
 
+    // Force storage version refresh on mount to ensure canvas state is current
+    setStorageVersion(prev => prev + 1);
+
     const handleResize = (): void => {
       batch(() => {
         setState(produce(state => {
@@ -494,11 +532,7 @@ export default function Dashboard() {
               <InfiniteCanvas
                 showGrid={false}
                 storageKey={`peach_${getUserName()}_canvas`}
-                initialViewport={
-                  canvasState() ? 
-                  { position: { x: canvasState()!.x, y: canvasState()!.y }, scale: canvasState()!.scale } :
-                  getViewportForLoginCenter(window.innerWidth, window.innerHeight)
-                }
+                initialViewport={getInitialViewport()}
                 className={styles["canvas-container"]}
                 onViewportChange={handleViewportChange}
                 focalPointId="dashboard-nav"
