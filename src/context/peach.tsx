@@ -34,6 +34,11 @@ export interface PeachUser {
   username: string;
   sessionId: string;
   streams: UserStream[];
+  // Peach API fields
+  name?: string;
+  displayName?: string;
+  avatarSrc?: string;
+  bio?: string;
 }
 
 interface PeachContextValue {
@@ -62,13 +67,15 @@ export function PeachProvider(props: { children: JSX.Element }) {
     const allKeys = Object.keys(localStorage);
     const userDataKey = allKeys.find(key => key.startsWith('peach_') && key.endsWith('_user'));
     
+    
     if (userDataKey) {
       const username = userDataKey.replace('peach_', '').replace('_user', '');
       const userData = getUserData(username);
       
+      
       if (userData) {
         setToken(userData.token);
-        setUser("data", {
+        const restoredUserData = {
           id: userData.id || userData.username,
           username: userData.username,
           sessionId: "restored",
@@ -78,7 +85,8 @@ export function PeachProvider(props: { children: JSX.Element }) {
           displayName: userData.displayName,
           avatarSrc: userData.avatarSrc,
           bio: userData.bio,
-        });
+        };
+        setUser("data", restoredUserData);
       }
     }
   }
