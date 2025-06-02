@@ -43,6 +43,13 @@
   box-shadow: none !important;
 }
 
+/* Prevent dragging styles on dashboard nav canvas item wrapper */
+[data-canvas-item-id="dashboard-nav"].selected,
+[data-canvas-item-id="dashboard-nav"].dragging,
+[data-canvas-item-id="dashboard-nav"] {
+  box-shadow: none !important;
+}
+
 /* Controls that appear inside the canvas */
 .canvas-controls {
   position: absolute;
