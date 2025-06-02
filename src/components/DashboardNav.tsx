@@ -37,8 +37,20 @@ export default function DashboardNav(props: DashboardNavProps) {
            exportContext.exportData.status === "exporting";
   };
 
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Enter" && !isDownloading()) {
+      e.preventDefault();
+      const target = e.target as HTMLElement;
+      
+      // If focused element is a button, trigger its click handler
+      if (target.tagName === "BUTTON") {
+        target.click();
+      }
+    }
+  };
+
   return (
-    <div class={styles["dashboard-nav-container"]}>
+    <div class={styles["dashboard-nav-container"]} onKeyDown={handleKeyDown}>
       {/* User avatar polaroid - top layer */}
       <div class={styles["avatar-polaroid-wrapper"]}>
         <Polaroid

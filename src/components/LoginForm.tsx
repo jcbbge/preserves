@@ -122,8 +122,27 @@ export default function LoginForm(props: LoginFormProps = {}) {
     }
   };
 
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Enter" && !loading()) {
+      e.preventDefault();
+      const target = e.target as HTMLElement;
+      
+      // If focused element is an input field, submit the form
+      if (target.tagName === "INPUT") {
+        const form = document.querySelector("form");
+        if (form) {
+          form.dispatchEvent(new Event("submit", { cancelable: true }));
+        }
+      }
+      // If focused element is a button, trigger its click handler
+      else if (target.tagName === "BUTTON") {
+        target.click();
+      }
+    }
+  };
+
   return (
-    <div class={styles["login-container"]}>
+    <div class={styles["login-container"]} onKeyDown={handleKeyDown}>
       {/* Login form polaroid - top layer */}
       <div class={styles["login-polaroid-wrapper"]}>
         <Polaroid
