@@ -3,7 +3,7 @@ import { usePeach } from "~/context/peach";
 import { useExport } from "~/context/export";
 import { Polaroid } from "./Polaroid";
 
-import styles from "./LoginForm.module.css";
+import styles from "./DashboardNav.module.css";
 
 interface DashboardNavProps {
   isDragging?: boolean;
@@ -38,31 +38,31 @@ export default function DashboardNav(props: DashboardNavProps) {
   };
 
   return (
-    <div class={styles["login-container"]}>
+    <div class={styles["dashboard-nav-container"]}>
       {/* User avatar polaroid - top layer */}
-      <div class={styles["login-polaroid-wrapper"]}>
+      <div class={styles["avatar-polaroid-wrapper"]}>
         <Polaroid
           id="user-avatar"
           src={getUserAvatar()}
           caption={getUserDisplayName()}
-          class={`${styles["login-polaroid"]} ${props.isDragging ? styles["dragging"] : ""}`}
+          class={`${styles["avatar-polaroid"]} ${props.isDragging ? styles["dragging"] : ""}`}
           onMouseDown={(e) => {}} // Allow events to bubble for dragging
         />
       </div>
 
       {/* Download button polaroid - bottom layer, peeking out */}
-      <div class={`${styles["connect-polaroid-wrapper"]} ${props.isDragging ? styles["dragging"] : ""}`}>
+      <div class={`${styles["download-polaroid-wrapper"]} ${props.isDragging ? styles["dragging"] : ""}`}>
         <button
           type="button"
-          class={styles["connect-button"]}
+          class={styles["download-button"]}
           onClick={handleDownloadClick}
           disabled={isDownloading()}
           tabindex="0"
           autofocus
         >
-          <div class={styles["connect-polaroid-container"]}>
-            <div class={styles["connect-image-area"]}>
-              <div class={styles["connect-photo"]}>
+          <div class={styles["download-polaroid-container"]}>
+            <div class={styles["download-image-area"]}>
+              <div class={styles["download-photo"]}>
                 {isDownloading() ? "Downloading..." : "Download"}
               </div>
               <div class={styles["arrow-down-container"]}>
@@ -72,8 +72,8 @@ export default function DashboardNav(props: DashboardNavProps) {
               </div>
               <div class={styles["polaroid-grit-overlay"]}></div>
             </div>
-            <div class={styles["connect-caption"]}>
-              <span class={styles["connect-text"]}>
+            <div class={styles["download-caption"]}>
+              <span class={styles["download-text"]}>
                 Download My Data
               </span>
             </div>

@@ -1,0 +1,179 @@
+/* Dashboard Nav container - for canvas item */
+.dashboard-nav-container {
+    position: relative;
+    width: 280px;
+    height: 380px;
+    perspective: 1000px;
+    pointer-events: all;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Avatar polaroid wrapper - top layer */
+.avatar-polaroid-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 20;
+    transform: rotate(-3deg);
+}
+
+/* Avatar polaroid styling */
+.avatar-polaroid {
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25) !important;
+    pointer-events: all;
+    cursor: grab;
+}
+
+
+/* Download button polaroid wrapper - bottom layer, peeking out */
+.download-polaroid-wrapper {
+    position: absolute;
+    top: 45px;
+    left: 35px;
+    z-index: 10;
+    transform: rotate(5deg);
+}
+
+/* Download button - styled as invisible button over polaroid */
+.download-button {
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.2s;
+    pointer-events: all;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    outline: none;
+}
+
+.download-button:focus-visible {
+    outline: 3px dashed var(--peach-primary);
+    outline-offset: 4px;
+}
+
+.download-button:hover:not(:disabled) {
+    transform: scale(1.03);
+}
+
+.download-button:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.download-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Download polaroid container - mimics Polaroid structure */
+.download-polaroid-container {
+    width: 260px;
+    height: 300px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 12px 35px 12px;
+    box-sizing: border-box;
+    transition: box-shadow 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+}
+
+.download-button:hover:not(:disabled) .download-polaroid-container {
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+}
+
+.download-image-area {
+    width: 100%;
+    height: 220px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 1px;
+    margin-bottom: 6px;
+    background: linear-gradient(
+        45deg,
+        var(--peach-secondary),
+        var(--peach-primary)
+    );
+}
+
+.download-photo {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Caveat", cursive;
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+    transform: translate(50px, 50px);
+}
+
+.arrow-down-container {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    padding: 2px;
+}
+
+/* Dragging styles for dashboard nav polaroids */
+.avatar-polaroid.dragging,
+.download-polaroid-wrapper.dragging {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Prevent dragging styles on dashboard nav container */
+.dashboard-nav-container.dragging,
+.dashboard-nav-container.selected {
+    box-shadow: none !important;
+}
+
+.polaroid-grit-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('data:image/svg+xml;utf8,<svg width="250" height="250" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="250" height="250" filter="url(%23noise)" opacity="0.4"/></svg>');
+    opacity: 0.1;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+.download-caption {
+    width: 100%;
+    text-align: center;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 0;
+}
+
+.download-text {
+    font-family: "Caveat", cursive;
+    color: #333;
+    line-height: 1.2;
+    font-size: 1.2rem;
+    font-weight: 700;
+    transform: translate(35px, 25px);
+    display: inline-block;
+}
