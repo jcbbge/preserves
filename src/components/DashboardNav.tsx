@@ -14,18 +14,14 @@ export default function DashboardNav(props: DashboardNavProps) {
   const { user } = usePeach();
   const exportContext = useExport();
 
-  // Log user data to inspect avatar and username structure
-  console.log("[DASHBOARD_NAV] Full user data:", user.data);
-  console.log("[DASHBOARD_NAV] User object keys:", user.data ? Object.keys(user.data) : "No user data");
 
-  // Get user avatar and username from API response
+  // Get user avatar and bio from context
   const getUserAvatar = () => {
-    // Default avatar if none found
-    return user.data?.avatar || user.data?.avatarSrc || "/peachdotcool.png";
+    return user.data?.avatarSrc;
   };
 
-  const getUserDisplayName = () => {
-    return user.data?.username || "Unknown User";
+  const getUserBio = () => {
+    return user.data?.bio;
   };
 
   const handleDownloadClick = () => {
@@ -56,7 +52,7 @@ export default function DashboardNav(props: DashboardNavProps) {
         <Polaroid
           id="user-avatar"
           src={getUserAvatar()}
-          caption={getUserDisplayName()}
+          caption={getUserBio()}
           class={`${styles["avatar-polaroid"]} ${props.isDragging ? styles["dragging"] : ""}`}
           onMouseDown={(e) => {}} // Allow events to bubble for dragging
         />

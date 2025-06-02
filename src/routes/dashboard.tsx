@@ -55,7 +55,7 @@ interface DashboardState {
 }
 
 export default function Dashboard() {
-  const { isAuthenticated, user, token, logout } = usePeach();
+  const { isAuthenticated, user, token, logout, updateUserData } = usePeach();
   const exportContext = useExport();
   const navigate = useNavigate();
 
@@ -255,7 +255,17 @@ export default function Dashboard() {
 
       const response = await fetchStream(formData);
 
-      if (response.success && response.data?.data?.posts) {
+      if (response.success && response.data?.data) {
+        // Update user context with stream data
+        const streamData = response.data.data;
+        updateUserData({
+          displayName: streamData.displayName,
+          bio: streamData.bio,
+          avatarSrc: streamData.avatarSrc,
+          name: streamData.name,
+          id: streamData.id
+        });
+
         if (user.data?.username) {
           const allImages: any[] = [];
           

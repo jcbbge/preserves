@@ -24,6 +24,11 @@ export interface UserData {
   screenName?: string;
   avatar?: string;
   bio?: string;
+  // Peach API specific fields
+  name?: string;
+  displayName?: string;
+  avatarSrc?: string;
+  id?: string;
 }
 
 export interface PostData {

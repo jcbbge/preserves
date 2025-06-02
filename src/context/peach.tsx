@@ -42,6 +42,7 @@ interface PeachContextValue {
   isAuthenticated: () => boolean;
   login: (token: string, userData: any) => void;
   logout: () => void;
+  updateUserData: (userData: any) => void;
 }
 
 // Auth storage - now handled through new storage system
@@ -68,10 +69,15 @@ export function PeachProvider(props: { children: JSX.Element }) {
       if (userData) {
         setToken(userData.token);
         setUser("data", {
-          id: userData.username,
+          id: userData.id || userData.username,
           username: userData.username,
           sessionId: "restored",
-          streams: []
+          streams: [],
+          // Restore all Peach API fields
+          name: userData.name,
+          displayName: userData.displayName,
+          avatarSrc: userData.avatarSrc,
+          bio: userData.bio,
         });
       }
     }
@@ -102,6 +108,8 @@ export function PeachProvider(props: { children: JSX.Element }) {
 
       const tokenData = parseJWT(newToken);
       console.log("[AUTH] Processing login data");
+      console.log("[AUTH] userData received:", userData);
+      console.log("[AUTH] userData keys:", Object.keys(userData || {}));
 
       // Always use the stream token which is what the API needs
       const streamToken = userData?.streams?.[0]?.token;
@@ -111,10 +119,15 @@ export function PeachProvider(props: { children: JSX.Element }) {
 
       // Prepare user data object with consistent structure
       const userDataObj = {
-        id: tokenData?.userID || "unknown",
+        id: tokenData?.userID || userData?.id || "unknown",
         username: userData?.email || "unknown",
         sessionId: tokenData?.sessionID || "unknown",
         streams: userData?.streams || [],
+        // Store Peach API fields directly in user object
+        name: userData?.name,
+        displayName: userData?.displayName,
+        avatarSrc: userData?.avatarSrc,
+        bio: userData?.bio,
       };
 
       // Update state
@@ -127,7 +140,12 @@ export function PeachProvider(props: { children: JSX.Element }) {
         token: tokenToUse,
         screenName: userData?.screenName,
         avatar: userData?.avatar,
-        bio: userData?.bio
+        bio: userData?.bio,
+        // Store Peach API specific fields
+        name: userData?.name,
+        displayName: userData?.displayName,
+        avatarSrc: userData?.avatarSrc,
+        id: userData?.id
       };
       setUserData(userStorageData);
 
@@ -168,12 +186,40 @@ export function PeachProvider(props: { children: JSX.Element }) {
     console.log("[AUTH] Logged out");
   };
 
+  const updateUserData = (userData: any) => {
+    setUser("data", existing => ({
+      ...existing,
+      displayName: userData.displayName,
+      bio: userData.bio,
+      avatarSrc: userData.avatarSrc,
+      name: userData.name,
+      id: userData.id,
+    }));
+
+    // Also update localStorage
+    if (user.data?.username) {
+      const currentUserData = getUserData(user.data.username);
+      if (currentUserData) {
+        const updatedUserData: UserData = {
+          ...currentUserData,
+          displayName: userData.displayName,
+          bio: userData.bio,
+          avatarSrc: userData.avatarSrc,
+          name: userData.name,
+          id: userData.id,
+        };
+        setUserData(updatedUserData);
+      }
+    }
+  };
+
   const value: PeachContextValue = {
     token,
     user,
     isAuthenticated,
     login,
     logout,
+    updateUserData,
   };
 
   return (

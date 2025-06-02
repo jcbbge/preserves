@@ -11,5 +11,5 @@
 | T7 | Remove ghosting border effect on DashboardNav drag | Done | Design | DashboardNav shows unwanted border around login-container div when mouse down/dragging. Should match LoginComponent drag behavior without visual artifacts.
 | T8 | No post found error message on Dashboard | Done | Design | When dashboard is loading, display message shows no posts found--however, that is an anti-pattern and disruptive to the user experience. What is actually happening is that the dashboard is loading and no posts have been found yet. We need to display a message that says "Loading..." until the dashboard has finished loading.
 | T9 | Canvas defaults are not getting reset | Done | Design | The canvas needs to reset to 100% view and centered. it doesnt alway seem to reset when refreshing the page even after clearing localstoreage.
-| T10 | Hitting Return or Enter key should submit index login form. | Review | Accessibility | If tab focus element is a 'button', then hitting the return / enter key should trigger the handler.
-| T11 | dashboardNav component not displaying correct user info | Todo | Design | user avatar should be displayed and the users bio should be displayed as the caption.
+| T10 | Hitting Return or Enter key should submit index login form. | Done | Accessibility | If tab focus element is a 'button', then hitting the return / enter key should trigger the handler.
+| T11 | dashboardNav component not displaying correct user info | Done | Design | user avatar should be displayed and the users bio should be displayed as the caption.
