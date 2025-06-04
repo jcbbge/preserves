@@ -37,11 +37,11 @@ export async function fetchPostsWithPagination(
   posts: PeachPost[];
   paginationState: PaginationState;
 }> {
-  // Setup initial state
+  // Setup initial state - always start fresh from beginning
   const paginationState: PaginationState = {
     currentPage: 0,
     totalPages: 0,
-    cursor: null,
+    cursor: null, // Always start from beginning
     postsLoaded: 0,
     estimatedTotal: 0,
     isComplete: false
@@ -67,6 +67,7 @@ export async function fetchPostsWithPagination(
     formData.append('token', token);
     if (paginationState.cursor) {
       formData.append('cursor', paginationState.cursor);
+      debugLog('pagination', `Using cursor for page ${paginationState.currentPage}: ${paginationState.cursor.substring(0, 20)}...`);
     }
     
     // Fetch current page
@@ -74,6 +75,9 @@ export async function fetchPostsWithPagination(
     
     try {
       const response = await fetchStream(formData);
+      
+      // DEBUG: LOG FULL PEACH API RESPONSE
+      debugLog('pagination', `FULL PEACH API RESPONSE for page ${paginationState.currentPage}:`, JSON.stringify(response, null, 2));
       
       // Process response
       if (!response.success || !response.data?.data?.posts) {
@@ -93,13 +97,30 @@ export async function fetchPostsWithPagination(
       }
       
       debugLog('pagination', `Received ${pagePostsCount} posts on page ${paginationState.currentPage}`);
+      debugLog('pagination', `First 3 post IDs on page ${paginationState.currentPage}:`, 
+        pagePosts.slice(0, 3).map(p => p.id));
       
       // Add posts to our collection
       allPosts = [...allPosts, ...pagePosts];
       paginationState.postsLoaded = allPosts.length;
       
+      // Debug: Check for duplicates after adding this page
+      const allPostIds = allPosts.map(p => p.id);
+      const uniqueIds = new Set(allPostIds);
+      if (allPostIds.length !== uniqueIds.size) {
+        debugLog('pagination', `DUPLICATES DETECTED after page ${paginationState.currentPage}: ${allPostIds.length} total, ${uniqueIds.size} unique`);
+      }
+      
       // Get next cursor if available
-      paginationState.cursor = response.data.data.cursor || null;
+      const nextCursor = response.data.data.cursor || null;
+      debugLog('pagination', `Next cursor received: ${nextCursor ? nextCursor : 'null'}`);
+      
+      // Debug: Log full response data structure to see cursor context
+      if (response.data.data) {
+        debugLog('pagination', 'Response data keys:', Object.keys(response.data.data));
+      }
+      
+      paginationState.cursor = nextCursor;
       
       // If no cursor, we've reached the end
       if (!paginationState.cursor) {

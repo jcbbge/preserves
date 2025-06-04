@@ -7,6 +7,7 @@ import { DownloadOptions, UpdateExportProgressFn, MediaMap } from './download/ty
 import { extractMediaUrls, downloadMedia, generateMediaFilename } from './download/media';
 import { createArchiveData, createArchive, downloadBlob } from './download/archive';
 import { fetchPostsWithPagination, PaginationOptions } from './download/pagination';
+import { debugLog } from './download/utils';
 
 // Global reference to the export context state updater
 let updateExportProgress: UpdateExportProgressFn;
@@ -81,39 +82,29 @@ export async function downloadPeachData(
     const username = userData?.username || options.username;
 
     
-    // Get posts directly from user data or fetch them
+    // ALWAYS START FRESH - fetch all posts from beginning using pagination
     let posts: PeachPost[] = [];
     let paginationState = null;
     
-    if (userData && userData.streams && userData.streams[0] && userData.streams[0].posts) {
-      // Use posts from user data if available
-      posts = userData.streams[0].posts;
-
+    // Set up pagination options - start from beginning every time
+    const paginationOptions: PaginationOptions = {
+      maxPages: options.devMode ? 2 : undefined, // Limit for dev mode testing
+      pauseBetweenRequests: options.devMode ? 100 : 500
+    };
+    
+    debugLog('download', 'Starting fresh pagination from beginning (no cached data used)');
+    
+    try {
+      // Always fetch posts fresh with pagination starting from page 1
+      const result = await fetchPostsWithPagination(token, username, updateExportProgress, paginationOptions);
+      posts = result.posts;
+      paginationState = result.paginationState;
       
-      // Limit the number of posts in development mode
-      if (options.devMode) {
-        const maxPosts = 10; // Get 10 posts for testing
-        if (posts.length > maxPosts) {
-          posts = posts.slice(0, maxPosts);
-        }
-      }
-    } else {
-      // Set up pagination options based on dev mode
-      const paginationOptions: PaginationOptions = {
-        maxPages: options.devMode ? 1 : undefined // Only fetch first page in dev mode
-      };
-      
-      try {
-        // Fetch posts with pagination
-        const result = await fetchPostsWithPagination(token, username, updateExportProgress, paginationOptions);
-        posts = result.posts;
-        paginationState = result.paginationState;
-        
+      debugLog('download', `Fetched ${posts.length} posts via fresh pagination`);
 
-      } catch (err) {
-        console.error('[API] Error fetching posts with pagination:', err);
-        throw new Error(`Failed to fetch posts: ${err instanceof Error ? err.message : String(err)}`);
-      }
+    } catch (err) {
+      console.error('[API] Error fetching posts with pagination:', err);
+      throw new Error(`Failed to fetch posts: ${err instanceof Error ? err.message : String(err)}`);
     }
     
     if (!posts || posts.length === 0) {

@@ -24,9 +24,14 @@ export function formatFileSize(bytes: number): string {
   return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
 }
 
+// Development mode flag
+export const DEV_MODE = import.meta.env.DEV;
+
 // Debug logging utility - disabled in production
 export function debugLog(section: string, message: string, data?: any) {
-  // Debug logging disabled
+  if (DEV_MODE) {
+    console.log(`[${section.toUpperCase()}]`, message, data ? data : '');
+  }
 }
 
 // Media type validation utilities

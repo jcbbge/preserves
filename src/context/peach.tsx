@@ -202,6 +202,8 @@ export function PeachProvider(props: { children: JSX.Element }) {
       avatarSrc: userData.avatarSrc,
       name: userData.name,
       id: userData.id,
+      // Also store streams data including posts and cursor
+      streams: userData.streams || existing?.streams || []
     }));
 
     // Also update localStorage
@@ -215,6 +217,7 @@ export function PeachProvider(props: { children: JSX.Element }) {
           avatarSrc: userData.avatarSrc,
           name: userData.name,
           id: userData.id,
+          streams: userData.streams || currentUserData.streams || []
         };
         setUserData(updatedUserData);
       }

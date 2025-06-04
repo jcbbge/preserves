@@ -1,4 +1,14 @@
-import { onMount, createEffect, For, Show, batch, createMemo, createSignal, Suspense, ErrorBoundary } from "solid-js";
+import {
+  onMount,
+  createEffect,
+  For,
+  Show,
+  batch,
+  createMemo,
+  createSignal,
+  Suspense,
+  ErrorBoundary,
+} from "solid-js";
 import { createStore, produce } from "solid-js/store";
 import { Title } from "@solidjs/meta";
 import { useNavigate } from "@solidjs/router";
@@ -32,10 +42,13 @@ import { InfiniteCanvas } from "~/primitives/infiniteCanvas/InfiniteCanvas";
 import { CanvasItem } from "~/primitives/infiniteCanvas/CanvasItem";
 import { createDraggable } from "~/primitives/createDraggable";
 import { Vector, Point } from "~/primitives/infiniteCanvas/TransformContext";
-import { DEFAULT_POSITIONS, getViewportForLoginCenter } from "~/config/defaultPositions";
+import {
+  DEFAULT_POSITIONS,
+  getViewportForLoginCenter,
+} from "~/config/defaultPositions";
 import styles from "./dashboard.module.css";
 
-interface DashboardPhoto extends Omit<PolaroidPhoto, 'position'> {
+interface DashboardPhoto extends Omit<PolaroidPhoto, "position"> {
   position: Point;
   type: "photo" | "menu";
   isRotatable?: boolean;
@@ -92,15 +105,25 @@ export default function Dashboard() {
   });
 
   const handleDragEndWithPosition = (id: string) => {
-    const item = polaroidPhotos.find(p => p.id === id);
+    const item = polaroidPhotos.find((p) => p.id === id);
     if (item && item.position) {
       handleDragEnd(id, item.position);
     }
   };
 
-  const handleViewportChange = (viewport: { position: Point; scale: number }): void => {
+  const handleViewportChange = (viewport: {
+    position: Point;
+    scale: number;
+  }): void => {
     batch(() => {
-      setCanvas({ x: viewport.position.x, y: viewport.position.y, scale: viewport.scale }, getUserName());
+      setCanvas(
+        {
+          x: viewport.position.x,
+          y: viewport.position.y,
+          scale: viewport.scale,
+        },
+        getUserName(),
+      );
     });
   };
 
@@ -111,7 +134,7 @@ export default function Dashboard() {
 
   // Signal to force canvas state refresh when storage is cleared
   const [storageVersion, setStorageVersion] = createSignal(0);
-  
+
   // Memoized canvas state that reacts to storage changes
   const canvasState = createMemo(() => {
     storageVersion(); // Subscribe to storage version changes
@@ -122,27 +145,28 @@ export default function Dashboard() {
   const resetCanvasToDefault = () => {
     const username = getUserName();
     // Clear canvas state from localStorage
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       localStorage.removeItem(`peach_${username}_canvas`);
     }
     // Force storage version update to trigger canvasState refresh
-    setStorageVersion(prev => prev + 1);
+    setStorageVersion((prev) => prev + 1);
   };
 
   // Get reliable initial viewport state
   const getInitialViewport = () => {
     const canvas = canvasState();
     // Always ensure we have valid window dimensions
-    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 800;
-    const screenHeight = typeof window !== 'undefined' ? window.innerHeight : 600;
-    
+    const screenWidth = typeof window !== "undefined" ? window.innerWidth : 800;
+    const screenHeight =
+      typeof window !== "undefined" ? window.innerHeight : 600;
+
     if (canvas && canvas.x && canvas.y && canvas.scale) {
-      return { 
-        position: { x: canvas.x, y: canvas.y }, 
-        scale: canvas.scale 
+      return {
+        position: { x: canvas.x, y: canvas.y },
+        scale: canvas.scale,
       };
     }
-    
+
     // Default to centered viewport
     return getViewportForLoginCenter(screenWidth, screenHeight);
   };
@@ -154,14 +178,16 @@ export default function Dashboard() {
 
     const storedPhotos = getPhotos(getUserName());
     const navPosition = DEFAULT_POSITIONS.dashboardNavComponent;
-    
+
     return currentPosts.map((imageBlock, index): DashboardPhoto => {
       const storedState = storedPhotos[imageBlock.id];
-      
+
       // Use stored dashboard positions first, then fall back to random calculation
       let x, y;
-      
-      const dashboardPositions = Object.values(DEFAULT_POSITIONS.dashboardPhotos);
+
+      const dashboardPositions = Object.values(
+        DEFAULT_POSITIONS.dashboardPhotos,
+      );
       if (index < dashboardPositions.length) {
         // Use predefined dashboard positions for first 13 photos
         const position = dashboardPositions[index];
@@ -171,64 +197,82 @@ export default function Dashboard() {
         // For additional photos beyond 13, use random scatter pattern
         const angle = Math.random() * 2 * Math.PI;
         const radius = 700 + Math.random() * 600; // Outer ring for additional photos
-        x = navPosition.x + Math.cos(angle) * radius + (Math.random() - 0.5) * 400;
-        y = navPosition.y + Math.sin(angle) * radius + (Math.random() - 0.5) * 400;
+        x =
+          navPosition.x +
+          Math.cos(angle) * radius +
+          (Math.random() - 0.5) * 400;
+        y =
+          navPosition.y +
+          Math.sin(angle) * radius +
+          (Math.random() - 0.5) * 400;
       }
-      
+
       // Caption and date processing
       const isSingleImage = imageBlock.imageCount === 1;
       const isFirstImage = imageBlock.imageIndex === 0;
-      const showCaption = isSingleImage ? Math.random() < 0.8 : (isFirstImage ? Math.random() < 0.4 : Math.random() < 0.1);
+      const showCaption = isSingleImage
+        ? Math.random() < 0.8
+        : isFirstImage
+          ? Math.random() < 0.4
+          : Math.random() < 0.1;
       const showDate = Math.random() < 0.6;
-      
+
       let date = "";
       let caption = "";
       let captionStyle = { fontSize: 14, offsetY: 0 };
-      
+
       // Date formatting
       if (showDate && imageBlock.createdTime) {
-        const timestamp = typeof imageBlock.createdTime === 'string' 
-          ? parseInt(imageBlock.createdTime) 
-          : imageBlock.createdTime;
-        const dateObj = timestamp > 1000000000000 
-          ? new Date(timestamp) 
-          : new Date(timestamp * 1000);
+        const timestamp =
+          typeof imageBlock.createdTime === "string"
+            ? parseInt(imageBlock.createdTime)
+            : imageBlock.createdTime;
+        const dateObj =
+          timestamp > 1000000000000
+            ? new Date(timestamp)
+            : new Date(timestamp * 1000);
         date = dateObj.toLocaleDateString();
       }
-      
+
       // Caption extraction
-      if (showCaption && imageBlock.message && Array.isArray(imageBlock.message)) {
-        const firstTextPart = imageBlock.message.find((part: any) => part.type === "text" && part.text);
+      if (
+        showCaption &&
+        imageBlock.message &&
+        Array.isArray(imageBlock.message)
+      ) {
+        const firstTextPart = imageBlock.message.find(
+          (part: any) => part.type === "text" && part.text,
+        );
         if (firstTextPart) {
-          const lines = firstTextPart.text.trim().split('\n');
-          const firstTwoLines = lines.slice(0, 2).join('\n').trim();
-          const words = firstTwoLines.split(' ');
-          
+          const lines = firstTextPart.text.trim().split("\n");
+          const firstTwoLines = lines.slice(0, 2).join("\n").trim();
+          const words = firstTwoLines.split(" ");
+
           if (words.length <= 3) {
-            caption = words.join(' ');
+            caption = words.join(" ");
             captionStyle = { fontSize: 30, offsetY: 0 };
           } else {
-            caption = words.slice(0, 4).join(' ');
+            caption = words.slice(0, 4).join(" ");
             captionStyle = { fontSize: 20, offsetY: 0 };
           }
         }
       }
-      
+
       if (!caption && date) {
         captionStyle = { fontSize: 20, offsetY: 0 };
       }
-      
+
       return {
         id: imageBlock.id,
-        src: imageBlock.src || '',
+        src: imageBlock.src || "",
         caption,
         date,
         captionStyle,
-        position: storedState ? 
-          { x: storedState.x, y: storedState.y } : 
-          { x, y },
-        rotation: storedState?.rotation || (Math.random() * 40 - 20),
-        zIndex: storedState?.zIndex || (index + 1),
+        position: storedState
+          ? { x: storedState.x, y: storedState.y }
+          : { x, y },
+        rotation: storedState?.rotation || Math.random() * 40 - 20,
+        zIndex: storedState?.zIndex || index + 1,
         type: "photo" as const,
         isRotatable: true,
         isExposed: storedState?.isExposed || false,
@@ -237,7 +281,10 @@ export default function Dashboard() {
   });
 
   const loadPosts = async (): Promise<void> => {
+    console.log('DEBUG: loadPosts function called');
+    
     if (!user.data || !isAuthenticated()) {
+      console.log('DEBUG: No user data or not authenticated');
       return;
     }
 
@@ -248,6 +295,7 @@ export default function Dashboard() {
     try {
       const username = user.data.username;
       const streamToken = token();
+      console.log('DEBUG: About to call fetchStream for username:', username);
 
       const formData = new FormData();
       formData.append("username", username);
@@ -255,26 +303,40 @@ export default function Dashboard() {
 
       const response = await fetchStream(formData);
 
+      // DEBUG: LOG FULL PEACH API RESPONSE FROM DASHBOARD
+      console.log(
+        "FULL DASHBOARD PEACH API RESPONSE:",
+        JSON.stringify(response, null, 2),
+      );
+
       if (response.success && response.data?.data) {
-        // Update user context with stream data
+        // Update user context with stream data including posts and cursor
         const streamData = response.data.data;
         updateUserData({
           displayName: streamData.displayName,
           bio: streamData.bio,
           avatarSrc: streamData.avatarSrc,
           name: streamData.name,
-          id: streamData.id
+          id: streamData.id,
+          streams: [
+            {
+              posts: streamData.posts,
+              cursor: streamData.cursor,
+            },
+          ],
         });
 
         if (user.data?.username) {
           const allImages: any[] = [];
-          
+
           batch(() => {
             for (const post of response.data.data.posts) {
               if (!post.message || !Array.isArray(post.message)) continue;
-              
-              const images = post.message.filter((part: any) => part.type === 'image');
-              
+
+              const images = post.message.filter(
+                (part: any) => part.type === "image",
+              );
+
               for (let i = 0; i < images.length; i++) {
                 allImages.push({
                   id: `${post.id}-image-${i}`,
@@ -282,29 +344,33 @@ export default function Dashboard() {
                   createdTime: post.createdTime,
                   imageIndex: i,
                   src: images[i].src,
-                  imageCount: images.length
+                  imageCount: images.length,
                 });
               }
             }
-            
+
             const filteredPosts = allImages;
 
-            setState(produce(state => {
-              state.posts = filteredPosts;
-              state.cursor = response.data.data.cursor;
-              state.loading = false;
-            }));
+            setState(
+              produce((state) => {
+                state.posts = filteredPosts;
+                state.cursor = response.data.data.cursor;
+                state.loading = false;
+              }),
+            );
 
             setPosts(filteredPosts, user.data?.username || getUserName());
           });
         }
       } else {
         batch(() => {
-          setState(produce(state => {
-            state.posts = [];
-            state.cursor = null;
-            state.loading = false;
-          }));
+          setState(
+            produce((state) => {
+              state.posts = [];
+              state.cursor = null;
+              state.loading = false;
+            }),
+          );
         });
 
         const userName = getUserName();
@@ -313,20 +379,24 @@ export default function Dashboard() {
     } catch (err) {
       logger.error("Failed to load posts", err);
       batch(() => {
-        setState(produce(state => {
-          state.error = "Failed to load your posts. Please try again.";
-          state.loading = false;
-        }));
+        setState(
+          produce((state) => {
+            state.error = "Failed to load your posts. Please try again.";
+            state.loading = false;
+          }),
+        );
       });
     }
   };
 
   const handleDownloadData = async (): Promise<void> => {
     batch(() => {
-      setState(produce(state => {
-        state.error = null;
-        state.downloading = true;
-      }));
+      setState(
+        produce((state) => {
+          state.error = null;
+          state.downloading = true;
+        }),
+      );
     });
 
     try {
@@ -340,37 +410,45 @@ export default function Dashboard() {
         {
           includeComments: true,
           includeImages: true,
+          devMode: import.meta.env.DEV,
         },
         exportContext,
         user.data,
       );
 
       batch(() => {
-        setState(produce(state => {
-          state.downloading = false;
-          state.downloadComplete = true;
-        }));
+        setState(
+          produce((state) => {
+            state.downloading = false;
+            state.downloadComplete = true;
+          }),
+        );
       });
 
       setTimeout(() => {
         batch(() => {
-          setState(produce(state => {
-            state.downloadComplete = false;
-          }));
+          setState(
+            produce((state) => {
+              state.downloadComplete = false;
+            }),
+          );
         });
         exportContext.resetExport();
       }, 5000);
     } catch (err) {
       logger.error("Failed to download data", err);
-      const errorMessage = err instanceof Error
-        ? `Error: ${err.message}`
-        : "Failed to download your Peach data. Please try again.";
+      const errorMessage =
+        err instanceof Error
+          ? `Error: ${err.message}`
+          : "Failed to download your Peach data. Please try again.";
 
       batch(() => {
-        setState(produce(state => {
-          state.error = errorMessage;
-          state.downloading = false;
-        }));
+        setState(
+          produce((state) => {
+            state.error = errorMessage;
+            state.downloading = false;
+          }),
+        );
       });
       exportContext.resetExport();
     }
@@ -383,9 +461,9 @@ export default function Dashboard() {
     }
 
     if (isAuthenticated() && (!user.data?.username || !token())) {
-      logger.error("Authentication incomplete", { 
-        hasUsername: !!user.data?.username, 
-        hasToken: !!token() 
+      logger.error("Authentication incomplete", {
+        hasUsername: !!user.data?.username,
+        hasToken: !!token(),
       });
       batch(() => {
         setState("error", "Missing username or token");
@@ -393,18 +471,22 @@ export default function Dashboard() {
     }
 
     batch(() => {
-      setState(produce(state => {
-        state.canvasWidth = window.innerWidth;
-        state.canvasHeight = window.innerHeight;
-      }));
+      setState(
+        produce((state) => {
+          state.canvasWidth = window.innerWidth;
+          state.canvasHeight = window.innerHeight;
+        }),
+      );
     });
 
     const storedPosts = getPosts(getUserName());
     batch(() => {
-      setState(produce(state => {
-        state.posts = storedPosts;
-        state.cursor = null;
-      }));
+      setState(
+        produce((state) => {
+          state.posts = storedPosts;
+          state.cursor = null;
+        }),
+      );
     });
 
     if (storedPosts.length === 0) {
@@ -416,14 +498,16 @@ export default function Dashboard() {
     });
 
     // Force storage version refresh on mount to ensure canvas state is current
-    setStorageVersion(prev => prev + 1);
+    setStorageVersion((prev) => prev + 1);
 
     const handleResize = (): void => {
       batch(() => {
-        setState(produce(state => {
-          state.canvasWidth = window.innerWidth;
-          state.canvasHeight = window.innerHeight;
-        }));
+        setState(
+          produce((state) => {
+            state.canvasWidth = window.innerWidth;
+            state.canvasHeight = window.innerHeight;
+          }),
+        );
       });
     };
 
@@ -470,7 +554,7 @@ export default function Dashboard() {
               x: photo.position.x,
               y: photo.position.y,
               rotation: photo.rotation || 0,
-              zIndex: photo.zIndex || 1
+              zIndex: photo.zIndex || 1,
             };
           });
           setPhotos(initialPhotoStates, getUserName());
@@ -482,14 +566,16 @@ export default function Dashboard() {
   });
 
   return (
-    <ErrorBoundary fallback={(err) => (
-      <div class={styles["peach-preserve"]}>
-        <div class={styles["error-container"]}>
-          <h2>Something went wrong</h2>
-          <p>{err.message || "Please refresh and try again."}</p>
+    <ErrorBoundary
+      fallback={(err) => (
+        <div class={styles["peach-preserve"]}>
+          <div class={styles["error-container"]}>
+            <h2>Something went wrong</h2>
+            <p>{err.message || "Please refresh and try again."}</p>
+          </div>
         </div>
-      </div>
-    )}>
+      )}
+    >
       <div class={styles["peach-preserve"]}>
         <Title>Peach Preserves</Title>
 
@@ -504,7 +590,7 @@ export default function Dashboard() {
           />
         </Show>
 
-        <Show when={exportContext.exportData.status === 'exporting'}>
+        <Show when={exportContext.exportData.status === "exporting"}>
           <ExportProgressModal />
         </Show>
 
@@ -529,16 +615,22 @@ export default function Dashboard() {
             </div>
           </Show>
 
-          <Show when={state.posts.length === 0 && !state.loading && state.clientOnly}>
+          <Show
+            when={
+              state.posts.length === 0 && !state.loading && state.clientOnly
+            }
+          >
             <EmptyStateMessage />
           </Show>
 
           <Show when={state.clientOnly}>
-            <Suspense fallback={
-              <div class={styles["loading-container"]}>
-                <div>Loading your preserves...</div>
-              </div>
-            }>
+            <Suspense
+              fallback={
+                <div class={styles["loading-container"]}>
+                  <div>Loading your preserves...</div>
+                </div>
+              }
+            >
               <InfiniteCanvas
                 showGrid={false}
                 storageKey={`peach_${getUserName()}_canvas`}
@@ -577,7 +669,11 @@ export default function Dashboard() {
                             delay={((photo.zIndex || 1) - 1) * 50}
                             onAnimationStart={() => {
                               batch(() => {
-                                setPhotoState(photo.id, { isExposed: true }, getUserName());
+                                setPhotoState(
+                                  photo.id,
+                                  { isExposed: true },
+                                  getUserName(),
+                                );
                               });
                             }}
                           >
@@ -609,7 +705,10 @@ export default function Dashboard() {
                         onDrag={handleDragMove}
                         onDragEnd={handleDragEndWithPosition}
                       >
-                        <DashboardNav isDragging={isDragging(photo.id)} onDownload={handleDownloadData} />
+                        <DashboardNav
+                          isDragging={isDragging(photo.id)}
+                          onDownload={handleDownloadData}
+                        />
                       </CanvasItem>
                     </Show>
                   )}

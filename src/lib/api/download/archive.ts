@@ -4,6 +4,7 @@ import { PeachPost } from "~/context/peach";
 import { ArchivePost, ArchiveMetadata, PeachArchive, MediaMap } from "./types";
 // Import from the viewer module that includes modal functionality
 import { generateViewerCSS, generateViewerJS } from "./viewer";
+import { debugLog } from "./utils";
 
 /**
  * Create the archive data structure
@@ -21,6 +22,16 @@ export function createArchiveData(
 
   if (!posts || !Array.isArray(posts) || posts.length === 0) {
     console.warn("[API] No posts provided for archive");
+  }
+
+  // Debug: Check for duplicates in input posts
+  const postIds = posts.map(p => p.id);
+  const uniquePostIds = new Set(postIds);
+  if (postIds.length !== uniquePostIds.size) {
+    debugLog("archive", `DUPLICATE POSTS DETECTED: ${postIds.length} posts, ${uniquePostIds.size} unique IDs`);
+    // Log first few duplicate IDs
+    const duplicates = postIds.filter((id, index) => postIds.indexOf(id) !== index);
+    debugLog("archive", "Duplicate IDs:", duplicates.slice(0, 5));
   }
 
   const archivePosts: ArchivePost[] = posts.map((post) => {
@@ -124,6 +135,10 @@ export function createArchiveData(
     },
     posts: archivePosts,
   };
+
+  // Debug: Final verification of archive posts
+  debugLog("archive", `Final archive: ${archivePosts.length} posts, first 3 IDs:`, 
+    archivePosts.slice(0, 3).map(p => p.id));
 
   debugLog("archive", "Archive data created", {
     username,
