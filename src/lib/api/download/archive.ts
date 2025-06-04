@@ -3,7 +3,7 @@ import JSZip from "jszip";
 import { PeachPost } from "~/context/peach";
 import { ArchivePost, ArchiveMetadata, PeachArchive, MediaMap } from "./types";
 // Import from the viewer module that includes modal functionality
-import { generateViewerCSS, generateViewerJS } from "./viewer";
+import { generateViewerHTML, generateViewerCSS, generateViewerJS } from "./viewer";
 import { debugLog } from "./utils";
 
 /**
@@ -176,6 +176,8 @@ export async function createArchive(
       FILES:
       ------
       - viewer.html: The HTML viewer for browsing your archive
+      - viewer.css: Stylesheet for the viewer interface
+      - viewer.js: JavaScript functionality for the viewer
       - data.js: Contains all your post data and metadata
       - media/: Directory containing all media files
 
@@ -187,143 +189,26 @@ export async function createArchive(
       Example: post_9fbd0e3b_img_00.jpg
 
       Each media file is associated with a specific post through this naming pattern.
-      The viewer.html file loads data from data.js and displays the media files
-      alongside their corresponding posts.
+      The viewer.html file loads data from data.js, styles from viewer.css, and 
+      functionality from viewer.js to display the media files alongside their 
+      corresponding posts.
       `,
     );
 
     // Create data.js with the archive data
-    const dataJsContent = `const ARCHIVE_DATA_JSON = ${JSON.stringify(archiveData)};`;
+    const dataJsContent = `window.ARCHIVE_DATA_JSON = ${JSON.stringify(archiveData)};`;
     zip.file("data.js", dataJsContent);
 
-    // Get CSS and JS content from our imported functions
+    // Get template content from functions and replace placeholders
+    const htmlTemplate = generateViewerHTML();
     const cssContent = generateViewerCSS();
     const jsContent = generateViewerJS();
 
-    // Generate modified JavaScript that loads from data.js
-    const modifiedJSContent = jsContent.replace(
-      "document.addEventListener('DOMContentLoaded', function() {",
-      "function initializeArchiveViewer() {",
-    );
-
-    // Create HTML content that loads from data.js
-    const htmlContent = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Peach Archive - ${archiveData.metadata.username}</title>
-  <style>
-    ${cssContent}
-  </style>
-</head>
-<body>
-  <header>
-    <div class="logo-container">
-      <img src="peachdotcool.png" alt="Peach Logo" class="logo">
-      <h1>Peach Archive</h1>
-    </div>
-    <div class="user-info">
-      <span class="username">@${archiveData.metadata.username}</span>
-      <span class="export-date">Exported: ${new Date(archiveData.metadata.exportDate).toLocaleDateString()}</span>
-    </div>
-  </header>
-
-  <div class="search-bar">
-    <div class="search-container">
-      <div class="search-field">
-        <label for="search-input">Search posts:</label>
-        <input type="text" id="search-input" placeholder="Search by content...">
-      </div>
-      <div class="time-filter">
-        <div class="year-filter">
-          <label for="year-select">Year:</label>
-          <select id="year-select">
-            <option value="">All Years</option>
-            <!-- Will be populated by JavaScript -->
-          </select>
-        </div>
-        <div class="month-filter">
-          <label for="month-select">Month:</label>
-          <select id="month-select">
-            <option value="">All Months</option>
-            <option value="0">January</option>
-            <option value="1">February</option>
-            <option value="2">March</option>
-            <option value="3">April</option>
-            <option value="4">May</option>
-            <option value="5">June</option>
-            <option value="6">July</option>
-            <option value="7">August</option>
-            <option value="8">September</option>
-            <option value="9">October</option>
-            <option value="10">November</option>
-            <option value="11">December</option>
-          </select>
-        </div>
-      </div>
-      <div class="search-buttons">
-        <button id="search-btn">Search</button>
-        <button id="reset-btn">Reset</button>
-      </div>
-    </div>
-  </div>
-
-  <main>
-    <div class="stats">
-      <div class="stat">
-        <span class="stat-value">${archiveData.metadata.postCount}</span>
-        <span class="stat-label">Total Posts</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value" id="visible-posts">${archiveData.metadata.postCount}</span>
-        <span class="stat-label">Visible Posts</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value" id="emoji-count">-</span>
-        <span class="stat-label">Emojis</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value" id="active-days">-</span>
-        <span class="stat-label">Active Days</span>
-      </div>
-    </div>
-
-    <div class="fun-stats">
-      <h3>Fun Stats</h3>
-      <div class="fun-stats-grid">
-        <div class="fun-stat" id="top-emojis">
-          <h4>Top Emojis</h4>
-          <div class="emoji-list">Loading...</div>
-        </div>
-        <div class="fun-stat" id="word-count">
-          <h4>Word Stats</h4>
-          <div class="word-stats">Loading...</div>
-        </div>
-        <div class="fun-stat" id="activity-chart">
-          <h4>Activity by Time</h4>
-          <div class="activity-data">Loading...</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="timeline" id="timeline">
-      <!-- Posts will be inserted here by JavaScript -->
-      <div class="loading">Loading posts...</div>
-    </div>
-  </main>
-
-  <footer>
-    <p>Created with Peach Preserves - © 2025 jcbbge</p>
-  </footer>
-
-  <script src="data.js"></script>
-
-  <script>
-    ${modifiedJSContent}
-  </script>
-</body>
-</html>`;
+    // Replace placeholders in HTML template
+    const htmlContent = htmlTemplate
+      .replace(/{{USERNAME}}/g, archiveData.metadata.username)
+      .replace(/{{EXPORT_DATE}}/g, new Date(archiveData.metadata.exportDate).toLocaleDateString())
+      .replace(/{{POST_COUNT}}/g, archiveData.metadata.postCount.toString());
 
     // Add a debug summary file to help troubleshoot the archive content
     if (true) {
@@ -377,6 +262,10 @@ export async function createArchive(
 
     // Add the HTML viewer
     zip.file("viewer.html", htmlContent);
+
+    // Add external CSS and JS files from templates
+    zip.file("viewer.css", cssContent);
+    zip.file("viewer.js", jsContent);
 
     // Add the Peach logo
     let peachLogoBlob;
