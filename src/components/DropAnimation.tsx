@@ -18,7 +18,6 @@ export function DropAnimation(props: DropAnimationProps) {
       props.onAnimationStart?.();
 
       // Generate random values based on ID
-      const startScale = seededRandom(`${props.id}_scale`, 1.8, 2.2);
       const startZ = seededRandom(`${props.id}_z`, 400, 600);
       const startRotate = seededRandom(`${props.id}_rotate`, -5, 5);
       const endRotate = seededRandom(`${props.id}_end_rotate`, -1, 2);
@@ -26,17 +25,17 @@ export function DropAnimation(props: DropAnimationProps) {
       const randomDelay = seededRandom(`${props.id}_delay`, 0, 400);
 
       // Set initial state
-      containerRef.style.transform = `scale(${startScale}) translateZ(${startZ}px) rotate(${startRotate}deg)`;
+      containerRef.style.transform = `scale(0) translateZ(${startZ}px) rotate(${startRotate}deg)`;
       containerRef.style.opacity = "0";
       containerRef.style.transition = "none";
 
       // Force layout
       containerRef.offsetHeight;
 
-      // Apply animation
+      // Apply animation with spring overshoot
       setTimeout(() => {
         const totalDelay = (props.delay || 0) + randomDelay;
-        containerRef.style.transition = `all ${duration}ms ease-in ${totalDelay}ms`;
+        containerRef.style.transition = `all ${duration}ms cubic-bezier(0.175, 0.885, 0.32, 1.275) ${totalDelay}ms`;
         containerRef.style.transform = `scale(1) translateZ(0) rotate(${endRotate}deg)`;
         containerRef.style.opacity = "1";
       }, 10);
