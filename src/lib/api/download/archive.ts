@@ -24,15 +24,22 @@ export function createArchiveData(
     console.warn("[API] No posts provided for archive");
   }
 
-  // Debug: Check for duplicates in input posts
-  const postIds = posts.map(p => p.id);
-  const uniquePostIds = new Set(postIds);
-  if (postIds.length !== uniquePostIds.size) {
-    debugLog("archive", `DUPLICATE POSTS DETECTED: ${postIds.length} posts, ${uniquePostIds.size} unique IDs`);
-    // Log first few duplicate IDs
-    const duplicates = postIds.filter((id, index) => postIds.indexOf(id) !== index);
-    debugLog("archive", "Duplicate IDs:", duplicates.slice(0, 5));
+  // Remove duplicate posts by ID
+  const seenIds = new Set<string>();
+  const deduplicatedPosts = posts.filter(post => {
+    if (seenIds.has(post.id)) {
+      debugLog("archive", `Removing duplicate post: ${post.id}`);
+      return false;
+    }
+    seenIds.add(post.id);
+    return true;
+  });
+  
+  if (posts.length !== deduplicatedPosts.length) {
+    debugLog("archive", `DUPLICATES REMOVED: ${posts.length} → ${deduplicatedPosts.length} posts`);
   }
+  
+  posts = deduplicatedPosts;
 
   const archivePosts: ArchivePost[] = posts.map((post) => {
     const archivePost: ArchivePost = { ...post };
@@ -176,8 +183,8 @@ export async function createArchive(
       FILES:
       ------
       - viewer.html: The HTML viewer for browsing your archive
-      - viewer.css: Stylesheet for the viewer interface
-      - viewer.js: JavaScript functionality for the viewer
+      - styles.css: Stylesheet for the viewer interface
+      - script.js: JavaScript functionality for the viewer
       - data.js: Contains all your post data and metadata
       - media/: Directory containing all media files
 
@@ -189,15 +196,36 @@ export async function createArchive(
       Example: post_9fbd0e3b_img_00.jpg
 
       Each media file is associated with a specific post through this naming pattern.
-      The viewer.html file loads data from data.js, styles from viewer.css, and 
-      functionality from viewer.js to display the media files alongside their 
+      The viewer.html file loads data from data.js, styles from styles.css, and 
+      functionality from script.js to display the media files alongside their 
       corresponding posts.
       `,
     );
 
     // Create data.js with the archive data
-    const dataJsContent = `window.ARCHIVE_DATA_JSON = ${JSON.stringify(archiveData)};`;
-    zip.file("data.js", dataJsContent);
+    try {
+      const jsonString = JSON.stringify(archiveData, null, 0);
+      const dataJsContent = `window.ARCHIVE_DATA_JSON = ${jsonString};`;
+      zip.file("data.js", dataJsContent);
+      debugLog("zip", "Added data.js to archive");
+    } catch (jsonError) {
+      console.error("[API] Error creating data.js:", jsonError);
+      // Create a minimal fallback data.js
+      const fallbackData = {
+        metadata: archiveData.metadata,
+        posts: archiveData.posts.map(p => ({
+          id: p.id,
+          createdTime: p.createdTime,
+          message: Array.isArray(p.message) ? p.message.filter(m => m.type === 'text') : '',
+          likeCount: p.likeCount || 0,
+          commentCount: p.commentCount || 0,
+          localMediaPaths: p.localMediaPaths || []
+        }))
+      };
+      const dataJsContent = `window.ARCHIVE_DATA_JSON = ${JSON.stringify(fallbackData)};`;
+      zip.file("data.js", dataJsContent);
+      debugLog("zip", "Added fallback data.js to archive due to JSON error");
+    }
 
     // Get template content from functions and replace placeholders
     const htmlTemplate = generateViewerHTML();
@@ -205,10 +233,16 @@ export async function createArchive(
     const jsContent = generateViewerJS();
 
     // Replace placeholders in HTML template
+    debugLog("zip", "Template replacement values:", {
+      username: archiveData.metadata.username,
+      exportDate: new Date(archiveData.metadata.exportDate).toLocaleDateString(),
+      postCount: archiveData.metadata.postCount
+    });
+    
     const htmlContent = htmlTemplate
-      .replace(/{{USERNAME}}/g, archiveData.metadata.username)
-      .replace(/{{EXPORT_DATE}}/g, new Date(archiveData.metadata.exportDate).toLocaleDateString())
-      .replace(/{{POST_COUNT}}/g, archiveData.metadata.postCount.toString());
+      .replace(/\{\{USERNAME\}\}/g, archiveData.metadata.username)
+      .replace(/\{\{EXPORT_DATE\}\}/g, new Date(archiveData.metadata.exportDate).toLocaleDateString())
+      .replace(/\{\{POST_COUNT\}\}/g, archiveData.metadata.postCount.toString());
 
     // Add a debug summary file to help troubleshoot the archive content
     if (true) {
@@ -264,8 +298,8 @@ export async function createArchive(
     zip.file("viewer.html", htmlContent);
 
     // Add external CSS and JS files from templates
-    zip.file("viewer.css", cssContent);
-    zip.file("viewer.js", jsContent);
+    zip.file("styles.css", cssContent);
+    zip.file("script.js", jsContent);
 
     // Add the Peach logo
     let peachLogoBlob;

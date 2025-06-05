@@ -100,24 +100,33 @@ export async function fetchPostsWithPagination(
       debugLog('pagination', `First 3 post IDs on page ${paginationState.currentPage}:`, 
         pagePosts.slice(0, 3).map(p => p.id));
       
-      // Add posts to our collection
-      allPosts = [...allPosts, ...pagePosts];
-      paginationState.postsLoaded = allPosts.length;
+      // Create a set of existing post IDs for fast lookup
+      const existingIds = new Set(allPosts.map(p => p.id));
       
-      // Debug: Check for duplicates after adding this page
-      const allPostIds = allPosts.map(p => p.id);
-      const uniqueIds = new Set(allPostIds);
-      if (allPostIds.length !== uniqueIds.size) {
-        debugLog('pagination', `DUPLICATES DETECTED after page ${paginationState.currentPage}: ${allPostIds.length} total, ${uniqueIds.size} unique`);
+      // Filter out any posts we already have
+      const newPosts = pagePosts.filter(post => !existingIds.has(post.id));
+      
+      debugLog('pagination', `Page ${paginationState.currentPage}: ${pagePostsCount} received, ${newPosts.length} new posts after deduplication`);
+      
+      if (newPosts.length < pagePostsCount) {
+        debugLog('pagination', `DUPLICATE POSTS FROM API: ${pagePostsCount - newPosts.length} duplicates detected on page ${paginationState.currentPage}`);
+        // Log the duplicate IDs
+        const duplicateIds = pagePosts.filter(post => existingIds.has(post.id)).map(p => p.id);
+        debugLog('pagination', 'Duplicate post IDs from API:', duplicateIds.slice(0, 5));
       }
       
-      // Get next cursor if available
-      const nextCursor = response.data.data.cursor || null;
+      // Add only new posts to our collection
+      allPosts = [...allPosts, ...newPosts];
+      paginationState.postsLoaded = allPosts.length;
+      
+      // Get next cursor if available - cursor is at top level of response.data
+      const nextCursor = response.data.cursor || null;
       debugLog('pagination', `Next cursor received: ${nextCursor ? nextCursor : 'null'}`);
       
       // Debug: Log full response data structure to see cursor context
+      debugLog('pagination', 'Response data keys:', Object.keys(response.data));
       if (response.data.data) {
-        debugLog('pagination', 'Response data keys:', Object.keys(response.data.data));
+        debugLog('pagination', 'Response data.data keys:', Object.keys(response.data.data));
       }
       
       paginationState.cursor = nextCursor;
