@@ -175,6 +175,7 @@ h1 {
   height: auto;
   display: block;
   transition: transform 0.3s;
+  cursor: pointer;
 }
 
 .media-item:hover img, .media-item:hover video {
@@ -263,48 +264,51 @@ footer {
     grid-template-columns: 1fr;
   }
 
-/* Image Popup Styles */
-.image-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.9);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+/* Modal Base Styles */
+.peach-modal {
+  display: none !important;
+  position: fixed !important;
+  z-index: 9999 !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: auto !important;
+  background-color: rgba(0,0,0,0.9) !important;
 }
 
-.image-popup {
+.modal-content {
   position: relative;
-  max-width: 90%;
-  max-height: 90%;
+  background-color: transparent;
+  margin: 5% auto;
+  padding: 0;
+  width: 90%;
+  max-width: 90vw;
+  max-height: 90vh;
+  text-align: center;
 }
 
-.image-popup img {
-  width: 100%;
-  height: auto;
+.modal-close {
+  position: absolute;
+  top: -40px;
+  right: 10px;
+  color: white;
+  font-size: 35px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 10001;
+}
+
+.modal-close:hover,
+.modal-close:focus {
+  color: #ccc;
+  text-decoration: none;
+}
+
+.modal img {
   max-width: 100%;
   max-height: 90vh;
   object-fit: contain;
-}
-
-.close-popup {
-  position: absolute;
-  top: -40px;
-  right: 0;
-  color: white;
-  font-size: 2rem;
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 5px;
-}
-
-.close-popup:hover {
-  opacity: 0.7;
 }
 
 /* Comment Styles */
@@ -360,32 +364,26 @@ footer {
 .comments {
   cursor: pointer;
   transition: color 0.2s;
+  user-select: none;
 }
 
 .comments:hover {
   color: var(--peach-primary);
+  text-decoration: underline;
 }
 
 /* Comments Modal Styles */
-.comments-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+.comments-modal {
   background-color: rgba(75, 35, 163, 0.8);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
 }
 
-.comments-modal {
+.comments-modal .modal-content {
   background: white;
   border-radius: var(--radius);
   max-width: 600px;
   max-height: 80vh;
   width: 90%;
+  margin: 10% auto;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
@@ -404,28 +402,11 @@ footer {
   font-size: 1.2rem;
 }
 
-.close-modal {
-  font-size: 1.5rem;
-  cursor: pointer;
-  background: none;
-  border: none;
-  color: var(--peach-text);
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.close-modal:hover {
-  opacity: 0.7;
-}
-
 .comments-modal-content {
   padding: 1rem;
   max-height: 60vh;
   overflow-y: auto;
+  text-align: left;
 }
 
 .comments-modal .comment {
@@ -470,12 +451,105 @@ footer {
 export function generateViewerJS(): string {
   return `// Peach Archive Viewer Script
 
-// Make functions globally accessible
-window.initializeArchiveViewer = initializeArchiveViewer;
-window.openImagePopup = openImagePopup;
-window.closeImagePopup = closeImagePopup;
-window.toggleComments = toggleComments;
-window.closeCommentsModal = closeCommentsModal;
+// Standard modal implementation
+window.openImagePopup = function(imageSrc) {
+  // Create modal with inline styles
+  const modal = document.createElement('div');
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';  
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+  modal.style.zIndex = '99999';
+  modal.style.display = 'block';
+  
+  // Create modal content
+  modal.innerHTML = '<span style="position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 100000;">&times;</span><img src="' + imageSrc + '" style="max-width: 90%; max-height: 90vh; margin: auto; display: block; position: relative; top: 50%; transform: translateY(-50%);" alt="Full size image">';
+  
+  // Add to body
+  document.body.appendChild(modal);
+  
+  // Add close handlers
+  const closeBtn = modal.querySelector('span');
+  closeBtn.onclick = function() {
+    document.body.removeChild(modal);
+  };
+  
+  // Close when clicking outside
+  modal.onclick = function(event) {
+    if (event.target === modal) {
+      document.body.removeChild(modal);
+    }
+  };
+};
+
+window.toggleComments = function(postId) {
+  const archiveData = window.ARCHIVE_DATA_JSON;
+  const post = archiveData.posts.find(p => p.id === postId);
+  
+  if (!post) return;
+  
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = 'peach-modal comments-modal';
+  modal.id = 'commentsModal';
+  
+  // FORCE VISIBLE STYLES
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';  
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.backgroundColor = 'rgba(20, 10, 40, 0.95)';
+  modal.style.zIndex = '99999';
+  modal.style.display = 'block';
+  
+  // Build comments HTML
+  let commentsHtml = '<div style="position: relative; margin: 10% auto; background: white; border-radius: 8px; max-width: 500px; width: 90%; max-height: 70vh; overflow: hidden;"><div style="padding: 1rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;"><h3 style="margin: 0; font-size: 1.1rem; color: #333;">Comments</h3><span style="font-size: 24px; cursor: pointer; color: #666;">&times;</span></div><div style="padding: 1rem; max-height: 50vh; overflow-y: auto;">';
+  
+  if (post && post.comments && post.comments.length > 0) {
+    post.comments.forEach(comment => {
+      const commentDate = comment.createdTime ? 
+        new Date(comment.createdTime > 9999999999 ? comment.createdTime : comment.createdTime * 1000).toLocaleDateString() : 
+        '';
+      
+      let authorName = 'Unknown';
+      if (comment.author) {
+        if (typeof comment.author === 'string') {
+          authorName = comment.author;
+        } else if (comment.author.name) {
+          authorName = comment.author.name;
+        } else if (comment.author.displayName) {
+          authorName = comment.author.displayName;
+        }
+      }
+      
+      commentsHtml += '<div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #f0f0f0;"><div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 0.2rem;">' + authorName + '</div>' + (commentDate ? '<div style="font-size: 0.8rem; color: #666; margin-bottom: 0.5rem;">' + commentDate + '</div>' : '') + '<div style="line-height: 1.4;">' + (comment.body || comment.text || comment.message || '') + '</div></div>';
+    });
+  } else {
+    commentsHtml += '<div style="text-align: center; color: #666; font-style: italic; padding: 2rem;">No comments</div>';
+  }
+  
+  commentsHtml += '</div></div>';
+  modal.innerHTML = commentsHtml;
+  
+  // Add to body
+  document.body.appendChild(modal);
+  
+  // Add close handlers
+  const closeBtn = modal.querySelector('span');
+  closeBtn.onclick = function() {
+    document.body.removeChild(modal);
+  };
+  
+  // Close when clicking outside
+  modal.onclick = function(event) {
+    if (event.target === modal) {
+      document.body.removeChild(modal);
+    }
+  };
+};
 
 function initializeArchiveViewer() {
   const timeline = document.getElementById('timeline');
@@ -665,82 +739,6 @@ function initializeArchiveViewer() {
   initializeViewer();
 }
 
-// Image popup functionality
-function openImagePopup(imageSrc) {
-  // Create popup overlay
-  const overlay = document.createElement('div');
-  overlay.className = 'image-popup-overlay';
-  overlay.innerHTML = '<div class="image-popup"><img src="' + imageSrc + '" alt="Full size image"><span class="close-popup" onclick="closeImagePopup()">&times;</span></div>';
-  
-  document.body.appendChild(overlay);
-  overlay.style.display = 'flex';
-}
-
-function closeImagePopup() {
-  const overlay = document.querySelector('.image-popup-overlay');
-  if (overlay) {
-    document.body.removeChild(overlay);
-  }
-}
-
-// Comment modal functionality
-function toggleComments(postId) {
-  const archiveData = window.ARCHIVE_DATA_JSON;
-  const post = archiveData.posts.find(p => p.id === postId);
-  
-  if (!post) return;
-  
-  // Create modal overlay
-  const overlay = document.createElement('div');
-  overlay.className = 'comments-modal-overlay';
-  
-  let commentsHtml = '<div class="comments-modal"><div class="comments-modal-header"><h3>Comments</h3><span class="close-modal" onclick="closeCommentsModal()">&times;</span></div><div class="comments-modal-content">';
-  
-  if (post && post.comments && post.comments.length > 0) {
-    post.comments.forEach(comment => {
-      const commentDate = comment.createdTime ? 
-        new Date(comment.createdTime > 9999999999 ? comment.createdTime : comment.createdTime * 1000).toLocaleDateString() : 
-        'Unknown date';
-      
-      // Fix the comment author display
-      let authorName = 'Unknown';
-      if (comment.author) {
-        if (typeof comment.author === 'string') {
-          authorName = comment.author;
-        } else if (comment.author.name) {
-          authorName = comment.author.name;
-        } else if (comment.author.displayName) {
-          authorName = comment.author.displayName;
-        }
-      }
-      
-      commentsHtml += '<div class="comment"><div class="comment-author">@' + authorName + '</div><div class="comment-date">' + commentDate + '</div><div class="comment-text">' + (comment.body || comment.text || comment.message || '') + '</div></div>';
-    });
-  } else {
-    commentsHtml += '<div class="no-comments">No comments available</div>';
-  }
-  
-  commentsHtml += '</div></div>';
-  overlay.innerHTML = commentsHtml;
-  
-  document.body.appendChild(overlay);
-  overlay.style.display = 'flex';
-}
-
-function closeCommentsModal() {
-  const overlay = document.querySelector('.comments-modal-overlay');
-  if (overlay) {
-    document.body.removeChild(overlay);
-  }
-}
-
-// Close popup when clicking outside image or comments modal
-document.addEventListener('click', function(e) {
-  if (e.target.classList.contains('image-popup-overlay')) {
-    closeImagePopup();
-  }
-  if (e.target.classList.contains('comments-modal-overlay')) {
-    closeCommentsModal();
-  }
-});`;
+// Assign to window object for global access
+window.initializeArchiveViewer = initializeArchiveViewer;`;
 }
