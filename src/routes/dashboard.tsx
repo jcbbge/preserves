@@ -434,7 +434,7 @@ export default function Dashboard() {
           );
         });
         exportContext.resetExport();
-      }, 5000);
+      }, 8000);
     } catch (err) {
       logger.error("Failed to download data", err);
       const errorMessage =

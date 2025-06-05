@@ -178,11 +178,11 @@ export async function createArchive(
       Total Posts: ${archiveData.metadata.postCount}
       Media Files: ${archiveData.metadata.mediaCount}
 
-      This archive was created with Peach Preserves.
+      Hi friend. Thank you for using my app. Peach holds a special place in my heart and I wanted a way to save all of my posts. I built this for me, but I want to share it with you. If you are still here then I know peach is special to you too. Don't let all of these files intimidate you. All you have to do is double click on the peach-preserves.html file.
 
       FILES:
       ------
-      - viewer.html: The HTML viewer for browsing your archive
+      - peach-preserves.html: The HTML viewer for browsing your archive
       - styles.css: Stylesheet for the viewer interface
       - script.js: JavaScript functionality for the viewer
       - data.js: Contains all your post data and metadata
@@ -196,7 +196,7 @@ export async function createArchive(
       Example: post_9fbd0e3b_img_00.jpg
 
       Each media file is associated with a specific post through this naming pattern.
-      The viewer.html file loads data from data.js, styles from styles.css, and 
+      The peach-preserves.html file loads data from data.js, styles from styles.css, and 
       functionality from script.js to display the media files alongside their 
       corresponding posts.
       `,
@@ -295,7 +295,7 @@ export async function createArchive(
     }
 
     // Add the HTML viewer
-    zip.file("viewer.html", htmlContent);
+    zip.file("peach-preserves.html", htmlContent);
 
     // Add external CSS and JS files from templates
     zip.file("styles.css", cssContent);

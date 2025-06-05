@@ -8,7 +8,8 @@ export interface PolaroidProps {
   
   // Image/content
   src?: string;
-  messageText?: string;
+  messageText?: string | JSX.Element;
+  customContent?: JSX.Element;
   caption?: string;
   
   // Date/metadata
@@ -132,16 +133,27 @@ export function Polaroid(props: PolaroidProps): JSX.Element {
       <div class={styles["polaroid-front"]}>
         <div class={styles["polaroid-image-area"]}>
           <Show
-            when={props.src}
+            when={props.customContent}
             fallback={
-              <div class={styles["text-content"]}>{displayCaption}</div>
+              <Show
+                when={props.src}
+                fallback={
+                  <div class={styles["text-content"]}>
+                    {typeof props.messageText === 'string' ? displayCaption : props.messageText}
+                  </div>
+                }
+              >
+                <img
+                  src={props.src}
+                  alt="Polaroid photo"
+                  class={styles["polaroid-photo"]}
+                />
+              </Show>
             }
           >
-            <img
-              src={props.src}
-              alt="Polaroid photo"
-              class={styles["polaroid-photo"]}
-            />
+            <div class={styles["text-content"]}>
+              {props.customContent}
+            </div>
           </Show>
           <div class={styles["polaroid-grit-overlay"]}></div>
         </div>

@@ -27,17 +27,8 @@
     animation: fadeIn 0.3s ease-out;
 }
 
-.polaroid {
-    width: 300px;
-    height: auto;
-    transform: rotate(-3deg) !important;
-    position: relative;
-    background: white;
-    padding: 15px;
-    padding-bottom: 40px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+.complete-polaroid {
     animation: dropIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    border-radius: 3px;
 }
 
 .polaroid-content {
@@ -54,10 +45,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 200px;
+    height: 100%;
     width: 100%;
-    background-color: #f0fff4; /* Light green success background */
-    border: 1px solid #e0e0e0;
 }
 
 .success-icon {

@@ -69,6 +69,21 @@
   display: block;
 }
 
+.text-content {
+  width: 236px;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  font-family: 'Caveat', cursive;
+  font-size: 1.2rem;
+  color: #333;
+  text-align: center;
+  line-height: 1.3;
+}
+
 
 .polaroid-grit-overlay {
   position: absolute;

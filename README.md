@@ -1,32 +1,32 @@
-# SolidStart
+# Peach Preserves
 
-Everything you need to build a Solid project, powered by [`solid-start`](https://start.solidjs.com);
+A web application to download and preserve your Peach social media posts as an interactive archive.
 
-## Creating a project
+## About
+
+Hi friend. Thank you for using my app. Peach holds a special place in my heart and I wanted a way to save all of my posts. I built this for me, but I want to share it with you. If you are still here then I know peach is special to you too. Don't let all of these files intimidate you. All you have to do is double click on the `peach-preserves.html` file.
+
+## How to Use
+
+1. Enter your Peach authentication token in the login form
+2. Browse your posts in the interactive polaroid canvas
+3. Click "Download My Data" to create an archive of all your posts
+4. Once downloaded, double click on the `peach-preserves.html` file to view your archive
+
+## Development
+
+This is a SolidStart application. To run locally:
 
 ```bash
-# create a new project in the current directory
-npm init solid@latest
-
-# create a new project in my-app
-npm init solid@latest my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```bash
+npm install
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
 ## Building
 
-Solid apps are built with _presets_, which optimise your project for deployment to different environments.
+```bash
+npm run build
+npm run start
+```
 
-By default, `npm run build` will generate a Node app that you can run with `npm start`. To use a different preset, add it to the `devDependencies` in `package.json` and specify in your `app.config.js`.
-
-## This project was created with the [Solid CLI](https://solid-cli.netlify.app)
+Built with love for the Peach community 🍑

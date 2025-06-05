@@ -1,6 +1,7 @@
 import { Show } from 'solid-js';
 import styles from './ExportProgressModal.module.css';
 import { useExport } from '~/context/export';
+import { Polaroid } from './Polaroid';
 
 export function ExportProgressModal() {
   const exportContext = useExport();
@@ -12,13 +13,10 @@ export function ExportProgressModal() {
         role="region"
         aria-live="polite"
       >
-        <div
-          class={`${styles.polaroid} ${styles["progress-polaroid"]}`}
-        >
-          <div class={styles["polaroid-image-area"]}>
-            <div
-              class={`${styles["polaroid-photo"]} ${styles["progress-content"]}`}
-            >
+        <Polaroid
+          id="export-progress"
+          customContent={
+            <div class={styles["progress-content"]}>
               <div class={styles["progress-header"]}>
                 <h3>Downloading Your Peach Data</h3>
               </div>
@@ -60,16 +58,14 @@ export function ExportProgressModal() {
                 </div>
               </div>
             </div>
-            <div class={styles["polaroid-grit-overlay"]} />
-          </div>
-          <div class={styles["polaroid-caption"]}>
-            <div class={styles["caption-content"]}>
-              <span class={styles["polaroid-handwritten"]}>
-                Preserving your peaches
-              </span>
-            </div>
-          </div>
-        </div>
+          }
+          caption="Preserving your peaches"
+          bgColor="#f8f6f1"
+          rotation={-2}
+          class={styles["progress-polaroid"]}
+          onMouseDown={() => {}}
+          useRandomValues={false}
+        />
       </div>
     </Show>
   );
