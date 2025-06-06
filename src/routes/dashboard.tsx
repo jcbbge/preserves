@@ -410,7 +410,6 @@ export default function Dashboard() {
         {
           includeComments: true,
           includeImages: true,
-          devMode: import.meta.env.DEV,
         },
         exportContext,
         user.data,

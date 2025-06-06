@@ -162,6 +162,7 @@ export function createArchiveData(
 export async function createArchive(
   archiveData: PeachArchive,
   mediaFiles: MediaMap,
+  performanceReport?: string,
 ): Promise<Blob> {
   debugLog("zip", "Creating ZIP archive");
 
@@ -199,6 +200,11 @@ export async function createArchive(
       The peach-preserves.html file loads data from data.js, styles from styles.css, and 
       functionality from script.js to display the media files alongside their 
       corresponding posts.
+
+      PERFORMANCE REPORT:
+      ------------------
+      The performance-report.txt file contains detailed metrics about the archive creation
+      process including timing, throughput, network statistics, and error analysis.
       `,
     );
 
@@ -300,6 +306,12 @@ export async function createArchive(
     // Add external CSS and JS files from templates
     zip.file("styles.css", cssContent);
     zip.file("script.js", jsContent);
+    
+    // Add performance report if provided
+    if (performanceReport) {
+      zip.file("performance-report.txt", performanceReport);
+      debugLog("zip", "Added performance report to archive");
+    }
 
     // Add the Peach logo
     let peachLogoBlob;

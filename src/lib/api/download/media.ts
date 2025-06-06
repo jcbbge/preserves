@@ -1,5 +1,5 @@
 // Media handling functions for the download module
-import { debugLog } from "./utils";
+import { debugLog, recordNetworkRequest } from "./utils";
 import { PeachPost } from "~/context/peach";
 
 /**
@@ -61,17 +61,12 @@ export function extractMediaUrls(posts: PeachPost[]): string[] {
     // METHOD 2: Check for media in the message structure (some posts have it here)
     if (post.message && Array.isArray(post.message)) {
       for (const messagePart of post.message) {
-        // Check for image type messages
-        if (
-          (messagePart.type === "image" ||
-            messagePart.type === "video" ||
-            messagePart.type === "gif") &&
-          messagePart.src &&
-          typeof messagePart.src === "string"
-        ) {
-          hasMedia = true;
-          mediaCounts.postsWithMessageMedia++;
-
+        // Check for ANY media URLs in this message part
+        let hasMediaInThisPart = false;
+        
+        // Check primary src field
+        if (messagePart.src && typeof messagePart.src === "string") {
+          hasMediaInThisPart = true;
           if (!uniqueUrls.has(messagePart.src)) {
             uniqueUrls.add(messagePart.src);
             mediaUrls.push(messagePart.src);
@@ -80,6 +75,54 @@ export function extractMediaUrls(posts: PeachPost[]): string[] {
               `Found media URL in post.message: ${messagePart.src.substring(0, 50)}...`,
             );
           }
+        }
+        
+        // Check for ANY field ending in 'Src' (posterSrc, iconSrc, coverSrc, etc.)
+        Object.keys(messagePart).forEach(key => {
+          if (key.endsWith('Src') && key !== 'src' && 
+              messagePart[key] && typeof messagePart[key] === "string") {
+            hasMediaInThisPart = true;
+            if (!uniqueUrls.has(messagePart[key])) {
+              uniqueUrls.add(messagePart[key]);
+              mediaUrls.push(messagePart[key]);
+              debugLog(
+                "media",
+                `Found additional media URL (${key}) in post.message: ${messagePart[key].substring(0, 50)}...`,
+              );
+            }
+          }
+        });
+        
+        // Check for other common media URL fields
+        const otherMediaFields = [
+          // Link/preview fields
+          'url', 'link', 'previewUrl', 'thumbnailUrl',
+          // Image fields  
+          'imageURL', 'imageUrl', 'image', 'thumbnail',
+          // Audio/video fields
+          'audioUrl', 'videoUrl', 'streamUrl',
+          // Cover art fields
+          'coverUrl', 'artworkUrl', 'albumArt'
+        ];
+        
+        otherMediaFields.forEach(field => {
+          if (messagePart[field] && typeof messagePart[field] === "string" && 
+              messagePart[field].startsWith('http')) {
+            hasMediaInThisPart = true;
+            if (!uniqueUrls.has(messagePart[field])) {
+              uniqueUrls.add(messagePart[field]);
+              mediaUrls.push(messagePart[field]);
+              debugLog(
+                "media",
+                `Found media URL (${field}) in post.message: ${messagePart[field].substring(0, 50)}...`,
+              );
+            }
+          }
+        });
+        
+        if (hasMediaInThisPart) {
+          hasMedia = true;
+          mediaCounts.postsWithMessageMedia++;
         }
 
         // Check for image URLs embedded in text content
@@ -227,6 +270,7 @@ export async function downloadMedia(url: string): Promise<Blob | null> {
       proxyUrl.searchParams.append("url", url);
 
       // Download media via direct proxy
+      const downloadStart = Date.now();
 
       // Use XMLHttpRequest for reliable binary data handling
       const blob = await new Promise<Blob>((resolve, reject) => {
@@ -248,11 +292,18 @@ export async function downloadMedia(url: string): Promise<Blob | null> {
 
             // Verify the response is a valid blob with content
             if (xhr.response instanceof Blob && xhr.response.size > 0) {
+              // Record successful download metrics
+              const downloadTime = Date.now() - downloadStart;
+              recordNetworkRequest(true, downloadTime, xhr.response.size);
               resolve(xhr.response);
             } else {
+              const downloadTime = Date.now() - downloadStart;
+              recordNetworkRequest(false, downloadTime);
               reject(new Error("Empty or invalid blob received"));
             }
           } else {
+            const downloadTime = Date.now() - downloadStart;
+            recordNetworkRequest(false, downloadTime);
             reject(
               new Error(`Media download failed with status ${xhr.status}`),
             );
@@ -260,10 +311,14 @@ export async function downloadMedia(url: string): Promise<Blob | null> {
         };
 
         xhr.onerror = function () {
+          const downloadTime = Date.now() - downloadStart;
+          recordNetworkRequest(false, downloadTime);
           reject(new Error("Network error when downloading media"));
         };
 
         xhr.ontimeout = function () {
+          const downloadTime = Date.now() - downloadStart;
+          recordNetworkRequest(false, downloadTime);
           reject(new Error("Timeout when downloading media"));
         };
 

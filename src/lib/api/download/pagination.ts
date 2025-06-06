@@ -1,5 +1,5 @@
 // Pagination functionality for fetching posts
-import { debugLog } from './utils';
+import { debugLog, recordNetworkRequest } from './utils';
 import { PeachPost } from '~/context/peach';
 import { UpdateExportProgressFn } from './types';
 import { fetchStream } from '~/routes/api/stream';
@@ -48,16 +48,16 @@ export async function fetchPostsWithPagination(
   };
   
   // Determine max pages to fetch
-  const maxPages = options.maxPages || Infinity;
+  const maxPages = options.maxPages;
   const pauseTime = options.pauseBetweenRequests || 500;
   
   // Combined posts array
   let allPosts: PeachPost[] = [];
   
   // Paginate until no more posts or reached limit
-  debugLog('pagination', `Starting pagination for user: ${username}, max pages: ${maxPages === Infinity ? 'unlimited' : maxPages}`);
+  debugLog('pagination', `Starting pagination for user: ${username}, max pages: ${maxPages ? maxPages : 'unlimited'}`);
   
-  while (!paginationState.isComplete && paginationState.currentPage < maxPages) {
+  while (!paginationState.isComplete && (!maxPages || paginationState.currentPage < maxPages)) {
     // Update page counter
     paginationState.currentPage++;
     
@@ -74,7 +74,12 @@ export async function fetchPostsWithPagination(
     debugLog('pagination', `Fetching page ${paginationState.currentPage}${paginationState.cursor ? ' with cursor' : ''}`);
     
     try {
+      const requestStart = Date.now();
       const response = await fetchStream(formData);
+      const requestTime = Date.now() - requestStart;
+      
+      // Record network metrics
+      recordNetworkRequest(response.success, requestTime);
       
       // DEBUG: LOG FULL PEACH API RESPONSE
       debugLog('pagination', `FULL PEACH API RESPONSE for page ${paginationState.currentPage}:`, JSON.stringify(response, null, 2));
@@ -119,15 +124,16 @@ export async function fetchPostsWithPagination(
       allPosts = [...allPosts, ...newPosts];
       paginationState.postsLoaded = allPosts.length;
       
-      // Get next cursor if available - cursor is at top level of response.data
-      const nextCursor = response.data.cursor || null;
-      debugLog('pagination', `Next cursor received: ${nextCursor ? nextCursor : 'null'}`);
+      // Get next cursor if available - try multiple possible locations
+      const nextCursor = response.data.cursor || response.data.data?.cursor || null;
+      debugLog('pagination', `Next cursor received: ${nextCursor ? nextCursor.substring(0, 50) + '...' : 'null'}`);
       
       // Debug: Log full response data structure to see cursor context
       debugLog('pagination', 'Response data keys:', Object.keys(response.data));
       if (response.data.data) {
         debugLog('pagination', 'Response data.data keys:', Object.keys(response.data.data));
       }
+      debugLog('pagination', 'FULL RESPONSE DATA STRUCTURE:', JSON.stringify(response.data, null, 2));
       
       paginationState.cursor = nextCursor;
       

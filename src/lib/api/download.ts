@@ -7,7 +7,16 @@ import { DownloadOptions, UpdateExportProgressFn, MediaMap } from './download/ty
 import { extractMediaUrls, downloadMedia, generateMediaFilename } from './download/media';
 import { createArchiveData, createArchive, downloadBlob } from './download/archive';
 import { fetchPostsWithPagination, PaginationOptions } from './download/pagination';
-import { debugLog } from './download/utils';
+import { 
+  debugLog, 
+  initializeMetrics, 
+  finalizeMetrics, 
+  recordPhaseStart, 
+  recordPhaseEnd, 
+  updateContentMetrics, 
+  generatePerformanceReport,
+  recordError 
+} from './download/utils';
 
 // Global reference to the export context state updater
 let updateExportProgress: UpdateExportProgressFn;
@@ -68,7 +77,11 @@ export async function downloadPeachData(
   }
   
   try {
+    // Initialize metrics collection
+    const metrics = initializeMetrics();
+    
     // Step 1: Gather posts
+    recordPhaseStart('discovery');
 
     updateExportProgress({ 
       phase: 'discovery', 
@@ -88,8 +101,8 @@ export async function downloadPeachData(
     
     // Set up pagination options - start from beginning every time
     const paginationOptions: PaginationOptions = {
-      maxPages: options.devMode ? 2 : undefined, // Limit for dev mode testing
-      pauseBetweenRequests: options.devMode ? 100 : 500
+      maxPages: undefined, // No pagination limit
+      pauseBetweenRequests: 500
     };
     
     debugLog('download', 'Starting fresh pagination from beginning (no cached data used)');
@@ -103,6 +116,7 @@ export async function downloadPeachData(
       debugLog('download', `Fetched ${posts.length} posts via fresh pagination`);
 
     } catch (err) {
+      recordError('pagination', err instanceof Error ? err.message : String(err));
       console.error('[API] Error fetching posts with pagination:', err);
       throw new Error(`Failed to fetch posts: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -111,6 +125,31 @@ export async function downloadPeachData(
       throw new Error('No posts found to archive');
     }
     
+    // Record content metrics - count posts that have media using same logic as extractMediaUrls
+    const postsWithMedia = posts.filter(post => {
+      // Check post.media array
+      if (post.media && post.media.length > 0) {
+        return true;
+      }
+      
+      // Check message content for media URLs (same logic as extractMediaUrls)
+      if (Array.isArray(post.message)) {
+        return post.message.some(item => item.src && typeof item.src === "string");
+      } else if (typeof post.message === "string") {
+        const imageUrlRegex = /https?:\/\/[^\s<>"]+\.(?:jpg|jpeg|png|gif|webp)(?:\?[^\s<>"]*)?/gi;
+        const peachMediaRegex = /https?:\/\/[^\s<>"]*(?:amazonaws\.com|cloudfront\.net)[^\s<>"]*\.(?:jpg|jpeg|png|gif|webp|mp4|mov)(?:\?[^\s<>"]*)?/gi;
+        return imageUrlRegex.test(post.message) || peachMediaRegex.test(post.message);
+      }
+      
+      return false;
+    }).length;
+    
+    updateContentMetrics({
+      totalPosts: posts.length,
+      postsWithMedia: postsWithMedia
+    });
+    
+    recordPhaseEnd('discovery');
     debugLog('posts', `Processing ${posts.length} posts`);
     
     // Update progress with actual post count
@@ -122,6 +161,7 @@ export async function downloadPeachData(
     });
     
     // Step 2: Download media if enabled
+    recordPhaseStart('media');
 
     updateExportProgress({ 
       phase: 'media', 
@@ -181,13 +221,13 @@ export async function downloadPeachData(
           mediaUrlToPath[url] = filename;
           
           try {
-
             const blob = await downloadMedia(url);
             if (blob) {
               mediaMap[filename] = blob;
-
+              updateContentMetrics({ totalMediaFiles: Object.keys(mediaMap).length });
             }
           } catch (err) {
+            recordError('media', `Failed to download ${url}: ${err instanceof Error ? err.message : String(err)}`);
             console.error(`[API] Error with media for post ${postId}:`, err);
             // Continue with next media
           }
@@ -200,9 +240,12 @@ export async function downloadPeachData(
         percentage: 60,
         completedItems: totalPosts
       });
+      
+      recordPhaseEnd('media');
     }
     
     // Step 3: Create archive data structure
+    recordPhaseStart('packaging');
 
     updateExportProgress({ 
       phase: 'content', 
@@ -229,6 +272,7 @@ export async function downloadPeachData(
       
 
     } catch (err) {
+      recordError('archive', `Failed to create archive data: ${err instanceof Error ? err.message : String(err)}`);
       console.error('[API] Error creating archive data:', err);
       throw new Error(`Failed to create archive data structure: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -242,14 +286,22 @@ export async function downloadPeachData(
     });
     
     try {
-
       const archiveBlob = await createArchive(archiveData, mediaMap);
       
       if (!archiveBlob || archiveBlob.size === 0) {
         throw new Error('Failed to create archive - empty or invalid ZIP file');
       }
       
-
+      // Update archive size in metrics and finalize
+      updateContentMetrics({ archiveSizeBytes: archiveBlob.size });
+      recordPhaseEnd('packaging');
+      
+      // Generate final metrics and report after archive creation
+      const finalMetrics = finalizeMetrics();
+      const performanceReport = finalMetrics ? generatePerformanceReport(finalMetrics) : 'Metrics unavailable';
+      
+      // Create final archive with performance report included
+      const finalArchiveBlob = await createArchive(archiveData, mediaMap, performanceReport);
       
       // Generate a filename with timestamp
       const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
@@ -262,8 +314,7 @@ export async function downloadPeachData(
       
       // Trigger download
       try {
-
-        downloadBlob(archiveBlob, filename);
+        downloadBlob(finalArchiveBlob, filename);
         
         // Complete the export process
         if (exportContext) {
