@@ -1,10 +1,12 @@
 {
   "name": "example-bare",
   "type": "module",
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "npx vinxi dev --host --port 3000 --strictPort",
     "build": "vinxi build",
-    "start": "npx kill-port 3000 3001 && vinxi start --port 3000 --strictPort"
+    "start": "vinxi start",
+    "start:dev": "npx kill-port 3000 3001 && vinxi start --port 3000 --strictPort"
   },
   "dependencies": {
     "@solid-primitives/bounds": "^0.1.1",
